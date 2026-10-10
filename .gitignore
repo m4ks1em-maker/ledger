@@ -1,0 +1,20 @@
+# secrets and runtime data: never commit these
+gate/data/
+.env
+*.log
+
+# the replay engine is downloaded by setup.bat, not stored here
+server.exe
+bot.exe
+server
+bot
+assets/
+
+# replays
+*.dem
+*.dem.bz2
+*.part
+replays/
+uploads/
+
+node_modules/

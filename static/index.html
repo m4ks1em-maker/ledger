@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledger — Dota 2 report timeline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=6">
+    <script src="i18n.js?v=7"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>Ledger</h1>
+                    <p>See who reported whom in your Dota 2 matches, and the minute they did it.</p>
+                </div>
+                <div class="header-actions">
+                    <div id="steam-status-badge" class="status-badge disconnected">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Steam: Disconnected</span>
+                    </div>
+                    <button id="setup-toggle" class="btn icon-btn" title="Settings" aria-label="Settings">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <section id="conduct-scorecard-section" class="conduct-scorecard-banner hidden">
+            <div class="conduct-scorecard-banner-content">
+                <div id="conduct-scorecard-content" class="conduct-scorecard-content">
+                    <div class="loading">Loading conduct scorecard...</div>
+                </div>
+            </div>
+        </section>
+
+        <div id="setup-panel" class="setup-panel hidden">
+            <div class="setup-content">
+                <div class="setup-section">
+                    <h3>Configuration</h3>
+                    <div class="input-group">
+                        <label for="replay-dir">Replay directory</label>
+                        <input type="text" id="replay-dir" placeholder="C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta\game\dota\replays">
+                        <small>Your Dota 2 replays folder. With a profile selected, replays are read from <code>{base}/ProfileName/</code></small>
+                    </div>
+                    <div class="input-group">
+                        <label for="profile-select">Steam profile</label>
+                        <select id="profile-select" class="full-width">
+                            <option value="">Select a profile...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Add a profile</label>
+                        <div class="row-group">
+                            <input type="text" id="new-profile-name" placeholder="Name (e.g. Main)">
+                            <input type="number" id="new-profile-id" placeholder="Steam ID">
+                            <button id="add-profile-btn" class="btn success-btn">Add</button>
+                        </div>
+                    </div>
+                    <div class="row-group" style="justify-content: flex-end;">
+                        <button id="delete-profile-btn" class="btn danger-btn small-btn" style="visibility: hidden;">Delete selected</button>
+                    </div>
+                    <button id="save-config" class="btn secondary-btn" style="margin-top: 10px;">Save settings</button>
+                </div>
+
+                <div class="setup-section">
+                    <h3>Steam connection</h3>
+                    <p class="status-text hint">Sign in to download recent matches, yours or a friend's.</p>
+                    <div class="input-group">
+                        <input type="text" id="steam-user" placeholder="Steam username" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="steam-pass" placeholder="Steam password" autocomplete="current-password">
+                    </div>
+                    <div class="input-group hidden" id="steam-guard-group">
+                        <input type="text" id="steam-code" placeholder="Steam Guard code">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="steam-login-btn" class="btn primary-btn">Connect to Steam</button>
+                        <button id="steam-disconnect-btn" class="btn danger-btn" style="display: none;">Disconnect</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div class="workflow-tabs" role="tablist">
+                <button class="workflow-tab active" data-tab="home">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/></svg></span>
+                    <span class="tab-label">Home</span>
+                </button>
+                <button class="workflow-tab" data-tab="browse">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+                    <span class="tab-label">Replays</span>
+                </button>
+                <button class="workflow-tab" data-tab="results">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></span>
+                    <span class="tab-label">Matches</span>
+                </button>
+                <button class="workflow-tab" data-tab="stats">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg></span>
+                    <span class="tab-label">Stats</span>
+                </button>
+                <button class="workflow-tab" data-tab="player">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></span>
+                    <span class="tab-label">Player</span>
+                </button>
+            </div>
+
+            <div id="ledger-status"></div>
+
+            <div class="tab-content active" id="home-tab">
+                <div class="bento">
+                    <section class="tile t-lookup">
+                        <span class="tile-kicker">Player lookup</span>
+                        <h2>Who do you want to check?</h2>
+                        <p>Paste a Steam ID. We find their latest matches, fetch the replays and show who they reported and who reported them. No Steam login.</p>
+                        <form id="lk-form" class="lk-form" autocomplete="off">
+                            <input id="lk-id" type="text" inputmode="numeric" placeholder="Steam ID (64-bit, 32-bit or [U:1:…])" spellcheck="false" aria-label="Steam ID">
+                            <button class="btn primary-btn" type="submit">Find</button>
+                        </form>
+                        <div id="lk-msg" class="lk-msg" role="status"></div>
+                        <div id="lk-list" class="lk-list hidden">
+                            <div class="lk-tools">
+                                <span id="lk-count"></span>
+                                <button type="button" class="btn small-btn" data-pick="5">Last 5</button>
+                                <button type="button" class="btn small-btn" data-pick="10">Last 10</button>
+                                <button type="button" class="btn small-btn" data-pick="all">All</button>
+                                <button type="button" class="btn small-btn" data-pick="none">None</button>
+                            </div>
+                            <div id="lk-rows" class="lk-rows custom-scrollbar"></div>
+                            <div class="lk-go">
+                                <button id="lk-go" class="btn primary-btn" type="button">Analyse</button>
+                                <small id="lk-hint">Replays that are no longer on Valve servers can't be fetched. Upload those instead.</small>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="t-side">
+                    <section class="tile t-upload">
+            <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload replays">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+                <div><b>Drop .dem files here</b><span>or click to choose</span></div>
+                <div id="dz-status" class="dz-status"></div>
+                <input id="dz-input" type="file" accept=".dem" multiple hidden>
+            </div>
+                    </section>
+                        <div class="kpi-row">
+                    <section class="tile t-kpi link" data-go="results"><span class="kpi" id="hm-matches">0</span><span class="tile-label">matches analysed</span></section>
+                    <section class="tile t-kpi link" data-go="stats"><span class="kpi" id="hm-reports">0</span><span class="tile-label">reports found</span></section>
+                        </div>
+                    </div>
+                    <section class="tile t-saved">
+                        <h3>Saved players</h3>
+                        <div id="hm-saved" class="saved-chips"></div>
+                    </section>
+                    <section class="tile t-trust">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <div><b>No Steam login. Ever.</b><span>Ledger never asks for your Steam password or Guard code. Replays come from public data.</span></div>
+                    </section>
+                    <a class="tile t-admin link" href="/admin"><div><b>Keys &amp; activity</b><br><span class="tile-label">Issue keys, see sign-ins, auto-sync</span></div><span class="kpi" style="font-size:1.6rem">→</span></a>
+                </div>
+            </div>
+
+            <div class="tab-content" id="browse-tab">
+                <div class="browse-grid">
+                    <section id="selection-section" class="card main-card">
+                        <div class="card-header">
+                            <h2>Local replays</h2>
+                            <div class="header-controls">
+                                <div id="current-path" class="current-path"></div>
+                                <button id="browse-back" class="btn text-btn" style="display: none;">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+                                    Back
+                                </button>
+                                <button id="refresh-replays" class="btn icon-btn" title="Refresh" aria-label="Refresh">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="selection-controls">
+                                <div class="btn-group">
+                                    <button id="select-all" class="btn small-btn">All</button>
+                                    <button id="deselect-all" class="btn small-btn">None</button>
+                                    <div class="select-last-group">
+                                        <input type="number" id="select-last-count" class="select-last-input" placeholder="X" min="1" value="10" aria-label="Number of latest replays">
+                                        <button id="select-last" class="btn small-btn">Latest</button>
+                                    </div>
+                                </div>
+                                <button id="delete-selected" class="btn danger-btn small-btn">Delete selected</button>
+                            </div>
+                            <div id="replay-list" class="replay-list custom-scrollbar">
+                                <p class="loading">Loading replays...</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="browse-sidebar">
+                        <section id="history-section" class="card">
+                            <div class="card-header">
+                                <h2>Match history</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group">
+                                    <label for="history-steam-id">Steam ID</label>
+                                    <input type="number" id="history-steam-id" placeholder="e.g. 76561198...">
+                                </div>
+                                <div class="input-group">
+                                    <label for="history-limit">How many matches</label>
+                                    <div class="row-group">
+                                        <input type="number" id="history-limit" value="10" min="1" max="100">
+                                        <button id="fetch-history" class="btn secondary-btn">Fetch</button>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>
+                                        <input type="checkbox" id="history-turbo-only">
+                                        Turbo games only
+                                    </label>
+                                </div>
+                                <small>Needs a Steam connection.</small>
+                                <p id="download-status" class="download-status hidden"></p>
+                                <div id="history-results" class="history-list custom-scrollbar"></div>
+                            </div>
+                        </section>
+
+                        <section id="fatal-search-section" class="card">
+                            <div class="card-header">
+                                <h2>Fatal game search</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group">
+                                    <label for="fatal-steam-id">Steam ID</label>
+                                    <input type="number" id="fatal-steam-id" placeholder="Filled in from your profile">
+                                </div>
+                                <div class="input-group">
+                                    <label for="fatal-max-depth">Max depth</label>
+                                    <input type="number" id="fatal-max-depth" value="1" min="1" max="10">
+                                    <small>How many low priority sessions to search.</small>
+                                </div>
+                                <div class="input-group">
+                                    <label for="fatal-games-per">Games per fatal</label>
+                                    <input type="number" id="fatal-games-per" value="2" min="1" max="15">
+                                    <small>How many games to download at each fatal game.</small>
+                                </div>
+                                <button id="find-fatal-games" class="btn secondary-btn">Find fatal games</button>
+                                <small style="margin-top: 12px;">Needs a Steam connection.</small>
+                                <div id="fatal-results" class="history-list custom-scrollbar" style="margin-top: 15px; max-height: 300px;"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="analyze-tab">
+                <section id="parse-section" class="card main-card" style="min-height: 0;">
+                    <div class="card-header">
+                        <h2>Analysis options</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group" id="steam-id-group">
+                            <label for="steam-id">Target Steam ID <span class="optional">(for multiple replays)</span></label>
+                            <input type="text" id="steam-id" placeholder="e.g. 76561198..." pattern="[0-9]*" inputmode="numeric">
+                        </div>
+                        <div class="input-group hidden" id="player-selection-group">
+                            <label for="player-select">Player</label>
+                            <div class="select-wrapper">
+                                <select id="player-select" class="full-width">
+                                    <option value="-1">Select a player...</option>
+                                </select>
+                                <div id="player-select-spinner" class="loading-spinner hidden"></div>
+                            </div>
+                        </div>
+                        <button id="start-parse" class="btn primary-btn large-btn">Start analysis</button>
+                    </div>
+                </section>
+
+                <section id="progress-section" class="card main-card hidden" style="min-height: 0; margin-top: 20px;">
+                    <div class="card-body">
+                        <div class="progress-info">
+                            <h3>Processing</h3>
+                            <p id="progress-text">0 / 0</p>
+                        </div>
+                        <div class="progress-container">
+                            <div id="progress-bar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="tab-content" id="stats-tab">
+                <section class="card main-card">
+                    <div class="card-header">
+                        <h2>Stats</h2>
+                        <span class="hint" id="st-scope"></span>
+                    </div>
+                    <div class="card-body">
+                        <div id="st-empty" class="pl-empty">No data yet. Analyse a few replays first.</div>
+                        <div id="st-out" class="hidden">
+                            <div id="st-kpi" class="pl-stats st-kpi"></div>
+                            <div class="st-grid">
+                                <div class="st-box wide"><h3>When in the game</h3><div id="st-minutes" class="st-bars"></div></div>
+                                <div class="st-box wide"><h3>Reports per match</h3><div id="st-permatch" class="st-bars"></div></div>
+                                <div class="st-box"><h3>Most reported</h3><div id="st-top" class="st-list"></div></div>
+                                <div class="st-box"><h3>Most active reporters</h3><div id="st-reporters" class="st-list"></div></div>
+                                <div class="st-box"><h3>Most reported heroes</h3><div id="st-heroes" class="st-list"></div></div>
+                                <div class="st-box"><h3>Teammates vs enemies</h3><div id="st-split" class="st-list"></div></div>
+                            </div>
+                            <div class="fresh-actions" style="margin-top:20px">
+                                <button id="st-clear" class="btn secondary-btn small-btn" type="button">Clear saved stats</button>
+                                <span class="hint" style="margin:0;align-self:center">Saved in this browser only. Analyse replays and they are added here.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="tab-content" id="player-tab">
+                <section class="card main-card" id="player-lookup">
+                    <div class="card-header">
+                        <h2>Player lookup</h2>
+                        <span class="hint" id="pl-scope"></span>
+                    </div>
+                    <div class="card-body">
+                        <form id="pl-form" class="pl-form" autocomplete="off">
+                            <input id="pl-id" type="text" inputmode="numeric" placeholder="Steam ID (64-bit, 32-bit or [U:1:…])" spellcheck="false" aria-label="Steam ID">
+                            <input id="pl-label" type="text" placeholder="Name (optional)" maxlength="32" aria-label="Name">
+                            <button class="btn primary-btn" type="submit">Add</button>
+                        </form>
+                        <p id="pl-error" class="gate-error pl-error" role="alert"></p>
+                        <div id="pl-chips" class="pl-chips"></div>
+                        <div id="pl-empty" class="pl-empty">Pick replays in the first tab, then add a player by ID to see everything they reported and everything reported on them.</div>
+                        <div id="pl-out" class="hidden">
+                            <div id="pl-stats" class="pl-stats"></div>
+                            <div class="pl-cols">
+                                <div class="pl-col"><h3>Reported on them</h3><div id="pl-in"></div></div>
+                                <div class="pl-col"><h3>They reported</h3><div id="pl-outgoing"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="tab-content" id="results-tab">
+                <section id="results-section" class="card main-card hidden">
+                    <div class="card-header">
+                        <h2>Match</h2>
+                        <div id="match-meta" class="match-meta hidden"></div>
+                    </div>
+                    <div class="card-body">
+                        <div id="match-selector-container" class="match-selector-container hidden">
+                            <label for="match-selector">Match</label>
+                            <select id="match-selector" class="match-selector">
+                                <option value="">Select a match...</option>
+                            </select>
+                        </div>
+                        <div id="player-selector-container" class="player-selector-container hidden">
+                            <label for="player-selector-display">Player who received reports</label>
+                            <div class="custom-select-wrapper">
+                                <div id="player-selector-display" class="custom-select-display" tabindex="0">
+                                    <span class="select-placeholder">Select a player...</span>
+                                </div>
+                                <div id="player-selector-dropdown" class="custom-select-dropdown hidden">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline-graph-header">
+                            <div class="graph-view-selector">
+                                <button class="graph-view-tab" data-view="reports" title="Incoming reports">
+                                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 7 7 17M7 8v9h9"/></svg></span>
+                                    <span class="tab-label">Incoming</span>
+                                </button>
+                                <button class="graph-view-tab active" data-view="playerReports" title="Outgoing reports">
+                                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+                                    <span class="tab-label">Outgoing</span>
+                                </button>
+                                <button class="graph-view-tab" data-view="scoreboard" title="Scoreboard activity">
+                                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>
+                                    <span class="tab-label">Scoreboard</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="timeline-graph-container" class="timeline-graph-container">
+                            <div id="graph-loading-overlay" class="graph-loading-overlay hidden">
+                                <div class="graph-loading-spinner"></div>
+                                <div class="graph-loading-text">Loading graph...</div>
+                            </div>
+                            <canvas id="timeline-graph"></canvas>
+                        </div>
+                        <div id="graphs-section" class="graphs-section hidden">
+                            <div id="report-summary" class="report-summary" style="display: none;">
+                                <h3>Report summary</h3>
+                                <div class="summary-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">From teammates</span>
+                                        <span class="stat-value" id="total-friendly-reports">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">From enemies</span>
+                                        <span class="stat-value" id="total-enemy-reports">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total</span>
+                                        <span class="stat-value" id="total-combined-reports">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="unconfirmed-section-title">Unconfirmed reports</h3>
+                            <div class="graphs-grid">
+                                <div class="graph-container"><canvas id="unconfirmedTeamEnemyChart"></canvas></div>
+                                <div class="graph-container"><canvas id="unconfirmedStatusChart"></canvas></div>
+                                <div class="graph-container" id="unconfirmedPerMatchContainer"><canvas id="unconfirmedPerMatchChart"></canvas></div>
+                                <div class="graph-container"><canvas id="unconfirmedTimelineChart"></canvas></div>
+                                <div class="graph-container"><canvas id="unconfirmedTopReportersChart"></canvas></div>
+                            </div>
+                            <div id="playerReportsPerMatchSection" class="graphs-section" style="display: none;">
+                                <h3>Player reports per match</h3>
+                                <div class="graphs-grid">
+                                    <div class="graph-container"><canvas id="playerReportsPerMatchChart"></canvas></div>
+                                </div>
+                            </div>
+                            <div id="all-matches-report-summary" class="report-summary" style="display: none;">
+                                <h3>Report summary, all matches</h3>
+                                <div class="summary-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">From teammates</span>
+                                        <span class="stat-value" id="all-matches-friendly-reports">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">From enemies</span>
+                                        <span class="stat-value" id="all-matches-enemy-reports">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total</span>
+                                        <span class="stat-value" id="all-matches-combined-reports">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="app.js?v=7"></script>
+    <script src="history.js?v=7"></script>
+    <script src="ledger.js?v=7"></script>
+</body>
+
+</html>

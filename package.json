@@ -1,0 +1,9 @@
+{
+  "name": "ledger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Who reported whom in Dota 2 matches, behind an access-key gate.",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": { "start": "node gate/gate.js" }
+}

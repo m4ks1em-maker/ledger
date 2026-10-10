@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Ledger — Sign in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/gate/gate.css">
+    <script src="/i18n.js"></script>
+</head>
+<body>
+    <main class="gate-shell">
+        <div class="gate-stack">
+            <h1 class="gate-mark">Ledger</h1>
+            <p class="gate-sub">Enter your access key to continue.</p>
+
+            <form id="form" class="gate-card" autocomplete="off" novalidate>
+                <label for="key">Access key</label>
+                <div class="field">
+                    <input id="key" name="key" type="password" placeholder="LDG-XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters" autocorrect="off" autofocus required>
+                    <button type="button" id="reveal" class="reveal" aria-pressed="false">Show</button>
+                </div>
+                <p id="error" class="gate-error" role="alert" aria-live="polite"></p>
+                <button id="submit" class="btn primary-btn large-btn" type="submit">Enter</button>
+            </form>
+
+            <p class="gate-foot">No key yet? Ask the owner for one.</p>
+        </div>
+    </main>
+    <script src="/gate/login.js"></script>
+</body>
+</html>
