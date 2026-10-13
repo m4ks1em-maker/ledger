@@ -563,7 +563,7 @@
                 if (!res.ok) { setState(r, res.status === 429 ? 'slow down' : 'error', 'bad'); return null; }
                 let job = j;
                 for (let i = 0; i < 600 && job.state !== 'done' && job.state !== 'error'; i++) {
-                    setState(r, ({ queued: 'queued', looking: 'looking…', downloading: 'downloading ' + (job.progress || 0) + '%', unpacking: 'unpacking…' }[job.state]) || '…', 'busy');
+                    setState(r, ({ queued: 'queued', looking: 'looking…', requesting: 'asking OpenDota…', downloading: 'downloading ' + (job.progress || 0) + '%', unpacking: 'unpacking…' }[job.state]) || '…', 'busy');
                     await sleep(900);
                     const p = await fetch('/_ledger/od/job?id=' + encodeURIComponent(job.id), { credentials: 'same-origin', cache: 'no-store' });
                     if (!p.ok) break; job = await p.json();
@@ -580,7 +580,11 @@
             if (!chosen.length) return;
             busy = true; count(); msg(T('Getting replays…'));
             const paths = (await Promise.all(chosen.map(fetchOne))).filter(Boolean);
-            if (!paths.length) { busy = false; count(); msg(T('None of those replays could be fetched. Upload the .dem files instead.'), true); return; }
+            if (!paths.length) {
+                busy = false; count();
+                const why = (chosen.map((r) => r.state && r.state.title).find(Boolean)) || '';
+                msg(T('None of those replays could be fetched. Upload the .dem files instead.') + (why ? ' ' + T(why) : ''), true); return;
+            }
             msg(T('Analysing…'));
             window.ledgerPathOverride = paths; window.ledgerNoJump = true; window.ledgerSilentDone = true;
             const sid = $('steam-id'); if (sid) sid.value = account;
@@ -600,6 +604,43 @@
         const check = () => sec.classList.toggle('is-hidden', /Error loading|not connected|Steam connection/i.test(sec.textContent || ''));
         new MutationObserver(check).observe(sec, { childList: true, subtree: true, characterData: true });
         check();
+    })();
+
+
+    /* ---------- replay search: filter the local replay list as you type ---------- */
+    (function replaySearch() {
+        const input = document.getElementById('replay-search'), list = document.getElementById('replay-list'), cnt = document.getElementById('replay-search-count');
+        if (!input || !list) return;
+        function apply() {
+            const q = input.value.trim().toLowerCase().replace(/\s+/g, '');
+            let shown = 0, total = 0;
+            list.querySelectorAll('.replay-item').forEach((el) => {
+                const cb = el.querySelector('input[type="checkbox"]');
+                if (!cb) return;                                  // folders stay visible
+                total++;
+                const hit = !q || (el.textContent || '').toLowerCase().replace(/\s+/g, '').includes(q) || String(cb.value || '').toLowerCase().includes(q);
+                el.classList.toggle('search-miss', !hit);
+                if (hit) shown++;
+            });
+            cnt.textContent = q ? shown + ' / ' + total : '';
+            list.classList.toggle('searching', !!q);
+        }
+        input.addEventListener('input', apply);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { input.value = ''; apply(); }
+            if (e.key === 'Enter') {                              // Enter ticks the matches that are left
+                e.preventDefault();
+                const vis = [...list.querySelectorAll('.replay-item:not(.search-miss) input[type="checkbox"]')];
+                if (vis.length && vis.length <= 20) vis.forEach((cb) => { if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); } });
+            }
+        });
+        new MutationObserver(() => { if (input.value) apply(); }).observe(list, { childList: true });
+        // "All" only ticks what the search shows
+        const all = document.getElementById('select-all');
+        if (all) all.addEventListener('click', () => {
+            if (!input.value.trim()) return;
+            setTimeout(() => { list.querySelectorAll('.replay-item.search-miss input[type="checkbox"]').forEach((cb) => { cb.checked = false; }); list.dispatchEvent(new Event('change', { bubbles: true })); }, 0);
+        });
     })();
 
     /* ---------- 2. Your key: account chip, key tile, sign out ---------- */

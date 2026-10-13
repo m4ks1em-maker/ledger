@@ -1046,3 +1046,13 @@ details.adv summary::before { content: ""; width: 7px; height: 7px; border-right
 details.adv[open] summary::before { transform: rotate(45deg); }
 details.adv[open] > *:not(summary) { animation: rise 0.3s var(--ease) both; }
 #update-slot { margin-bottom: 4px; }
+
+/* replay search */
+.replay-search { position: relative; display: flex; align-items: center; flex: 1 1 200px; max-width: 300px; margin: 0 10px 0 auto; }
+.replay-search svg { position: absolute; left: 12px; width: 16px; height: 16px; fill: none; stroke: var(--text-tertiary); stroke-width: 2; stroke-linecap: round; pointer-events: none; transition: stroke 0.2s; }
+.replay-search input { height: 36px; padding: 0 58px 0 36px; border-radius: 12px; font: 600 0.85rem var(--font-ui); width: 100%; }
+.replay-search input::-webkit-search-cancel-button { display: none; }
+.replay-search:focus-within svg { stroke: var(--accent); }
+.replay-search .rs-count { position: absolute; right: 12px; font: 600 0.72rem var(--font-mono); color: var(--text-tertiary); pointer-events: none; }
+.replay-item.search-miss { display: none !important; }
+@media (max-width: 700px) { .replay-search { order: 3; max-width: none; flex-basis: 100%; margin: 8px 0 0; } }

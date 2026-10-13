@@ -562,12 +562,17 @@ function accountId(v) {
     } catch (_) { return null; }
 }
 
-function httpGet(urlStr, { timeout = 20000, onHead, onData } = {}) {
+function httpGet(urlStr, { timeout = 20000, onHead, onData, hops = 0 } = {}) {
     return new Promise((resolve, reject) => {
         let u; try { u = new URL(urlStr); } catch (_) { return reject(new Error('bad url')); }
         const lib = u.protocol === 'https:' ? https : http;
         const r = lib.get(u, { timeout, headers: { 'User-Agent': `DotaTraker/${VERSION} (+replay report viewer)`, Accept: '*/*' } }, (ur) => {
-            if (ur.statusCode >= 300 && ur.statusCode < 400 && ur.headers.location) { ur.resume(); return reject(Object.assign(new Error('redirect'), { status: ur.statusCode })); }
+            if (ur.statusCode >= 300 && ur.statusCode < 400 && ur.headers.location) {
+                ur.resume();
+                if (hops > 4) return reject(Object.assign(new Error('too many redirects'), { status: ur.statusCode }));
+                let next; try { next = new URL(ur.headers.location, u).href; } catch (_) { return reject(new Error('bad redirect')); }
+                return httpGet(next, { timeout, onHead, onData, hops: (hops || 0) + 1 }).then(resolve, reject);
+            }
             if (ur.statusCode !== 200) { ur.resume(); return reject(Object.assign(new Error('HTTP ' + ur.statusCode), { status: ur.statusCode })); }
             if (onHead) { try { onHead(ur); } catch (e) { ur.destroy(); return reject(e); } }
             ur.on('data', (c) => { try { if (onData) onData(c); } catch (e) { ur.destroy(); reject(e); } });
@@ -577,11 +582,21 @@ function httpGet(urlStr, { timeout = 20000, onHead, onData } = {}) {
         r.on('error', reject);
     });
 }
-async function odJson(p, timeout) {
-    const chunks = []; let size = 0;
+async function odJson(p, timeout, method) {
     const sep = p.includes('?') ? '&' : '?';
-    await httpGet(OD_BASE + p + (OD_KEY ? `${sep}api_key=${encodeURIComponent(OD_KEY)}` : ''), { timeout: timeout || 20000, onData: (c) => { size += c.length; if (size > 20 * 1024 * 1024) throw new Error('too large'); chunks.push(c); } });
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    const url = OD_BASE + p + (OD_KEY ? `${sep}api_key=${encodeURIComponent(OD_KEY)}` : '');
+    let last;
+    for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+            const buf = await fetchBuf(url, { method: method || 'GET', timeout: timeout || 20000, max: 20 * 1024 * 1024, headers: { Accept: 'application/json' } });
+            return JSON.parse(buf.toString('utf8'));
+        } catch (e) {
+            last = e;
+            if (e.status && e.status !== 429 && e.status < 500) throw e;     // 404 and friends: no point retrying
+            await sleep(e.status === 429 ? 4000 * (attempt + 1) : 1500 * (attempt + 1));
+        }
+    }
+    throw last;
 }
 
 let heroCache = { at: 0, map: {} };
@@ -651,15 +666,33 @@ async function runJob(j) {
         if (dirSize(target) > MAX_STORE) return failJob(j, 'full', 'The replay library is full (8 GB). Delete some replays first.');
 
         j.state = 'looking'; j.progress = 2;
-        const info = await odJson('/matches/' + j.matchId, 25000).catch((e) => { throw Object.assign(e, { od: true }); });
-        const cluster = Number(info && info.cluster), salt = String((info && info.replay_salt) || '');
-        if (!(cluster > 0 && cluster < 100000) || !/^\d{1,12}$/.test(salt)) return failJob(j, 'expired', 'Valve no longer keeps this replay. Upload the .dem file instead.');
+        const od = (p, t, m) => odJson(p, t, m).catch((e) => { throw Object.assign(e, { od: true }); });
+        const hasSalt = (i) => i && Number(i.cluster) > 0 && /^\d{1,12}$/.test(String(i.replay_salt || ''));
+        let info = await od('/matches/' + j.matchId, 25000);
+        if (!hasSalt(info)) {
+            // fresh matches: OpenDota learns the replay address only after a parse request
+            j.state = 'requesting'; j.progress = 3;
+            let jobId = null;
+            try { const rq = await od('/request/' + j.matchId, 20000, 'POST'); jobId = rq && rq.job && rq.job.jobId; } catch (_) {}
+            const until = now() + 150000;
+            let tick = 0;
+            while (now() < until && !hasSalt(info)) {
+                await sleep(5000); tick++;
+                let finished = !jobId;
+                if (jobId) { try { const st = await odJson('/request/' + jobId, 15000); if (st && st.state === 'failed') break; finished = !st; } catch (_) {} }
+                if (finished || tick % 3 === 0) { try { info = await odJson('/matches/' + j.matchId, 20000); } catch (_) {} }
+                j.progress = Math.min(4, j.progress + 0.05);
+            }
+        }
+        if (!hasSalt(info)) return failJob(j, 'expired', 'OpenDota could not get this replay from Valve (too old, or not available yet). Upload the .dem file instead.');
+        const cluster = Number(info.cluster), salt = String(info.replay_salt);
 
         j.state = 'downloading';
         const bz = path.join(target, j.matchId + '.' + crypto.randomBytes(3).toString('hex') + '.dem.bz2.part'); tmpFiles.push(bz);
         let ok = false, lastErr = null;
-        for (const tpl of REPLAY_TEMPLATES) {
-            const url = tpl.replace('{c}', String(cluster)).replace('{m}', j.matchId).replace('{s}', salt);
+        const urls = REPLAY_TEMPLATES.map((tpl) => tpl.replace('{c}', String(cluster)).replace('{m}', j.matchId).replace('{s}', salt));
+        if (info.replay_url && /^https?:\/\/replay\d+\.(valve\.net|steamcontent\.com|wmsj\.cn)\//.test(info.replay_url)) urls.unshift(info.replay_url);
+        for (const url of [...new Set(urls)]) {
             const out = fs.createWriteStream(bz); let got = 0, total = 0, diskErr = null;
             out.on('error', (e) => { diskErr = e; });
             try {
@@ -683,7 +716,8 @@ async function runJob(j) {
         if (!r.ok) return failJob(j, r.code, r.error);
         j.state = 'done'; j.progress = 100; j.path = 'uploads/' + j.matchId + '.dem';
     } catch (e) {
-        failJob(j, e && e.od ? 'opendota' : 'internal', e && e.od ? 'OpenDota did not answer. Try again in a minute.' : 'Something went wrong while fetching the replay.');
+        console.error('[gate] replay job', j.matchId, e && e.message);
+        failJob(j, e && e.od ? 'opendota' : 'internal', e && e.od ? 'OpenDota did not answer (' + (e.status ? 'HTTP ' + e.status : e.message) + '). Try again in a minute.' : 'Something went wrong while fetching the replay: ' + (e && e.message));
     } finally {
         tmpFiles.forEach((f) => fs.rm(f, { force: true }, () => {}));
     }

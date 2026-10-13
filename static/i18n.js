@@ -186,6 +186,9 @@
         "Advanced: Steam bot for match history": "Дополнительно: Steam-бот для истории матчей",
         "Only needed for match history and fatal search through Valve. Use a spare account: the login goes to the engine on this PC only. Player lookup and auto-sync work without it.": "Нужен только для истории матчей и поиска фаталов через Valve. Используй запасной аккаунт: логин уходит только в движок на этом ПК. Поиск игрока и автосинк работают без него.",
         "Unlink": "Отвязать",
+        "Search by match ID": "Поиск по ID матча", "Search replays": "Поиск реплеев",
+        "asking OpenDota…": "запрос в OpenDota…",
+        "OpenDota could not get this replay from Valve (too old, or not available yet). Upload the .dem file instead.": "OpenDota не смог получить реплей у Valve (слишком старый или ещё не готов). Загрузи .dem файл.",
         "Click to open the Steam profile": "Нажми, чтобы открыть профиль Steam",
         "A new version is on GitHub.": "На GitHub вышла новая версия.",
         "Update now": "Обновить",
@@ -231,6 +234,8 @@
         [/^DotaTraker (\d+\.\d+\.\d+) is out$/, (m) => 'Вышел DotaTraker ' + m[1]],
         [/^(\d+) days$/, (m) => m[1] + ' ' + plural(+m[1], 'день', 'дня', 'дней')],
         [/^\$([\d.]+) a day$/, (m) => '$' + m[1] + ' в день'],
+        [/^OpenDota did not answer \((.+)\)\. Try again in a minute\.$/, (m) => 'OpenDota не ответил (' + m[1] + '). Попробуй через минуту.'],
+        [/^Could not download the replay \((.+)\)\.$/, (m) => 'Не удалось скачать реплей (' + m[1] + ').'],
         [/^downloading (\d+)%$/, (m) => 'скачивание ' + m[1] + '%'], [/^(\d+) \/ (\d+)$/, null]
     ];
     function plural(n, a, b, c) { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? b : c); }
