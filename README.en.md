@@ -56,6 +56,9 @@ When a new version is out, the app shows a "DotaTraker … is out" bar. The "Upd
 - Auto-sync of new matches, dark and light theme, Russian and English.
 - Reads replays from the latest Dota patches (manta 1.5.1 parser).
 
-## Licences
+## Author
 
-Engine: [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT), built with [dotabuff/manta](https://github.com/dotabuff/manta) v1.5.1. Other components: [NOTICE.md](NOTICE.md). MIT licensed.
+**DotaTraker** is created and maintained by **Max** — [@m4ks1em](https://t.me/m4ks1em) · [GitHub](https://github.com/m4ks1em-maker).
+Design, key server, Steam sign-in, updates and the engine build are his work.
+
+<sub>MIT licensed. Third-party components and their licences: [NOTICE.md](NOTICE.md).</sub>

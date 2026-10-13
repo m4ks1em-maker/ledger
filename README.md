@@ -56,6 +56,9 @@ DotaTraker разбирает реплеи Dota 2 и показывает каж
 - Автосинк новых матчей, тёмная и светлая тема, русский и английский.
 - Читает реплеи с новых патчей Dota (парсер manta 1.5.1).
 
-## Лицензии
+## Автор
 
-Движок: [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT), собран с [dotabuff/manta](https://github.com/dotabuff/manta) v1.5.1. Остальные компоненты: [NOTICE.md](NOTICE.md). Лицензия MIT.
+**DotaTraker** создал и развивает **Макс** — [@m4ks1em](https://t.me/m4ks1em) · [GitHub](https://github.com/m4ks1em-maker).
+Дизайн, сервер ключей, вход через Steam, обновления и сборка движка — его работа.
+
+<sub>Лицензия MIT. Сторонние компоненты и их лицензии: [NOTICE.md](NOTICE.md).</sub>
