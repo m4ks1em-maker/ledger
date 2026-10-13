@@ -1,12 +1,16 @@
 {
   "name": "dotatraker",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "engineRev": "2",
-  "releaseNotes": "Steam sign-in through the official site, replays from new Dota patches parse again, new look, update button.",
-  "releaseNotesRu": "Вход через официальный сайт Steam, снова читаются реплеи с новых патчей Dota, новый дизайн, кнопка обновления.",
+  "releaseNotes": "New dark bronze look. Fixes \"buffer underflow\" on new replays: an old engine left running is now replaced automatically.",
+  "releaseNotesRu": "Новый тёмно-бронзовый дизайн. Фикс ошибки \"buffer underflow\": старый движок теперь заменяется сам.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
-  "engines": { "node": ">=18" },
-  "scripts": { "start": "node gate/gate.js" }
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node gate/gate.js"
+  }
 }

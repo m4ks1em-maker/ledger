@@ -240,7 +240,7 @@
             bg: v('--cv-bg', '#0d1326'), row: v('--cv-row', '#121a33'), line: v('--cv-line', '#26304d'), grid: v('--cv-grid', '#2b3657'),
             text: v('--text-primary', '#eaf0ff'), muted: v('--text-secondary', '#a3adc7'), faint: v('--text-tertiary', '#6b7591'),
             chip: v('--cv-chip', '#2b3657'), chipText: v('--text-primary', '#eaf0ff'),
-            good: v('--radiant', '#3ddbb0'), bad: v('--dire', '#ff5a6e'), warn: v('--aegis', '#f2c46d'), accent: v('--accent', '#9db4ff'),
+            good: v('--radiant', '#3ddbb0'), bad: v('--dire', '#ff5a6e'), warn: v('--aegis', '#f2c46d'), accent: v('--accent', '#e3a46f'),
             halo: v('--cv-halo', '#0b1020'), font: v('--font-ui', 'system-ui').split(',')[0].replace(/['"]/g, '').trim() || 'system-ui'
         };
     }

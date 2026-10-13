@@ -1,33 +1,33 @@
 /* ==========================================================================
    DotaTraker
-   Night-ink glass. Radiant teal and Dire red carry meaning (teammates and
-   enemies) and nothing else; periwinkle is the one interactive colour.
+   Dark bronze glass, copper accents to match the medallion. Radiant teal and
+   Dire red carry meaning (teammates and enemies) and nothing else.
    Unbounded for display, Manrope for reading, JetBrains Mono for IDs.
    ========================================================================== */
 
 :root {
-    --bg: #0a0f1f;
-    --bg-2: #0e1530;
-    --glass: rgba(20, 28, 56, 0.56);
-    --glass-strong: rgba(24, 33, 66, 0.82);
-    --glass-pop: rgba(17, 24, 50, 0.97);
-    --glass-soft: rgba(157, 180, 255, 0.05);
-    --glass-border: rgba(168, 188, 255, 0.13);
-    --glass-edge: rgba(255, 255, 255, 0.09);
-    --hair: rgba(168, 188, 255, 0.09);
-    --field: rgba(8, 12, 28, 0.42);
-    --field-border: rgba(168, 188, 255, 0.14);
-    --hover: rgba(157, 180, 255, 0.07);
+    --bg: #110b07;
+    --bg-2: #1a110b;
+    --glass: rgba(40, 27, 18, 0.58);
+    --glass-strong: rgba(46, 31, 21, 0.86);
+    --glass-pop: rgba(30, 20, 13, 0.97);
+    --glass-soft: rgba(240, 190, 140, 0.045);
+    --glass-border: rgba(240, 190, 140, 0.14);
+    --glass-edge: rgba(255, 228, 200, 0.08);
+    --hair: rgba(240, 190, 140, 0.09);
+    --field: rgba(14, 9, 6, 0.5);
+    --field-border: rgba(240, 190, 140, 0.15);
+    --hover: rgba(240, 190, 140, 0.07);
 
-    --text-primary: #eaf0ff;
-    --text-secondary: #a3adc7;
-    --text-tertiary: #6b7591;
+    --text-primary: #f6ece2;
+    --text-secondary: #c6af9b;
+    --text-tertiary: #8b7664;
 
-    --accent: #9db4ff;
-    --accent-strong: #c6d2ff;
-    --accent-ink: #0b1230;
-    --accent-soft: rgba(157, 180, 255, 0.15);
-    --accent-line: rgba(157, 180, 255, 0.55);
+    --accent: #e3a46f;
+    --accent-strong: #f6c99c;
+    --accent-ink: #2a1405;
+    --accent-soft: rgba(227, 164, 111, 0.15);
+    --accent-line: rgba(227, 164, 111, 0.55);
 
     --radiant: #3ddbb0;
     --dire: #ff5a6e;
@@ -37,14 +37,14 @@
     --aegis-soft: rgba(242, 196, 109, 0.15);
 
     /* canvases (timeline graphs) */
-    --cv-bg: #0c1329;
-    --cv-row: #111a36;
-    --cv-line: #25304f;
-    --cv-grid: #222c4a;
-    --cv-chip: #2a3558;
-    --cv-halo: #0a0f1f;
+    --cv-bg: #150e09;
+    --cv-row: #1e150e;
+    --cv-line: #3d2d20;
+    --cv-grid: #30241a;
+    --cv-chip: #44321f;
+    --cv-halo: #110b07;
 
-    --shadow: 0 1px 0 var(--glass-edge) inset, 0 24px 60px -30px rgba(0, 0, 0, 0.85);
+    --shadow: 0 1px 0 var(--glass-edge) inset, 0 24px 60px -30px rgba(0, 0, 0, 0.9);
     --shadow-pop: 0 1px 0 var(--glass-edge) inset, 0 30px 80px -24px rgba(0, 0, 0, 0.9);
 
     --r-xl: 26px;
@@ -139,9 +139,9 @@ button { font-family: inherit; }
     position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0;
     animation: aurora-in 1.6s var(--ease) 0.1s forwards, drift 38s ease-in-out infinite alternate;
 }
-.aurora .a1 { width: 54vmax; height: 46vmax; left: -16vmax; top: -18vmax; background: radial-gradient(circle at 40% 40%, rgba(61, 219, 176, 0.32), transparent 62%); }
-.aurora .a2 { width: 50vmax; height: 50vmax; right: -18vmax; bottom: -22vmax; background: radial-gradient(circle at 60% 60%, rgba(255, 90, 110, 0.26), transparent 62%); animation-delay: 0.2s, -12s; }
-.aurora .a3 { width: 40vmax; height: 36vmax; left: 34vw; top: 18vh; background: radial-gradient(circle, rgba(124, 140, 255, 0.2), transparent 64%); animation-delay: 0.35s, -24s; }
+.aurora .a1 { width: 54vmax; height: 46vmax; left: -16vmax; top: -18vmax; background: radial-gradient(circle at 40% 40%, rgba(214, 132, 72, 0.32), transparent 62%); }
+.aurora .a2 { width: 50vmax; height: 50vmax; right: -18vmax; bottom: -22vmax; background: radial-gradient(circle at 60% 60%, rgba(160, 60, 40, 0.28), transparent 62%); animation-delay: 0.2s, -12s; }
+.aurora .a3 { width: 40vmax; height: 36vmax; left: 34vw; top: 18vh; background: radial-gradient(circle, rgba(242, 196, 109, 0.2), transparent 64%); animation-delay: 0.35s, -24s; }
 html[data-theme="light"] .aurora .a1 { background: radial-gradient(circle at 40% 40%, rgba(14, 159, 122, 0.2), transparent 62%); }
 html[data-theme="light"] .aurora .a2 { background: radial-gradient(circle at 60% 60%, rgba(224, 58, 82, 0.15), transparent 62%); }
 html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(74, 99, 224, 0.14), transparent 64%); }
@@ -276,7 +276,7 @@ html:not(.js) .workflow-tab.active, html:not(.js) .graph-view-tab.active { backg
     width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
     display: grid; place-items: center;
     background: linear-gradient(140deg, var(--radiant), var(--accent) 55%, var(--dire));
-    color: #0a0f1f; font: 700 0.7rem var(--font-display);
+    color: #110b07; font: 700 0.7rem var(--font-display);
 }
 .account-chip .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-chip .left { color: var(--text-tertiary); font-weight: 600; white-space: nowrap; }
@@ -315,7 +315,7 @@ html:not(.js) .workflow-tab.active, html:not(.js) .graph-view-tab.active { backg
 /* soft light that follows the pointer across a glass card */
 .card::before, .tile::before {
     content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(157, 180, 255, 0.09), transparent 45%);
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(227, 164, 111, 0.09), transparent 45%);
     opacity: 0; transition: opacity 0.4s;
 }
 .card:hover::before, .tile:hover::before { opacity: 1; }

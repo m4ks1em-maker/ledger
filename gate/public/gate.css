@@ -154,7 +154,7 @@ html[data-theme="light"] .aurora.copper .a1 { background: radial-gradient(circle
 .price-row .pr-sub { grid-column: 1; font-size: 0.8rem; color: var(--text-tertiary); font-weight: 600; }
 .price-row .pr-price { grid-row: 1 / span 2; grid-column: 2; font: 700 1.55rem/1 var(--font-display); letter-spacing: -0.02em; display: flex; align-items: flex-start; gap: 2px; }
 .price-row .pr-price small { font-size: 0.9rem; margin-top: 2px; color: var(--text-secondary); }
-.pr-tag { padding: 3px 8px; border-radius: 999px; font: 800 0.62rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: #9db4ff; background: rgba(157, 180, 255, 0.14); }
+.pr-tag { padding: 3px 8px; border-radius: 999px; font: 800 0.62rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: #e3a46f; background: rgba(227, 164, 111, 0.14); }
 .price-row.best {
     background: linear-gradient(120deg, rgba(241, 185, 138, 0.22), rgba(208, 138, 82, 0.1) 55%, rgba(208, 138, 82, 0.04));
     border-color: rgba(214, 140, 84, 0.65);

@@ -431,7 +431,7 @@ function portOpen(host, port) {
 function ensureDecoy() {
     const dir = path.join(ENGINE_DIR, 'static');
     const file = path.join(dir, 'index.html');
-    const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=http://localhost:${settings.port}/"><title>DotaTraker</title><body style="font:15px system-ui;background:#0a0f1f;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><a style="color:#9db4ff" href="http://localhost:${settings.port}/">Open DotaTraker</a>`;
+    const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=http://localhost:${settings.port}/"><title>DotaTraker</title><body style="font:15px system-ui;background:#110b07;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><a style="color:#e3a46f" href="http://localhost:${settings.port}/">Open DotaTraker</a>`;
     try { fs.mkdirSync(dir, { recursive: true }); if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== html) fs.writeFileSync(file, html); } catch (_) {}
 }
 function supervise(name, file, extraEnv) {
@@ -458,12 +458,34 @@ function supervise(name, file, extraEnv) {
     };
     run();
 }
+function engineRevNow() { try { return fs.readFileSync(path.join(ENGINE_DIR, 'engine-rev.txt'), 'utf8').trim(); } catch (_) { return ''; } }
+function winPortOwner(port) {
+    try {
+        const ps = `$c=Get-NetTCPConnection -LocalPort ${Number(port)} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if($c){ $p=Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue; Write-Output ([string]$c.OwningProcess + '|' + $p.Path) }`;
+        const out = execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true, timeout: 20000 }).toString().trim();
+        const [pid, file] = out.split('|');
+        return pid && /^\d+$/.test(pid) ? { pid: Number(pid), path: file || '' } : null;
+    } catch (_) { return null; }
+}
 async function startEngine() {
     if (process.env.LEDGER_NO_ENGINE === '1') return;
     const up = new URL(settings.upstream);
     if (!/^(127\.0\.0\.1|localhost)$/.test(up.hostname)) return;
+    // an engine left running (often from an older DotaTraker folder) would keep the old parser: replace it
+    if (process.platform === 'win32' && fs.existsSync(engineExe('server'))) {
+        let killed = false;
+        for (const port of [Number(up.port || 80), 8082]) {
+            const o = winPortOwner(port);
+            if (o && /\\(server|bot)\.exe$/i.test(o.path)) {
+                console.log(`  Engine:  stopping the engine already running on port ${port} (${o.path})`);
+                try { execFileSync('taskkill', ['/PID', String(o.pid), '/F'], { windowsHide: true, stdio: 'ignore', timeout: 15000 }); killed = true; } catch (_) {}
+            }
+        }
+        if (killed) await sleep(1500);
+    }
     if (fs.existsSync(engineExe('server')) && !(await portOpen(up.hostname, up.port || 80))) await ensureEngine();
-    if (await portOpen(up.hostname, up.port || 80)) { console.log('  Engine:  already running'); return; }
+    if (await portOpen(up.hostname, up.port || 80)) { console.log('  Engine:  already running (not started by DotaTraker, it may be an old version)'); return; }
+    console.log(`  Engine:  ${engineRevNow() === ENGINE_REV ? 'up to date (parser manta 1.5.1)' : 'OLD version, could not update: see the message above'}`);
     if (!fs.existsSync(engineExe('server'))) {
         console.log('  ! The replay engine is missing. Run setup.bat first.');
         return;
@@ -1000,7 +1022,7 @@ function meView() {
         label: l.label || '', tail: l.tail || '', status: l.status || '', expiresAt: l.expiresAt || null,
         activatedAt: l.activatedAt || null, maxDevices: l.maxDevices || 1, devices: l.devices || 1,
         offline: !!lic.offline, lastOk: lic.lastOk || 0, telegram: TELEGRAM, github: GITHUB, version: VERSION, serverTime: now(),
-        steam: steamView(), update: updateView()
+        steam: steamView(), update: updateView(), engine: { rev: engineRevNow(), want: ENGINE_REV }
     };
 }
 
