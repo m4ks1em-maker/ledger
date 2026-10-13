@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "engineRev": "2",
-  "releaseNotes": "Match ID on every match view: click it to copy. Faster update checks.",
-  "releaseNotesRu": "ID матча в каждом окне матча: нажми, чтобы скопировать. Обновления находятся быстрее.",
+  "releaseNotes": "New \"Bot\" tab: a page for the Dota Tracker Telegram bot (patch alerts, Valve activity, hero win rates) with links to the bot and channel.",
+  "releaseNotesRu": "Новая вкладка «Бот»: страница Telegram-бота Dota Tracker (уведомления о патчах, активность Valve, винрейты героев) со ссылками на бота и канал.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
