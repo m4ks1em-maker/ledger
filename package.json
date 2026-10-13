@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "engineRev": "2",
-  "releaseNotes": "New dark bronze look. Fixes \"buffer underflow\" on new replays: an old engine left running is now replaced automatically.",
-  "releaseNotesRu": "Новый тёмно-бронзовый дизайн. Фикс ошибки \"buffer underflow\": старый движок теперь заменяется сам.",
+  "releaseNotes": "Hover a hero on the timeline to see the player's name and Steam ID, click to open their Steam profile.",
+  "releaseNotesRu": "Наведи на героя на таймлайне: видно ник и Steam ID, по клику открывается профиль Steam.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

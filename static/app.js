@@ -158,6 +158,24 @@ const DOTA_HEROES = [
         return steamIDStr;
     }
 
+    // who a timeline icon stands for: name + SteamID64, used for the tooltip and the click-through
+    function iconPlayer(report, cand) {
+        const src = cand || report || {};
+        const useTarget = !cand && report && (report.TargetHero || report.TargetSteamID != null);
+        const name = String((useTarget ? src.TargetName : src.Name) || '').trim();
+        const raw = String((useTarget ? src.TargetSteamID : src.SteamID) || '').trim();
+        let id = '';
+        try { if (/^\d+$/.test(raw) && raw !== '0') { let n = BigInt(raw); if (n < 76561197960265728n) n += 76561197960265728n; id = n.toString(); } } catch (_) {}
+        return { name, id };
+    }
+    function playerLines(pl) {
+        const out = [];
+        if (pl.name) out.push(pl.name);
+        if (pl.id) { out.push('Steam ID: ' + pl.id); out.push(tr('Click to open the Steam profile')); }
+        return out.length ? '\n' + out.join('\n') : '';
+    }
+    function openSteamProfile(id) { if (id) window.open('https://steamcommunity.com/profiles/' + id, '_blank', 'noopener,noreferrer'); }
+
     function normalizeSteamIDForComparison(steamID) {
         if (!steamID) return null;
         return convertSteamIDTo64(steamID);
@@ -3279,6 +3297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showTimelineGraphWhenReady();
         }
 
+        canvas.addEventListener('click', () => openSteamProfile(canvas.__steamId));
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = rect.width / containerWidth;
@@ -3302,10 +3321,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            canvas.__steamId = hoveredIcon ? iconPlayer(hoveredIcon.report).id : '';
+            canvas.style.cursor = canvas.__steamId ? 'pointer' : '';
             if (hoveredIcon) {
                 const timestamp = hoveredIcon.report.Time;
                 const heroName = hoveredIcon.report.TargetHero || hoveredIcon.report.Hero;
-                tooltip.textContent = `${heroName || 'Unknown'}: ${timestamp}`;
+                tooltip.textContent = `${heroName || 'Unknown'}: ${timestamp}` + playerLines(iconPlayer(hoveredIcon.report));
                 tooltip.style.visibility = 'hidden';
                 tooltip.classList.remove('hidden');
                 
@@ -4024,6 +4045,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        canvas.addEventListener('click', () => openSteamProfile(canvas.__steamId));
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = rect.width / containerWidth;
@@ -4068,6 +4090,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            {
+                const cands = hoveredIcon && hoveredIcon.report.Candidates && hoveredIcon.report.Candidates.length ? hoveredIcon.report.Candidates : null;
+                const pick = hoveredIcon ? (cands ? cands[Math.max(0, hoveredCandidateIndex)] : null) : null;
+                canvas.__steamId = hoveredIcon ? iconPlayer(hoveredIcon.report, pick).id : '';
+                canvas.__steamLines = hoveredIcon ? playerLines(iconPlayer(hoveredIcon.report, pick)) : '';
+                canvas.style.cursor = canvas.__steamId ? 'pointer' : '';
+            }
             if (hoveredIcon) {
                 const timestamp = hoveredIcon.report.Time;
                 const candidates = hoveredIcon.report.Candidates && hoveredIcon.report.Candidates.length > 0 ? hoveredIcon.report.Candidates : null;
@@ -4082,11 +4111,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const marker = isSelected ? '★' : ' ';
                         return `${marker} ${heroName}: ${cand.Score.toFixed(2)} (${scorePercent}%)`;
                     }).join('\n');
-                    tooltip.textContent = `${timestamp}\n${candidateLines}`;
+                    tooltip.textContent = `${timestamp}\n${candidateLines}` + canvas.__steamLines;
                 } else {
                     const heroNameRaw = hoveredIcon.report.TargetHero ? hoveredIcon.report.TargetHero.trim() : '';
                     const heroName = heroNameRaw && heroNameRaw.toLowerCase() !== 'unknown' ? heroNameRaw : 'Unknown Hero';
-                    tooltip.textContent = `${heroName}: ${timestamp}`;
+                    tooltip.textContent = `${heroName}: ${timestamp}` + canvas.__steamLines;
                 }
                 tooltip.style.visibility = 'hidden';
                 tooltip.classList.remove('hidden');

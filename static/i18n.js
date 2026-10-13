@@ -186,6 +186,7 @@
         "Advanced: Steam bot for match history": "Дополнительно: Steam-бот для истории матчей",
         "Only needed for match history and fatal search through Valve. Use a spare account: the login goes to the engine on this PC only. Player lookup and auto-sync work without it.": "Нужен только для истории матчей и поиска фаталов через Valve. Используй запасной аккаунт: логин уходит только в движок на этом ПК. Поиск игрока и автосинк работают без него.",
         "Unlink": "Отвязать",
+        "Click to open the Steam profile": "Нажми, чтобы открыть профиль Steam",
         "A new version is on GitHub.": "На GitHub вышла новая версия.",
         "Update now": "Обновить",
         "Downloading…": "Скачиваю…",
