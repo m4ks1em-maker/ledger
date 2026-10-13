@@ -19,3 +19,6 @@ replays/
 uploads/
 
 node_modules/
+
+# key server lives only on the owner PC
+cloud/
