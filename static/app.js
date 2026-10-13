@@ -1,3 +1,7 @@
+// Debug output is off unless you run `window.LEDGER_DEBUG = true` in the console.
+const dbg = (...a) => { if (window.LEDGER_DEBUG) console.log(...a); };
+const tr = (s) => (window.LedgerI18n ? window.LedgerI18n.t(s) : s);
+
 const DOTA_HEROES = [
     { id: 'antimage', name: 'Anti-Mage', localized_name: 'Anti-Mage' },
     { id: 'axe', name: 'Axe', localized_name: 'Axe' },
@@ -196,8 +200,7 @@ const DOTA_HEROES = [
     };
     
     const heroNameVariations = {
-        'zuus': 'zeus',
-        'zeus': 'zuus',
+        'zuus': 'zeus',                 // the engine's internal name; the portrait is zeus.png
         'anti_mage': 'antimage',
         'vengeful_spirit': 'vengefulspirit',
         'queen_of_pain': 'queenofpain'
@@ -219,49 +222,6 @@ const DOTA_HEROES = [
     }
     const heroId = hero.id;
     return `/api/hero-icon/${heroId}`;
-}
-
-// Retry utility with exponential backoff
-async function fetchWithRetry(url, options = {}, maxRetries = 3, baseDelay = 1000) {
-    let lastError;
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => '');
-                if (response.status >= 500 && attempt < maxRetries) {
-                    throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
-                }
-                throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            return response;
-        } catch (error) {
-            lastError = error;
-            if (attempt < maxRetries) {
-                const isConnectionError = error.name === 'AbortError' || 
-                                        error.message.includes('Failed to fetch') ||
-                                        error.message.includes('NetworkError') ||
-                                        error.message.includes('timeout');
-                
-                if (isConnectionError || (error.message && error.message.includes('500'))) {
-                    const delay = baseDelay * Math.pow(2, attempt);
-                    console.log(`Request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`, error.message);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
-                }
-            }
-            throw error;
-        }
-    }
-    throw lastError;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -316,10 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showGraphLoading() {
-        console.log('[GRAPH DEBUG] showGraphLoading() called');
+        dbg('[GRAPH DEBUG] showGraphLoading() called');
         let overlay = document.getElementById('graph-loading-overlay');
         if (!overlay) {
-            console.log('[GRAPH DEBUG] Creating new overlay element');
+            dbg('[GRAPH DEBUG] Creating new overlay element');
             overlay = document.createElement('div');
             overlay.id = 'graph-loading-overlay';
             overlay.className = 'graph-loading-overlay';
@@ -337,20 +297,20 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.style.opacity = '1';
         overlay.style.visibility = 'visible';
         overlay.style.pointerEvents = 'auto';
-        console.log('[GRAPH DEBUG] Overlay shown, display:', overlay.style.display, 'opacity:', overlay.style.opacity);
+        dbg('[GRAPH DEBUG] Overlay shown, display:', overlay.style.display, 'opacity:', overlay.style.opacity);
     }
     
     function hideGraphLoading() {
-        console.log('[GRAPH DEBUG] hideGraphLoading() called');
+        dbg('[GRAPH DEBUG] hideGraphLoading() called');
         const overlay = document.getElementById('graph-loading-overlay');
         if (overlay) {
             overlay.classList.add('hidden');
             overlay.style.display = 'none';
             overlay.style.visibility = 'hidden';
             overlay.style.pointerEvents = 'none';
-            console.log('[GRAPH DEBUG] Overlay hidden');
+            dbg('[GRAPH DEBUG] Overlay hidden');
         } else {
-            console.log('[GRAPH DEBUG] WARNING: Overlay not found when trying to hide');
+            dbg('[GRAPH DEBUG] WARNING: Overlay not found when trying to hide');
         }
         if (graphLoadingOverlay) {
             graphLoadingOverlay.classList.add('hidden');
@@ -363,11 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updatePlayerSelectorLabel() {
         if (!playerSelectorLabel) return;
         if (currentGraphView === 'reports') {
-            playerSelectorLabel.textContent = 'Select Player (who received reports):';
+            playerSelectorLabel.textContent = 'Player who received reports';
         } else if (currentGraphView === 'playerReports') {
-            playerSelectorLabel.textContent = 'Select Player (who created reports):';
+            playerSelectorLabel.textContent = 'Player who made reports';
         } else if (currentGraphView === 'scoreboard') {
-            playerSelectorLabel.textContent = 'Select Player (scoreboard activity):';
+            playerSelectorLabel.textContent = 'Player (scoreboard activity)';
         }
     }
     const timelineGraphCanvas = document.getElementById('timeline-graph');
@@ -518,30 +478,31 @@ document.addEventListener('DOMContentLoaded', () => {
         profileSelect.dispatchEvent(new Event('change'));
     });
 
-    deleteProfileBtn.addEventListener('click', () => {
+    deleteProfileBtn.addEventListener('click', async () => {
         const index = profileSelect.value;
-        if (index === "") return;
+        if (index === "" || !profiles[index]) return;
 
-        if (confirm(`Delete profile "${profiles[index].name}"?`)) {
-            profiles.splice(index, 1);
-            saveProfiles();
-            profileSelect.value = "";
-            deleteProfileBtn.style.visibility = 'hidden';
-            
-            // Optionally clear the filled fields or leave them?
-            // Leaving them is safer/less annoying.
-        }
+        const ok = await LedgerUI.confirm({ title: `Delete profile "${profiles[index].name}"?`, text: 'Replays on disk stay where they are.', ok: 'Delete profile' });
+        if (!ok) return;
+        profiles.splice(index, 1);
+        // the saved index would now point at the next profile in the list
+        localStorage.removeItem('selectedProfileIndex');
+        profileSelect.value = "";
+        saveProfiles();
+        deleteProfileBtn.style.visibility = 'hidden';
+        updatePathDisplay('', '');
+        browseDirectory('', '');
     });
 
     profileSelect.addEventListener('change', () => {
-        console.log('Profile select changed, value:', profileSelect.value);
+        dbg('Profile select changed, value:', profileSelect.value);
         const index = profileSelect.value;
         let profileName = "";
         if (index !== "" && profiles[index]) {
             const p = profiles[index];
             profileName = p.name;
             localStorage.setItem('selectedProfileIndex', index);
-            console.log('Selected profile:', profileName);
+            dbg('Selected profile:', profileName);
             if (historySteamIdInput) {
                 historySteamIdInput.value = p.id;
                 historySteamIdInput.dispatchEvent(new Event('input')); 
@@ -559,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             deleteProfileBtn.style.visibility = 'visible';
         } else {
-            console.log('No profile selected');
+            dbg('No profile selected');
             localStorage.removeItem('selectedProfileIndex');
             deleteProfileBtn.style.visibility = 'hidden';
             const fatalSteamIdInput = document.getElementById('fatal-steam-id');
@@ -567,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fatalSteamIdInput.value = '';
             }
         }
-        console.log('Calling browseDirectory with profileName:', profileName);
+        dbg('Calling browseDirectory with profileName:', profileName);
         updatePathDisplay('', profileName);
         browseDirectory('', profileName);
     });
@@ -675,9 +636,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (steamStatusBadge) {
             const statusLabel = steamStatusBadge.querySelector('.status-text');
-            if (statusLabel) {
-                statusLabel.textContent = `Steam: ${text}`;
-            }
+            if (statusLabel && statusLabel.textContent !== 'Steam') statusLabel.textContent = 'Steam';
+            steamStatusBadge.title = `Steam: ${text}`;
             if (status === 3 || status === 4) {
                 steamStatusBadge.classList.remove('disconnected');
                 steamStatusBadge.classList.add('connected');
@@ -693,11 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!errorDisplay) {
                 errorDisplay = document.createElement('p');
                 errorDisplay.id = 'steam-error-message';
-                errorDisplay.style.color = '#ff5d6c';
-                errorDisplay.style.marginTop = '8px';
-                errorDisplay.style.marginBottom = '8px';
-                errorDisplay.style.fontSize = '0.9em';
-                steamStatusText.parentNode.insertBefore(errorDisplay, steamStatusText.nextSibling);
+                errorDisplay.className = 'inline-error';
+                const anchor = steamStatusText || steamLoginBtn;
+                if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(errorDisplay, anchor.nextSibling);
             }
             errorDisplay.textContent = errorMessage;
             errorDisplay.style.display = 'block';
@@ -716,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (status === 1) {
             if (lastSteamStatus !== 1) {
-                if (steamStatusText) steamStatusText.style.color = '#e9b44c';
+                if (steamStatusText) steamStatusText.style.color = 'var(--aegis)';
                 if (steamGuardGroup) steamGuardGroup.classList.add('hidden');
                 steamLoginBtn.textContent = 'Connecting...';
                 steamLoginBtn.disabled = true;
@@ -727,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
             steamPollingInterval = setInterval(pollSteamStatus, 2000);
             
             connectingTimeoutId = setTimeout(() => {
-                if (steamLoginBtn.disabled && steamLoginBtn.textContent === 'Connecting...') {
+                if (steamLoginBtn.disabled && srcText(steamLoginBtn) === 'Connecting...') {
                     console.warn('Connection timeout - re-enabling button as fallback');
                     steamLoginBtn.disabled = false;
                     steamLoginBtn.textContent = 'Connect to Steam';
@@ -739,19 +697,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 20000);
         } else if (status === 2) {
             if (lastSteamStatus !== 2) {
-                if (steamStatusText) steamStatusText.style.color = '#e9b44c';
+                if (steamStatusText) steamStatusText.style.color = 'var(--aegis)';
                 if (setupPanel) {
                     setupPanel.classList.remove('hidden');
                 }
                 if (steamGuardGroup) {
                     steamGuardGroup.classList.remove('hidden');
-                    console.log('Steam Guard field should now be visible');
+                    dbg('Steam Guard field should now be visible');
                 } else {
                     console.error('steamGuardGroup element not found!');
                 }
-                if (steamLoginBtn.textContent === 'Submitting Code...') {
+                if (srcText(steamLoginBtn) === 'Submitting Code...') {
                     submittingTimeoutId = setTimeout(() => {
-                        if (steamLoginBtn.disabled && steamLoginBtn.textContent === 'Submitting Code...') {
+                        if (steamLoginBtn.disabled && srcText(steamLoginBtn) === 'Submitting Code...') {
                             console.warn('Submit code timeout - re-enabling button as fallback');
                             steamLoginBtn.disabled = false;
                             steamLoginBtn.textContent = 'Submit Code';
@@ -768,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
             steamPollingInterval = setInterval(pollSteamStatus, 2000);
         } else if (status === 3 || status === 4) {
              if (lastSteamStatus !== status) {
-                 if (steamStatusText) steamStatusText.style.color = '#5fd0a0';
+                 if (steamStatusText) steamStatusText.style.color = 'var(--radiant)';
                  steamLoginBtn.textContent = status === 4 ? 'Connected' : 'Connecting...';
                  steamLoginBtn.disabled = true;
                  if (steamGuardGroup) steamGuardGroup.classList.add('hidden');
@@ -783,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (status === 5) { // Rate Limited
              if (lastSteamStatus !== 5) {
                  if (steamStatusText) {
-                     steamStatusText.style.color = '#ff5d6c';
+                     steamStatusText.style.color = 'var(--dire)';
                      steamStatusText.textContent = 'Status: Rate Limited (Wait 24h)';
                  }
                  steamLoginBtn.textContent = 'Rate Limited';
@@ -848,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => {
                 console.error('Error fetching conduct scorecard:', err);
                 if (!scorecardContent.querySelector('.conduct-scorecard-grid')) {
-                    scorecardContent.innerHTML = `<div style="color: var(--danger-color);">Error loading conduct scorecard: ${err.message}</div>`;
+                    scorecardContent.innerHTML = `<div class="inline-error">Error loading conduct scorecard: ${esc(err.message)}</div>`;
                 }
                 isFetchingConductScorecard = false;
             });
@@ -881,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Raw Behavior Score</div>
-                <div class="conduct-stat-value">${rawBehaviorScore.toLocaleString()}</div>
+                <div class="conduct-stat-value">${esc(Number(rawBehaviorScore).toLocaleString())}</div>
                 ${oldRawBehaviorScore > 0 ? `
                     <div class="conduct-stat-change ${behaviorScoreChangeClass}">
                         ${behaviorScoreChangeSymbol} ${Math.abs(behaviorScoreChange).toLocaleString()} 
@@ -894,14 +852,14 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Commend Count</div>
-                <div class="conduct-stat-value">${data.commend_count || 0}</div>
+                <div class="conduct-stat-value">${esc(data.commend_count || 0)}</div>
             </div>
         `;
         
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Matches in Report</div>
-                <div class="conduct-stat-value">${data.matches_in_report || 0}</div>
+                <div class="conduct-stat-value">${esc(data.matches_in_report || 0)}</div>
                 <div class="conduct-date-display">15-game period</div>
             </div>
         `;
@@ -909,21 +867,21 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Matches Clean</div>
-                <div class="conduct-stat-value">${data.matches_clean || 0}</div>
+                <div class="conduct-stat-value">${esc(data.matches_clean || 0)}</div>
             </div>
         `;
         
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Matches Reported</div>
-                <div class="conduct-stat-value" style="color: ${(data.matches_reported || 0) > 0 ? 'var(--warning-color)' : 'var(--text-primary)'}">${data.matches_reported || 0}</div>
+                <div class="conduct-stat-value" style="color: ${(data.matches_reported || 0) > 0 ? 'var(--warning-color)' : 'var(--text-primary)'}">${esc(data.matches_reported || 0)}</div>
             </div>
         `;
         
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Matches Abandoned</div>
-                <div class="conduct-stat-value" style="color: ${(data.matches_abandoned || 0) > 0 ? 'var(--danger-color)' : 'var(--text-primary)'}">${data.matches_abandoned || 0}</div>
+                <div class="conduct-stat-value" style="color: ${(data.matches_abandoned || 0) > 0 ? 'var(--danger-color)' : 'var(--text-primary)'}">${esc(data.matches_abandoned || 0)}</div>
             </div>
         `;
         
@@ -937,7 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `
             <div class="conduct-stat-card">
                 <div class="conduct-stat-label">Match ID</div>
-                <div class="conduct-match-id">${data.match_id || 'N/A'}</div>
+                <div class="conduct-match-id">${esc(data.match_id || 'N/A')}</div>
             </div>
         `;
         
@@ -966,13 +924,13 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `
                 <div style="margin-top: var(--spacing-md); display: flex; justify-content: center; gap: var(--spacing-md); flex-wrap: wrap;">
                     <button id="validate-report-card-btn" class="btn primary-btn" 
-                            data-match-id="${data.match_id}" 
-                            data-account-id="${String(data.account_id)}">
+                            data-match-id="${esc(data.match_id)}" 
+                            data-account-id="${esc(data.account_id)}">
                         Validate Report Card
                     </button>
                     <button id="validate-report-card-current-btn" class="btn secondary-btn" 
-                            data-match-id="${data.match_id}" 
-                            data-account-id="${String(data.account_id)}">
+                            data-match-id="${esc(data.match_id)}" 
+                            data-account-id="${esc(data.account_id)}">
                         Current
                     </button>
                 </div>
@@ -1061,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                let html = `<div><strong>${status.message || 'Processing...'}</strong></div>`;
+                let html = `<div><strong>${esc(status.message || 'Processing...')}</strong></div>`;
                 
                 if (status.phase === 'downloading') {
                     html += `<div style="margin-top: 8px; font-size: 0.9em;">`;
@@ -1069,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `Downloaded: ${status.downloaded || 0} | `;
                     html += `Skipped: ${status.skipped || 0}`;
                     if (status.currentMatch) {
-                        html += `<br>Current: ${status.currentMatch}`;
+                        html += `<br>Current: ${esc(status.currentMatch)}`;
                     }
                     html += `</div>`;
                 } else if (status.phase === 'parsing') {
@@ -1077,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `Parsed: ${status.parsed || 0} / ${status.total || 0} | `;
                     html += `Errors: ${status.parseErrors || 0}`;
                     if (status.currentMatch) {
-                        html += `<br>Current: ${status.currentMatch}`;
+                        html += `<br>Current: ${esc(status.currentMatch)}`;
                     }
                     html += `</div>`;
                 } else if (status.phase === 'complete' && status.results) {
@@ -1103,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (status.errors && status.errors.length > 0) {
                     html += `<div style="margin-top: 8px; color: var(--warning-color); font-size: 0.85em;">`;
-                    html += `Errors: ${status.errors.join(', ')}`;
+                    html += `Errors: ${esc(status.errors.join(', '))}`;
                     html += `</div>`;
                 }
                 
@@ -1140,14 +1098,14 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 if (data.results && data.results.matchResults) {
-                    let html = `<div><strong>${data.results.totalReports} total reports found</strong></div>`;
+                    let html = `<div><strong>${esc(data.results.totalReports)} total reports found</strong></div>`;
                     html += `<div style="margin-top: 8px; font-size: 0.9em;">`;
                     html += `Downloaded: ${data.downloaded?.length || 0} | `;
                     html += `Skipped: ${data.skipped?.length || 0} | `;
                     html += `Parsed: ${data.parsed || 0}`;
                     html += `</div>`;
                     if (data.directory) {
-                        html += `<div style="margin-top: 4px; font-size: 0.85em; color: var(--text-secondary);">Saved to: ${data.directory}</div>`;
+                        html += `<div style="margin-top: 4px; font-size: 0.85em; color: var(--text-secondary);">Saved to: ${esc(data.directory)}</div>`;
                     }
                     statusDiv.innerHTML = html;
                     statusDiv.style.color = 'var(--success-color)';
@@ -1187,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const expectedSteamID64 = (accountIDNum + STEAMID64_IDENTIFIER).toString();
             const convertedSteamID = convertSteamIDTo64(accountIDStr);
             analysisSteamID = convertedSteamID;
-            console.log('[ValidateReportCard] Set analysisSteamID to:', analysisSteamID, 'from accountID:', accountIDStr);
+            dbg('[ValidateReportCard] Set analysisSteamID to:', analysisSteamID, 'from accountID:', accountIDStr);
         }
         
         const matchData = [];
@@ -1283,8 +1241,8 @@ document.addEventListener('DOMContentLoaded', () => {
             populatePlayerSelector(matchData[0]).then(() => {
                 if (analysisSteamID) {
                     const steamIDToMatch = String(analysisSteamID);
-                    console.log('[ValidateReportCard] Looking for player with SteamID:', steamIDToMatch);
-                    console.log('[ValidateReportCard] Available players:', playerSelectorOptions.map(opt => ({ 
+                    dbg('[ValidateReportCard] Looking for player with SteamID:', steamIDToMatch);
+                    dbg('[ValidateReportCard] Available players:', playerSelectorOptions.map(opt => ({ 
                         key: opt.key, 
                         steamID: String(opt.steamID || 'null'), 
                         name: opt.name, 
@@ -1295,18 +1253,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!opt.steamID) return false;
                         const match = steamIDsMatch(opt.steamID, steamIDToMatch);
                         if (!match) {
-                            console.log(`[ValidateReportCard] SteamID mismatch: opt.steamID="${opt.steamID}" !== target="${steamIDToMatch}" for ${opt.name}`);
+                            dbg(`[ValidateReportCard] SteamID mismatch: opt.steamID="${opt.steamID}" !== target="${steamIDToMatch}" for ${opt.name}`);
                         }
                         return match;
                     });
                     
                     if (matchingPlayer) {
-                        console.log('[ValidateReportCard] Found matching player, selecting:', matchingPlayer.key, matchingPlayer.name);
+                        dbg('[ValidateReportCard] Found matching player, selecting:', matchingPlayer.key, matchingPlayer.name);
                         currentSelectedPlayer = matchingPlayer.key;
                         selectPlayerOption(matchingPlayer.key);
                     } else {
-                        console.log('[ValidateReportCard] No matching player found for SteamID:', steamIDToMatch);
-                        console.log('[ValidateReportCard] Player SteamIDs:', playerSelectorOptions.map(opt => ({ 
+                        dbg('[ValidateReportCard] No matching player found for SteamID:', steamIDToMatch);
+                        dbg('[ValidateReportCard] Player SteamIDs:', playerSelectorOptions.map(opt => ({ 
                             name: opt.name, 
                             steamID: String(opt.steamID || 'null'), 
                             slot: opt.slot 
@@ -1322,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         
                         if (playerFromReports) {
-                            console.log('[ValidateReportCard] Found player from reports data, selecting:', playerFromReports.key, playerFromReports.name);
+                            dbg('[ValidateReportCard] Found player from reports data, selecting:', playerFromReports.key, playerFromReports.name);
                             currentSelectedPlayer = playerFromReports.key;
                             selectPlayerOption(playerFromReports.key);
                         } else {
@@ -1331,21 +1289,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const slotKey = `slot_${targetSlotFromReports}`;
                                 const slotPlayer = playerSelectorOptions.find(opt => opt.key === slotKey);
                                 if (slotPlayer) {
-                                    console.log('[ValidateReportCard] Found player by slot from reports, selecting:', slotPlayer.key, slotPlayer.name);
+                                    dbg('[ValidateReportCard] Found player by slot from reports, selecting:', slotPlayer.key, slotPlayer.name);
                                     currentSelectedPlayer = slotPlayer.key;
                                     selectPlayerOption(slotPlayer.key);
                                 } else {
-                                    console.log('[ValidateReportCard] Could not find player, but will filter by SteamID in reports');
+                                    dbg('[ValidateReportCard] Could not find player, but will filter by SteamID in reports');
                                     currentSelectedPlayer = null;
                                 }
                             } else {
-                                console.log('[ValidateReportCard] Could not find player, but will filter by SteamID in reports');
+                                dbg('[ValidateReportCard] Could not find player, but will filter by SteamID in reports');
                                 currentSelectedPlayer = null;
                             }
                         }
                     }
                 } else {
-                    console.log('[ValidateReportCard] No analysisSteamID set, showing all players');
+                    dbg('[ValidateReportCard] No analysisSteamID set, showing all players');
                     currentSelectedPlayer = null;
                 }
                 
@@ -1372,12 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!currentSelectedPlayer && analysisSteamID) {
                         const matchingPlayer = playerSelectorOptions.find(opt => opt.steamID && steamIDsMatch(opt.steamID, analysisSteamID));
                         if (matchingPlayer) {
-                            console.log('[ValidateReportCard] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
+                            dbg('[ValidateReportCard] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
                             currentSelectedPlayer = matchingPlayer.key;
                             selectPlayerOption(matchingPlayer.key);
                         } else {
                         const steamIDFilter = `steamid_${analysisSteamID}`;
-                        console.log('[ValidateReportCard] No player selected but analysisSteamID exists, using SteamID filter:', steamIDFilter);
+                        dbg('[ValidateReportCard] No player selected but analysisSteamID exists, using SteamID filter:', steamIDFilter);
                         currentSelectedPlayer = steamIDFilter;
                             let matchingOption = playerSelectorOptions.find(opt => opt.key === steamIDFilter);
                         if (!matchingOption) {
@@ -1400,17 +1358,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                         slotFromMatch = closestPlayer.Slot;
                                         const actualSteamID = String(closestPlayer.SteamID);
                                         if (actualSteamID !== analysisSteamID) {
-                                            console.log('[ValidateReportCard] Correcting analysisSteamID from', analysisSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
+                                            dbg('[ValidateReportCard] Correcting analysisSteamID from', analysisSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
                                             analysisSteamID = actualSteamID;
                                         }
-                                        console.log('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from match.players');
+                                        dbg('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from match.players');
                                     }
                                 }
                                 if (slotFromMatch == null && matchData[0]?.reports) {
                                     const reportWithSlot = matchData[0].reports.find(r => r.TargetSteamID && steamIDsMatch(r.TargetSteamID, analysisSteamID) && r.TargetSlot != null && r.TargetSlot >= 0 && r.TargetSlot < 10);
                                     if (reportWithSlot) {
                                         slotFromMatch = reportWithSlot.TargetSlot;
-                                        console.log('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from reports');
+                                        dbg('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from reports');
                                     } else {
                                         const targetSteamIDNum = BigInt(analysisSteamID);
                                         const reportsWithSlots = matchData[0].reports
@@ -1430,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                             });
                                         if (reportsWithSlots.length > 0 && reportsWithSlots[0].diff <= BigInt(100)) {
                                             slotFromMatch = reportsWithSlots[0].slot;
-                                            console.log('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from closest matching report (diff:', reportsWithSlots[0].diff.toString(), ')');
+                                            dbg('[ValidateReportCard] Found slot', slotFromMatch, 'for Your Account from closest matching report (diff:', reportsWithSlots[0].diff.toString(), ')');
                                         }
                                     }
                                 }
@@ -1464,19 +1422,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                         slotFromMatch = closestPlayer.Slot;
                                         const actualSteamID = String(closestPlayer.SteamID);
                                         if (actualSteamID !== analysisSteamID) {
-                                            console.log('[ValidateReportCard] Correcting analysisSteamID from', analysisSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
+                                            dbg('[ValidateReportCard] Correcting analysisSteamID from', analysisSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
                                             analysisSteamID = actualSteamID;
                                             matchingOption.steamID = actualSteamID;
                                             matchingOption.key = `steamid_${actualSteamID}`;
                                         }
-                                        console.log('[ValidateReportCard] Updating Your Account with slot', slotFromMatch, 'from match.players');
+                                        dbg('[ValidateReportCard] Updating Your Account with slot', slotFromMatch, 'from match.players');
                                     }
                                 }
                                 if (slotFromMatch == null && matchData[0].reports) {
                                     const reportWithSlot = matchData[0].reports.find(r => r.TargetSteamID && steamIDsMatch(r.TargetSteamID, analysisSteamID) && r.TargetSlot != null && r.TargetSlot >= 0 && r.TargetSlot < 10);
                                     if (reportWithSlot) {
                                         slotFromMatch = reportWithSlot.TargetSlot;
-                                        console.log('[ValidateReportCard] Updating Your Account with slot', slotFromMatch, 'from reports');
+                                        dbg('[ValidateReportCard] Updating Your Account with slot', slotFromMatch, 'from reports');
                                     }
                                 }
                                 if (slotFromMatch != null) {
@@ -1539,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         steamLoginBtn.addEventListener('click', () => {
         const username = steamUserInput.value.trim();
         const password = steamPassInput.value.trim();
-        const isSubmittingCode = steamLoginBtn.textContent === 'Submit Code';
+        const isSubmittingCode = srcText(steamLoginBtn) === 'Submit Code';
         const code = isSubmittingCode ? steamCodeInput.value.trim() : '';
 
         if (!username || !password) {
@@ -1591,7 +1549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
              pollSteamStatus();
              setTimeout(() => {
-                 if (steamLoginBtn.textContent.includes('Submitting') || steamLoginBtn.textContent.includes('Connecting')) {
+                 if (srcText(steamLoginBtn).includes('Submitting') || srcText(steamLoginBtn).includes('Connecting')) {
                      if (data.status === 2) {
                          steamLoginBtn.disabled = false;
                          steamLoginBtn.textContent = 'Submit Code';
@@ -1627,8 +1585,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Disconnect button handler
     if (steamDisconnectBtn) {
-        steamDisconnectBtn.addEventListener('click', () => {
-            if (!confirm('Are you sure you want to disconnect from Steam?')) {
+        steamDisconnectBtn.addEventListener('click', async () => {
+            if (!(await LedgerUI.confirm({ title: 'Disconnect from Steam?', text: 'Match history and fatal search need a Steam connection.', ok: 'Disconnect' }))) {
             return;
         }
 
@@ -1648,7 +1606,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return res.json();
         })
         .then(data => {
-            console.log('Disconnect successful:', data);
+            dbg('Disconnect successful:', data);
             steamCodeInput.value = '';
             pollSteamStatus();
             steamDisconnectBtn.disabled = false;
@@ -1667,12 +1625,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadFromStorage() {
         const savedReplayDir = localStorage.getItem('replayDir');
         const savedSteamUser = localStorage.getItem('steamUser');
-        const savedSteamPass = localStorage.getItem('steamPass');
         const savedSteamId = localStorage.getItem('steamId');
+        localStorage.removeItem('steamPass');   // never keep a Steam password in the browser
         
         if (savedReplayDir) replayDirInput.value = savedReplayDir;
         if (savedSteamUser) steamUserInput.value = savedSteamUser;
-        if (savedSteamPass) steamPassInput.value = savedSteamPass;
         if (savedSteamId) steamIdInput.value = savedSteamId;
     }
 
@@ -1680,7 +1637,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveToStorage() {
         if (replayDirInput.value) localStorage.setItem('replayDir', replayDirInput.value);
         if (steamUserInput.value) localStorage.setItem('steamUser', steamUserInput.value);
-        if (steamPassInput.value) localStorage.setItem('steamPass', steamPassInput.value);
         if (steamIdInput.value) localStorage.setItem('steamId', steamIdInput.value);
     }
 
@@ -1691,8 +1647,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchWithRetry('/api/config', {}, 2, 1000)
         .then(res => res.json())
         .then(config => {
-            if (!replayDirInput.value && config.replayDir) {
+            // the folder the engine really uses wins over whatever this browser remembered
+            if (config.replayDir) {
                 replayDirInput.value = config.replayDir;
+                localStorage.setItem('replayDir', config.replayDir);
             }
             updatePathDisplay(currentPath, getSelectedProfileName());
 
@@ -1703,7 +1661,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (config.steamPass && config.steamPass.trim() !== '') {
                 steamPassInput.value = config.steamPass;
-                localStorage.setItem('steamPass', config.steamPass);
             }
             browseDirectory(currentPath);
         })
@@ -1719,7 +1676,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (replayDir) localStorage.setItem('replayDir', replayDir);
         if (steamUser) localStorage.setItem('steamUser', steamUser);
-        if (steamPass) localStorage.setItem('steamPass', steamPass);
         
         clearTimeout(saveTokenTimeout);
         saveTokenTimeout = setTimeout(() => {
@@ -1781,10 +1737,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     steamUserInput.value = config.steamUser;
                 }
                 if (config.steamPass) {
-                    localStorage.setItem('steamPass', config.steamPass);
                     steamPassInput.value = config.steamPass;
                 }
-                alert('Configuration saved!');
+                LedgerUI.toast('Settings saved', 'ok');
                 browseDirectory(currentPath);
             })
             .catch(err => {
@@ -1814,28 +1769,28 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPathDisplay.title = fullPath;
     }
     
+    let browseSeq = 0;
     function browseDirectory(path = '', profileNameOverride, silent = false) {
-        if (!replayList) {
-            console.error('replayList element not found');
-            return;
-        }
+        if (!replayList) return;
         if (!silent) {
-            replayList.innerHTML = '<p class="loading">Loading...</p>';
+            replayList.innerHTML = '<div class="skeleton-list"><i></i><i></i><i></i><i></i></div>';
         }
+        const seq = ++browseSeq;
         const profileName = profileNameOverride !== undefined ? profileNameOverride : getSelectedProfileName();
         const url = '/api/browse?t=' + Date.now() + (profileName ? '&profile=' + encodeURIComponent(profileName) : '') + (path ? '&path=' + encodeURIComponent(path) : '');
         
         fetch(url)
             .then(res => {
                 if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    return res.text().then(t => { throw new Error(t || `HTTP ${res.status}`); });
                 }
                 return res.json();
             })
             .then(items => {
+                if (seq !== browseSeq) return;          // a newer request already answered
                 const pathChanged = currentPath !== path;
                 currentPath = path;
-                browseBackBtn.style.display = path ? 'inline-block' : 'none';
+                browseBackBtn.style.display = path ? 'inline-flex' : 'none';
                 updatePathDisplay(path, profileName);
                 renderBrowseList(items, silent && !pathChanged);
                 if (window.updateHistoryStatus && !silent) {
@@ -1843,9 +1798,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
             .catch(err => {
-                console.error('Error browsing directory:', err);
+                if (seq !== browseSeq) return;
                 if (!silent) {
-                    replayList.innerHTML = `<p style="color:red">Error browsing directory: ${err}</p>`;
+                    replayList.textContent = '';
+                    const p = document.createElement('p');
+                    p.className = 'list-empty bad';
+                    p.textContent = 'Could not open the replay folder: ' + (err && err.message ? err.message : err);
+                    replayList.appendChild(p);
                 }
             });
     }
@@ -1855,125 +1814,81 @@ document.addEventListener('DOMContentLoaded', () => {
             browseDirectory(currentPath, undefined, true);
         }
     }, 120000);
-    
+
+    function fmtSize(bytes) {
+        if (!bytes) return '';
+        return bytes > 1048576 ? (bytes / 1048576).toFixed(0) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    // Rebuilt every time in the server's order (folders first, newest replay first), so "Latest N"
+    // always picks the newest ones. Ticks and scroll position survive a refresh.
     function renderBrowseList(items, preserveState = false) {
-        if (!items || items.length === 0) {
-            if (!preserveState) {
-                replayList.innerHTML = '<p>Directory is empty.</p>';
-            }
+        const checked = new Set(Array.from(replayList.querySelectorAll('.replay-item input[type="checkbox"]:checked')).map(cb => cb.value));
+        const scrollTop = replayList.scrollTop;
+        const shown = (items || []).filter(item => item.isDir || (item.isFile && /\.dem$/i.test(item.name)));
+        replayList.textContent = '';
+        if (!shown.length) {
+            const p = document.createElement('div');
+            p.className = 'list-empty';
+            p.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><b>No replays here yet</b><span>Drop .dem files on the page or look a player up on the home tab.</span>';
+            replayList.appendChild(p);
             return;
         }
-
-        if (preserveState) {
-            const scrollTop = replayList.scrollTop;
-            const checkedPaths = new Set(Array.from(document.querySelectorAll('.replay-item input[type="checkbox"]:checked')).map(cb => cb.value));
-            const existingItems = new Map();
-            Array.from(replayList.children).forEach(child => {
-                const checkbox = child.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    existingItems.set(checkbox.value, { checked: checkbox.checked, element: child });
-                } else {
-                    const label = child.querySelector('label');
-                    if (label) {
-                        const dirName = label.textContent.trim().replace('/', '');
-                        existingItems.set(`dir:${dirName}`, { element: child });
+        const frag = document.createDocumentFragment();
+        shown.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'replay-item' + (item.isDir ? ' is-dir' : '');
+            if (!preserveState) div.style.setProperty('--i', String(Math.min(i, 14)));
+            if (item.isDir) {
+                const target = String(item.path || item.name).replace(/\\/g, '/');
+                div.tabIndex = 0;
+                div.setAttribute('role', 'button');
+                div.innerHTML = '<svg class="dir-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+                const name = document.createElement('span');
+                name.className = 'replay-name';
+                name.textContent = item.name;
+                div.appendChild(name);
+                const open = () => browseDirectory(target);
+                div.addEventListener('click', open);
+                div.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+            } else {
+                const fullPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+                const matchId = item.name.replace(/\.dem$/i, '');
+                const id = 'replay-' + (fullPath.replace(/[^A-Za-z0-9_-]/g, '_'));
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.value = fullPath;
+                box.id = id;
+                box.dataset.matchId = matchId;
+                box.checked = checked.has(fullPath);
+                const label = document.createElement('label');
+                label.htmlFor = id;
+                const name = document.createElement('span');
+                name.className = 'replay-name';
+                name.textContent = matchId;
+                label.appendChild(name);
+                if (item.date) {
+                    const d = new Date(item.date);
+                    if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
+                        const when = document.createElement('span');
+                        when.className = 'date-display';
+                        when.textContent = d.toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                        label.appendChild(when);
                     }
                 }
-            });
-
-            const newItems = new Set();
-            items.forEach(item => {
-                if (item.isFile && item.name.endsWith('.dem')) {
-                    const fullPath = currentPath ? `${currentPath}/${item.name}` : item.name;
-                    newItems.add(fullPath);
-                } else if (item.isDir) {
-                    newItems.add(`dir:${item.name}`);
+                if (item.fileSize) {
+                    const size = document.createElement('span');
+                    size.className = 'size-display';
+                    size.textContent = fmtSize(item.fileSize);
+                    label.appendChild(size);
                 }
-            });
-
-            const fragment = document.createDocumentFragment();
-            let hasChanges = false;
-
-            existingItems.forEach((data, path) => {
-                if (!newItems.has(path)) {
-                    data.element.remove();
-                    hasChanges = true;
-                }
-            });
-
-            items.forEach(item => {
-                if (item.isFile && item.name.endsWith('.dem')) {
-                    const matchId = item.name.replace('.dem', '');
-                    const fullPath = currentPath ? `${currentPath}/${item.name}` : item.name;
-                    const escapedPath = fullPath.replace(/"/g, '&quot;');
-                    const existing = existingItems.get(fullPath);
-                    
-                    if (!existing) {
-                        const div = document.createElement('div');
-                        div.className = 'replay-item';
-                        const date = item.date ? new Date(item.date).toLocaleString() : '';
-                        const dateDisplay = date ? ` <span class="date-display">(${date})</span>` : '';
-                        div.innerHTML = `
-                            <input type="checkbox" value="${escapedPath}" id="replay-${matchId}" data-match-id="${matchId}" ${checkedPaths.has(fullPath) ? 'checked' : ''}>
-                            <label for="replay-${matchId}" style="cursor: pointer;">${item.name}${dateDisplay}</label>
-                        `;
-                        fragment.appendChild(div);
-                        hasChanges = true;
-                    } else {
-                        const checkbox = existing.element.querySelector('input[type="checkbox"]');
-                        if (checkbox && checkbox.checked !== checkedPaths.has(fullPath)) {
-                            checkbox.checked = checkedPaths.has(fullPath);
-                        }
-                    }
-                } else if (item.isDir) {
-                    const existing = existingItems.get(`dir:${item.name}`);
-                    if (!existing) {
-                        const div = document.createElement('div');
-                        div.className = 'replay-item';
-                        const escapedPath = item.path.replace(/'/g, "\\'");
-                        div.innerHTML = `
-                            <svg class="dir-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                            <label style="cursor: pointer; flex: 1;" onclick="window.browseDirectory('${escapedPath}')">${item.name}/</label>
-                        `;
-                        fragment.appendChild(div);
-                        hasChanges = true;
-                    }
-                }
-            });
-
-            if (hasChanges && fragment.hasChildNodes()) {
-                replayList.appendChild(fragment);
+                div.append(box, label);
             }
-            replayList.scrollTop = scrollTop;
-        } else {
-            replayList.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'replay-item';
-                
-                if (item.isDir) {
-                    const escapedPath = item.path.replace(/'/g, "\\'");
-                    div.innerHTML = `
-                        <svg class="dir-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                        <label style="cursor: pointer; flex: 1;" onclick="window.browseDirectory('${escapedPath}')">${item.name}/</label>
-                    `;
-                } else if (item.isFile && item.name.endsWith('.dem')) {
-                    const matchId = item.name.replace('.dem', '');
-                    const fullPath = currentPath ? `${currentPath}/${item.name}` : item.name;
-                    const escapedPath = fullPath.replace(/"/g, '&quot;');
-                    const date = item.date ? new Date(item.date).toLocaleString() : '';
-                    const dateDisplay = date ? ` <span class="date-display">(${date})</span>` : '';
-                    div.innerHTML = `
-                        <input type="checkbox" value="${escapedPath}" id="replay-${matchId}" data-match-id="${matchId}">
-                        <label for="replay-${matchId}" style="cursor: pointer;">${item.name}${dateDisplay}</label>
-                    `;
-                } else {
-                    return;
-                }
-                
-                replayList.appendChild(div);
-            });
-        }
+            frag.appendChild(div);
+        });
+        replayList.appendChild(frag);
+        if (preserveState) replayList.scrollTop = scrollTop;
+        updatePlayerSelection();
     }
 
     if (browseBackBtn) {
@@ -1988,17 +1903,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.browseDirectory = browseDirectory;
     window.loadReplays = () => browseDirectory('');
 
-    function deleteSelectedReplays() {
+    async function deleteSelectedReplays() {
         const checkboxes = document.querySelectorAll('.replay-item input[type="checkbox"]:checked');
         const selectedPaths = Array.from(checkboxes).map(cb => cb.value);
-        
+
         if (selectedPaths.length === 0) {
-            alert('Please select at least one replay to delete.');
+            LedgerUI.toast('Select at least one replay to delete.', 'info');
             return;
         }
-        
-        const fileNames = selectedPaths.map(path => path.split('/').pop()).join(', ');
-        if (!confirm(`Are you sure you want to delete ${selectedPaths.length} replay file(s)?\n\n${fileNames}\n\nThis cannot be undone.`)) {
+
+        const fileNames = selectedPaths.map(path => path.split('/').pop());
+        const shown = fileNames.slice(0, 6).join(', ') + (fileNames.length > 6 ? ` and ${fileNames.length - 6} more` : '');
+        if (!(await LedgerUI.confirm({ title: `Delete ${selectedPaths.length} replay${selectedPaths.length > 1 ? 's' : ''}?`, text: shown + '. This cannot be undone.', ok: 'Delete' }))) {
             return;
         }
         
@@ -2037,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         .join('\n');
                     alert(`Deleted ${successful} file(s), but ${failed} failed:\n\n${errors}`);
                 } else {
-                    console.log(`Successfully deleted ${successful} replay file(s)`);
+                    dbg(`Successfully deleted ${successful} replay file(s)`);
                 }
                 
                 deleteSelectedBtn.textContent = originalText;
@@ -2118,17 +2034,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedIds = (window.ledgerPathOverride && window.ledgerPathOverride.length) ? window.ledgerPathOverride.slice() : Array.from(selectedCheckboxes).map(cb => cb.value);
 
         if (selectedIds.length === 0) {
-            alert('Please select at least one replay.');
+            LedgerUI.toast('Select at least one replay.', 'info');
             return;
         }
 
-        const steamIdToSend = "0";
-        const slotId = -1;
-        
         const steamIdValue = steamIdInput.value.trim();
-        analysisSteamID = steamIdValue ? convertSteamIDTo64(steamIdValue) : null;
-        console.log('Steam ID input value:', steamIdValue);
-        console.log('Stored analysisSteamID (converted):', analysisSteamID);
+        const converted = steamIdValue ? convertSteamIDTo64(steamIdValue) : null;
+        // anything that is not a number would crash the BigInt maths further down
+        analysisSteamID = converted && /^\d{5,20}$/.test(String(converted)) ? String(converted) : null;
         
         saveToStorage();
 
@@ -2138,11 +2051,22 @@ document.addEventListener('DOMContentLoaded', () => {
         graphsSection.classList.add('hidden');
         matchSelectorContainer.classList.add('hidden');
         playerSelectorContainer.classList.add('hidden');
-        playerSelectorDisplay.innerHTML = '<span class="select-placeholder">Select a player...</span><span class="select-chevron">▼</span>';
+        playerSelectorDisplay.innerHTML = '<span class="select-placeholder">Select a player...</span><span class="select-chevron" aria-hidden="true"></span>';
         playerSelectorDropdown.classList.add('hidden');
         currentSelectedPlayer = null;
         playerSelectorOptions = [];
         progressBar.style.width = '0%';
+        // a new run never shows numbers left over from the previous one
+        allMatchData = [];
+        allMatchDataOriginal = [];
+        playerSelectorCache.clear();
+        allConfirmedPlayerReportCounts = new Map();
+        allUnconfirmedPlayerReportCounts = new Map();
+        allConfirmedTimelineData = [];
+        allUnconfirmedTimelineData = [];
+        allTotalTeamReports = allTotalEnemyReports = allTotalConfirmedTeamReports = allTotalConfirmedEnemyReports = 0;
+        allTotalUnconfirmedTeamReports = allTotalUnconfirmedEnemyReports = 0;
+        const failures = [];
 
         let totalTeamReports = 0;
         let totalEnemyReports = 0;
@@ -2251,10 +2175,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (err) {
                 console.error(`Error processing ${matchId} (${filePath}):`, err);
+                failures.push(matchId + ': ' + String((err && err.message) || err).replace(/\s+/g, ' ').slice(0, 140));
             }
 
             processedCount++;
             progressBar.style.width = `${(processedCount / selectedIds.length) * 100}%`;
+        }
+
+        if (failures.length) {
+            LedgerUI.toast(failures.length === selectedIds.length
+                ? 'Could not read the selected replay' + (failures.length > 1 ? 's' : '') + '. ' + failures[0]
+                : `${failures.length} of ${selectedIds.length} replays could not be read. ${failures[0]}`, 'bad', 9000);
+        }
+        if (!matchData.length) {
+            window.ledgerMatches = [];
+            document.dispatchEvent(new CustomEvent('ledger:matches'));
+            return;
         }
 
         resultsSection.classList.remove('hidden');
@@ -2262,14 +2198,17 @@ document.addEventListener('DOMContentLoaded', () => {
             switchToTab('results');
         }
         
-        if (matchData.length > 0) {
-            allMatchDataOriginal = JSON.parse(JSON.stringify(matchData));
+        allMatchDataOriginal = JSON.parse(JSON.stringify(matchData));
+        // publish the data first: the stats tab must not depend on the charts drawing
+        window.ledgerMatches = allMatchDataOriginal;
+        document.dispatchEvent(new CustomEvent('ledger:matches'));
+        try {
             populateMatchSelector(matchData);
-            if (matchData.length > 1) {
-                matchSelectorContainer.classList.remove('hidden');
-            } else {
-                matchSelectorContainer.classList.add('hidden');
-            }
+        } catch (e) { console.error('match selector failed', e); }
+        if (matchData.length > 1) {
+            matchSelectorContainer.classList.remove('hidden');
+        } else {
+            matchSelectorContainer.classList.add('hidden');
         }
 
         if (totalTeamReports + totalEnemyReports > 0) {
@@ -2287,11 +2226,9 @@ document.addEventListener('DOMContentLoaded', () => {
             allTotalUnconfirmedTeamReports = totalUnconfirmedTeamReports;
             allTotalUnconfirmedEnemyReports = totalUnconfirmedEnemyReports;
             
-            updateGraphsForPlayer(currentSelectedPlayer);
+            try { updateGraphsForPlayer(currentSelectedPlayer); } catch (e) { console.error('graphs failed', e); }
             graphsSection.classList.remove('hidden');
         }
-        window.ledgerMatches = allMatchDataOriginal;
-        document.dispatchEvent(new CustomEvent('ledger:matches'));
     }
 
     // Single-flight wrapper: a click during a run queues exactly one re-run afterwards.
@@ -2346,16 +2283,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (steamIDToMatch) {
-                    console.log('Initial match - Looking for Steam ID:', steamIDToMatch);
-                    console.log('Available players:', playerSelectorOptions.map(opt => ({ key: opt.key, steamID: String(opt.steamID), name: opt.name })));
+                    dbg('Initial match - Looking for Steam ID:', steamIDToMatch);
+                    dbg('Available players:', playerSelectorOptions.map(opt => ({ key: opt.key, steamID: String(opt.steamID), name: opt.name })));
                     const matchingPlayer = playerSelectorOptions.find(opt => 
                         opt.steamID && steamIDsMatch(opt.steamID, steamIDToMatch)
                     );
                     if (matchingPlayer) {
-                        console.log('Found matching player, selecting:', matchingPlayer.key);
+                        dbg('Found matching player, selecting:', matchingPlayer.key);
                         selectPlayerOption(matchingPlayer.key);
                     } else {
-                        console.log('No matching player found for Steam ID:', steamIDToMatch);
+                        dbg('No matching player found for Steam ID:', steamIDToMatch);
                         renderCurrentGraph(matchData[0], null);
                     }
                 } else {
@@ -2427,8 +2364,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        console.log('=== populatePlayerSelector DEBUG ===');
-        console.log('Total reports:', matchData.reports.length);
+        dbg('=== populatePlayerSelector DEBUG ===');
+        dbg('Total reports:', matchData.reports.length);
         
         const uniqueTargetSlots = new Set();
         const uniqueTargetSteamIDs = new Set();
@@ -2452,21 +2389,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 reportsByTargetSteamID.get(targetSteamIDStr).push({ idx, time: r.Time, targetSlot: r.TargetSlot, targetSteamID: targetSteamIDStr });
             }
         });
-        console.log('Unique TargetSlots:', Array.from(uniqueTargetSlots).sort((a, b) => a - b));
-        console.log('Unique TargetSteamIDs:', Array.from(uniqueTargetSteamIDs).sort((a, b) => a - b));
+        dbg('Unique TargetSlots:', Array.from(uniqueTargetSlots).sort((a, b) => a - b));
+        dbg('Unique TargetSteamIDs:', Array.from(uniqueTargetSteamIDs).sort((a, b) => a - b));
         
-        const slot3SteamID = 76561198067621800;
-        if (reportsByTargetSlot.has(3)) {
-            console.log('Reports targeting slot 3:', reportsByTargetSlot.get(3));
-        } else {
-            console.log('No reports found with TargetSlot = 3');
-        }
-        if (reportsByTargetSteamID.has(slot3SteamID)) {
-            console.log(`Reports targeting SteamID ${slot3SteamID} (slot 3):`, reportsByTargetSteamID.get(slot3SteamID));
-        } else {
-            console.log(`No reports found with TargetSteamID = ${slot3SteamID} (slot 3)`);
-        }
-
         const buildPlayersMap = (steamIDToSlotMap) => {
             const map = new Map();
             const skipped = [];
@@ -2559,8 +2484,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        console.log('Initial slotToSteamID mapping:', Array.from(slotToSteamID.entries()));
-        console.log('Initial steamIDToSlot mapping:', Array.from(steamIDToSlot.entries()).map(([id, slot]) => `${id}: slot_${slot}`));
+        dbg('Initial slotToSteamID mapping:', Array.from(slotToSteamID.entries()));
+        dbg('Initial steamIDToSlot mapping:', Array.from(steamIDToSlot.entries()).map(([id, slot]) => `${id}: slot_${slot}`));
         
         let { map: playersMap, skipped: initialSkipped } = buildPlayersMap(steamIDToSlot);
         skippedReports.push(...initialSkipped);
@@ -2568,7 +2493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (skippedReports.length > 0) {
             console.warn('Initial skipped reports:', skippedReports);
         }
-        console.log('Initial playersMap created with', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
+        dbg('Initial playersMap created with', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
 
         let players = [];
         const selectorCacheKey = `${matchData.matchID}_${currentGraphView}`;
@@ -2576,11 +2501,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (matchData.players && Array.isArray(matchData.players) && matchData.players.length > 0) {
             players = matchData.players;
-            console.log('Using cached players from matchData, count:', players.length);
+            dbg('Using cached players from matchData, count:', players.length);
         } else if (playerInfoCache.has(playerInfoCacheKey)) {
             const cached = playerInfoCache.get(playerInfoCacheKey);
             players = cached.players || [];
-            console.log('Using cached players from playerInfoCache, count:', players.length);
+            dbg('Using cached players from playerInfoCache, count:', players.length);
         } else {
             try {
                 const res = await fetch('/api/player-info', {
@@ -2600,14 +2525,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const playersText = await res.text();
                 const playersTextFixed = playersText.replace(/"SteamID":\s*(\d+)/g, '"SteamID":"$1"');
                 players = JSON.parse(playersTextFixed);
-                console.log('Loaded players from API, count:', players.length);
+                dbg('Loaded players from API, count:', players.length);
             } catch (err) {
                 console.error('Error loading player info:', err);
                 players = [];
             }
         }
         
-        console.log('Total players loaded:', players.length, 'slots:', players.map(p => p.Slot));
+        dbg('Total players loaded:', players.length, 'slots:', players.map(p => p.Slot));
         
         const playerInfoMap = new Map();
         players.forEach(p => {
@@ -2637,25 +2562,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            console.log('Player info loaded:', Array.from(playerInfoMap.entries()).map(([slot, info]) => `slot_${slot}: ${info.name} (steamID: ${info.steamID}, hero: ${info.hero})`));
-            console.log('Updated steamIDToSlot mapping:', Array.from(steamIDToSlot.entries()).map(([id, slot]) => `${id}: slot_${slot}`));
-            console.log('playerInfoMap size:', playerInfoMap.size, 'entries:', Array.from(playerInfoMap.keys()));
+            dbg('Player info loaded:', Array.from(playerInfoMap.entries()).map(([slot, info]) => `slot_${slot}: ${info.name} (steamID: ${info.steamID}, hero: ${info.hero})`));
+            dbg('Updated steamIDToSlot mapping:', Array.from(steamIDToSlot.entries()).map(([id, slot]) => `${id}: slot_${slot}`));
+            dbg('playerInfoMap size:', playerInfoMap.size, 'entries:', Array.from(playerInfoMap.keys()));
             
             const { map: updatedPlayersMap, skipped: remainingSkipped } = buildPlayersMap(steamIDToSlot);
             playersMap = updatedPlayersMap;
             
             if (remainingSkipped.length > skippedReports.length) {
                 const newlyMapped = remainingSkipped.length - skippedReports.length;
-                console.log(`Rebuilt playersMap after player info. Previously skipped ${skippedReports.length}, now skipped ${remainingSkipped.length}`);
+                dbg(`Rebuilt playersMap after player info. Previously skipped ${skippedReports.length}, now skipped ${remainingSkipped.length}`);
             }
             
-            console.log('Final playersMap created with', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
+            dbg('Final playersMap created with', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
             
             players.forEach(p => {
                 if (p.Slot >= 0 && p.Slot < 10) {
                     const key = `slot_${p.Slot}`;
                     if (!playersMap.has(key)) {
-                        console.log(`Adding missing slot ${p.Slot} (${p.Name}) with 0 reports`);
+                        dbg(`Adding missing slot ${p.Slot} (${p.Name}) with 0 reports`);
                         playersMap.set(key, {
                             slot: p.Slot,
                             steamID: p.SteamID,
@@ -2665,7 +2590,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            console.log('Final playersMap after adding missing slots:', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
+            dbg('Final playersMap after adding missing slots:', playersMap.size, 'players:', Array.from(playersMap.entries()).map(([k, v]) => `${k}: slot=${v.slot}, steamID=${v.steamID}, reports=${v.reportCount}`));
 
             const targetPlayerMap = new Map();
             matchData.reports.forEach(report => {
@@ -2726,7 +2651,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            console.log('targetPlayerMap keys after update:', Array.from(targetPlayerMap.keys()));
+            dbg('targetPlayerMap keys after update:', Array.from(targetPlayerMap.keys()));
 
             playerSelectorOptions = [];
             playerSelectorOptions.push({ key: '', name: 'All Players', hero: '', team: null, reportCount: 0, slot: null });
@@ -2754,7 +2679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const reportCount = playerData ? (playerData.reportCount || 0) : 0;
                 const steamID = playerData ? (playerData.steamID ? String(playerData.steamID) : null) : (apiInfo ? (apiInfo.steamID ? String(apiInfo.steamID) : null) : null);
                 
-                console.log(`[PLAYER SELECTOR] Slot ${slot}: name="${playerName}", hero="${heroName}", apiInfo=${!!apiInfo}, playerData=${!!playerData}, targetInfo=${!!targetInfo}`);
+                dbg(`[PLAYER SELECTOR] Slot ${slot}: name="${playerName}", hero="${heroName}", apiInfo=${!!apiInfo}, playerData=${!!playerData}, targetInfo=${!!targetInfo}`);
                 
                 playerSelectorOptions.push({
                     key: key,
@@ -2767,15 +2692,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
-            console.log('Final playerSelectorOptions count:', playerSelectorOptions.length);
-            console.log('Player selector options:', playerSelectorOptions.map(opt => ({ key: opt.key, slot: opt.slot, name: opt.name, hero: opt.hero, reportCount: opt.reportCount })));
-            const slot4Option = playerSelectorOptions.find(opt => opt.key === 'slot_4' || opt.slot === 4);
-            if (slot4Option) {
-                console.log('Slot 4 option found:', slot4Option);
-            } else {
-                console.warn('Slot 4 option NOT found in playerSelectorOptions!');
-            }
-            console.log('=== END populatePlayerSelector DEBUG ===');
+            dbg('Final playerSelectorOptions count:', playerSelectorOptions.length);
+            dbg('Player selector options:', playerSelectorOptions.map(opt => ({ key: opt.key, slot: opt.slot, name: opt.name, hero: opt.hero, reportCount: opt.reportCount })));
+            dbg('=== END populatePlayerSelector DEBUG ===');
 
             playerSelectorCache.set(selectorCacheKey, playerSelectorOptions);
             renderPlayerSelector();
@@ -2885,21 +2804,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (currentSelectedPlayer && playerSelectorOptions.length > 0) {
                 const option = playerSelectorOptions.find(o => o.key === currentSelectedPlayer);
-                if (option) {
-                    const iconUrl = option.hero ? getHeroIconUrl(option.hero) : null;
-                    const playerColor = getSlotColor(option.slot);
-                    let html = '';
-                    if (iconUrl) {
-                        html += `<img src="${iconUrl}" alt="${option.hero}" class="player-selector-icon" onerror="this.style.display='none'">`;
-                    }
-                    html += `<span class="player-selector-name" style="color: ${playerColor}">${option.name}</span>`;
-                    if (option.reportCount > 0) {
-                        html += `<span class="player-selector-count">${option.reportCount} report${option.reportCount !== 1 ? 's' : ''}</span>`;
-                    }
-                    html += '<span class="select-chevron">▼</span>';
-                    if (playerSelectorDisplay) {
-                        playerSelectorDisplay.innerHTML = html;
-                    }
+                if (option && playerSelectorDisplay) {
+                    playerSelectorDisplay.innerHTML = playerOptionHtml(option, true);
                 }
             }
         } finally {
@@ -2913,7 +2819,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (timelineOverlay) {
                 timelineOverlay.remove();
             }
-            timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No reports found for this match.</p>';
+            timelineGraphContainer.innerHTML = '<p class="graph-empty">No reports found for this match.</p>';
             hideGraphLoading();
             return;
         }
@@ -2923,8 +2829,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (playerFilter && playerFilter.startsWith('steamid_') && matchData.players) {
             const targetSteamID = String(playerFilter.replace('steamid_', '')).trim();
-            console.log(`[renderTimelineGraph] Attempting to find player by SteamID: "${targetSteamID}"`);
-            console.log(`[renderTimelineGraph] Available players:`, matchData.players.map(p => ({
+            dbg(`[renderTimelineGraph] Attempting to find player by SteamID: "${targetSteamID}"`);
+            dbg(`[renderTimelineGraph] Available players:`, matchData.players.map(p => ({
                 Slot: p.Slot,
                 SteamID: p.SteamID ? String(p.SteamID).trim() : null,
                 Name: p.Name
@@ -2935,40 +2841,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const playerSteamID = String(p.SteamID).trim();
                 const match = playerSteamID === targetSteamID;
                 if (!match) {
-                    console.log(`[renderTimelineGraph] SteamID mismatch: player.SteamID="${playerSteamID}" !== target="${targetSteamID}" for ${p.Name}`);
+                    dbg(`[renderTimelineGraph] SteamID mismatch: player.SteamID="${playerSteamID}" !== target="${targetSteamID}" for ${p.Name}`);
                 }
                 return match;
             });
             
             if (targetPlayer && targetPlayer.Slot != null && targetPlayer.Slot >= 0 && targetPlayer.Slot < 10) {
-                console.log(`[renderTimelineGraph] Found player by SteamID, converting to slot filter: slot_${targetPlayer.Slot}`);
+                dbg(`[renderTimelineGraph] Found player by SteamID, converting to slot filter: slot_${targetPlayer.Slot}`);
                 effectiveFilter = `slot_${targetPlayer.Slot}`;
             } else {
-                console.log(`[renderTimelineGraph] Player not found by SteamID, will try TargetSteamID filtering`);
+                dbg(`[renderTimelineGraph] Player not found by SteamID, will try TargetSteamID filtering`);
             }
-        }
-        
-        const slot4Reports = reports.filter(r => r.TargetSlot === 4);
-        if (slot4Reports.length > 0) {
-            console.log(`[FRONTEND] DEBUG: Found ${slot4Reports.length} reports targeting slot 4:`, slot4Reports.map(r => ({
-                Time: r.Time,
-                Reporter: `${r.Name} (Slot ${r.Slot})`,
-                Target: `${r.TargetName} (Slot ${r.TargetSlot})`
-            })));
-        } else {
-            console.log(`[FRONTEND] DEBUG: No reports found targeting slot 4. All TargetSlots:`, [...new Set(reports.map(r => r.TargetSlot))].sort());
         }
         
         if (effectiveFilter) {
             if (effectiveFilter.startsWith('slot_')) {
                 const targetSlot = parseInt(effectiveFilter.replace('slot_', ''));
-                console.log(`[renderTimelineGraph] Filtering reports for TargetSlot: ${targetSlot}`);
+                dbg(`[renderTimelineGraph] Filtering reports for TargetSlot: ${targetSlot}`);
                 const beforeCount = reports.length;
                 reports = reports.filter(r => r.TargetSlot === targetSlot);
-                console.log(`[renderTimelineGraph] Filtered from ${beforeCount} to ${reports.length} reports for TargetSlot: ${targetSlot}`);
+                dbg(`[renderTimelineGraph] Filtered from ${beforeCount} to ${reports.length} reports for TargetSlot: ${targetSlot}`);
             } else if (effectiveFilter.startsWith('steamid_')) {
                 const targetSteamID = String(effectiveFilter.replace('steamid_', '')).trim();
-                console.log(`[renderTimelineGraph] Filtering by TargetSteamID: "${targetSteamID}"`);
+                dbg(`[renderTimelineGraph] Filtering by TargetSteamID: "${targetSteamID}"`);
                 const beforeCount = reports.length;
                 const sampleReports = reports.slice(0, 5).map(r => ({
                     TargetSteamID: r.TargetSteamID,
@@ -2977,40 +2872,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     TargetSlot: r.TargetSlot,
                     TargetName: r.TargetName
                 }));
-                console.log(`[renderTimelineGraph] Sample report TargetSteamIDs:`, sampleReports);
+                dbg(`[renderTimelineGraph] Sample report TargetSteamIDs:`, sampleReports);
                 reports = reports.filter(r => {
                     if (!r.TargetSteamID) return false;
                     const reportTargetSteamID = String(r.TargetSteamID).trim();
                     const matches = reportTargetSteamID === targetSteamID;
                     if (!matches && reportTargetSteamID && targetSteamID) {
-                        console.log(`[renderTimelineGraph] Mismatch: report.TargetSteamID="${reportTargetSteamID}" (type: ${typeof r.TargetSteamID}) !== filter="${targetSteamID}"`);
+                        dbg(`[renderTimelineGraph] Mismatch: report.TargetSteamID="${reportTargetSteamID}" (type: ${typeof r.TargetSteamID}) !== filter="${targetSteamID}"`);
                     }
                     return matches;
                 });
-                console.log(`[renderTimelineGraph] Filtered from ${beforeCount} to ${reports.length} reports for TargetSteamID: ${targetSteamID}`);
+                dbg(`[renderTimelineGraph] Filtered from ${beforeCount} to ${reports.length} reports for TargetSteamID: ${targetSteamID}`);
                 
                 if (reports.length === 0 && matchData.players) {
-                    console.log(`[renderTimelineGraph] No reports found by TargetSteamID, trying fallback to slot-based filtering`);
+                    dbg(`[renderTimelineGraph] No reports found by TargetSteamID, trying fallback to slot-based filtering`);
                     const targetPlayer = matchData.players.find(p => p.SteamID && String(p.SteamID).trim() === targetSteamID);
                     if (targetPlayer && targetPlayer.Slot != null && targetPlayer.Slot >= 0 && targetPlayer.Slot < 10) {
-                        console.log(`[renderTimelineGraph] Found player by SteamID for fallback, using slot ${targetPlayer.Slot}`);
+                        dbg(`[renderTimelineGraph] Found player by SteamID for fallback, using slot ${targetPlayer.Slot}`);
                         reports = matchData.reports.filter(r => r.TargetSlot === targetPlayer.Slot);
-                        console.log(`[renderTimelineGraph] Fallback slot filter found ${reports.length} reports`);
+                        dbg(`[renderTimelineGraph] Fallback slot filter found ${reports.length} reports`);
                     }
                 }
             }
         }
 
         if (reports.length === 0) {
-            timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No reports found for the selected player.</p>';
+            timelineGraphContainer.innerHTML = '<p class="graph-empty">No reports found for the selected player.</p>';
             hideGraphLoading();
             return;
         }
 
         const title = document.createElement('h3');
         title.className = 'graph-title';
-        title.textContent = 'Incoming Reports - Report Timestamps';
-        title.style.cssText = 'margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.25rem; font-weight: 600;';
+        title.textContent = 'Reports on the player, by minute';
+        
         
         const canvas = document.createElement('canvas');
         canvas.id = 'timeline-graph';
@@ -3030,17 +2925,18 @@ document.addEventListener('DOMContentLoaded', () => {
         title.style.visibility = 'hidden';
 
         const ctx = canvas.getContext('2d');
+        const T = LedgerUI.canvasTheme();
         const padding = { top: 60, right: 40, bottom: 60, left: 80 };
         const iconSize = 40;
         const iconSpacing = 5;
         const teamRegionHeight = 120;
         const totalHeight = padding.top + teamRegionHeight * 2 + padding.bottom;
         
-        const containerWidth = Math.max(timelineGraphContainer.clientWidth || 1200, 800);
+        const containerWidth = Math.max((timelineGraphContainer.clientWidth || 1200) - 2, 760);
         const devicePixelRatio = window.devicePixelRatio || 1;
         canvas.width = containerWidth * devicePixelRatio;
         canvas.height = totalHeight * devicePixelRatio;
-        canvas.style.width = '100%';
+        canvas.style.width = containerWidth + 'px';
         canvas.style.height = `${totalHeight}px`;
         ctx.scale(devicePixelRatio, devicePixelRatio);
         
@@ -3254,10 +3150,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawIcons() {
             ctx.clearRect(0, 0, containerWidth, totalHeight);
-            ctx.fillStyle = '#0c0d11';
+            ctx.fillStyle = T.bg;
             ctx.fillRect(0, 0, containerWidth, totalHeight);
 
-            ctx.strokeStyle = '#262932';
+            ctx.strokeStyle = T.line;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(padding.left, padding.top);
@@ -3268,11 +3164,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight * 2);
             ctx.stroke();
 
-            ctx.fillStyle = '#9a9ca6';
-            ctx.font = '12px Geist, Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('FRIENDLY', containerWidth / 2, padding.top - 20);
-            ctx.fillText('ENEMY', containerWidth / 2, padding.top + teamRegionHeight + 20);
+            ctx.fillStyle = T.muted;
+            ctx.font = '600 12px Manrope, system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = T.good;
+            ctx.fillText(tr('Teammates'), padding.left + 8, padding.top - 20);
+            ctx.fillStyle = T.bad;
+            ctx.fillText(tr('Enemies'), padding.left + 8, padding.top + teamRegionHeight + 20);
 
             const numLabels = Math.min(20, Math.ceil(timeRange / 2));
             for (let i = 0; i <= numLabels; i++) {
@@ -3282,15 +3180,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const seconds = Math.floor((time - minutes) * 60);
                 const timeLabel = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 
-                ctx.strokeStyle = '#3a3d49';
+                ctx.strokeStyle = T.grid;
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.moveTo(x, padding.top);
                 ctx.lineTo(x, totalHeight - padding.bottom);
                 ctx.stroke();
                 
-                ctx.fillStyle = '#9a9ca6';
-                ctx.font = '11px Geist, Inter, sans-serif';
+                ctx.fillStyle = T.muted;
+                ctx.font = '11px Manrope, system-ui, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(timeLabel, x, totalHeight - padding.bottom + 18);
             }
@@ -3308,17 +3206,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.drawImage(img, x - iconSize / 2, y, iconSize, iconSize);
                     ctx.restore();
                 } else {
-                    ctx.fillStyle = '#3a3d49';
+                    ctx.fillStyle = T.grid;
                     ctx.beginPath();
                     ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.fillStyle = '#ecebe6';
-                    ctx.font = '10px Geist, Inter, sans-serif';
+                    ctx.fillStyle = T.text;
+                    ctx.font = '10px Manrope, system-ui, sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText(heroName ? heroName.substring(0, 3).toUpperCase() : '?', x, y + iconSize / 2 + 3);
                 }
                 
-                ctx.strokeStyle = team === 'FRIENDLY' ? '#5fd0a0' : '#ff5d6c';
+                ctx.strokeStyle = team === 'FRIENDLY' ? T.good : T.bad;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
@@ -3329,17 +3227,17 @@ document.addEventListener('DOMContentLoaded', () => {
         drawIcons();
 
         function showTimelineGraphWhenReady() {
-            console.log('[GRAPH DEBUG] showTimelineGraphWhenReady() called');
+            dbg('[GRAPH DEBUG] showTimelineGraphWhenReady() called');
             hideGraphLoading();
             requestAnimationFrame(() => {
                 const canvas = timelineGraphContainer.querySelector('canvas');
                 const title = timelineGraphContainer.querySelector('.graph-title');
-                console.log('[GRAPH DEBUG] Canvas found:', !!canvas, 'Title found:', !!title);
+                dbg('[GRAPH DEBUG] Canvas found:', !!canvas, 'Title found:', !!title);
                 if (canvas) {
                     canvas.style.opacity = '1';
                     canvas.style.visibility = 'visible';
                     canvas.style.display = 'block';
-                    console.log('[GRAPH DEBUG] Canvas shown, opacity:', canvas.style.opacity, 'visibility:', canvas.style.visibility);
+                    dbg('[GRAPH DEBUG] Canvas shown, opacity:', canvas.style.opacity, 'visibility:', canvas.style.visibility);
                 } else {
                     console.error('[GRAPH DEBUG] ERROR: Canvas not found!');
                 }
@@ -3347,7 +3245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     title.style.opacity = '1';
                     title.style.visibility = 'visible';
                     title.style.display = 'block';
-                    console.log('[GRAPH DEBUG] Title shown');
+                    dbg('[GRAPH DEBUG] Title shown');
                 } else {
                     console.error('[GRAPH DEBUG] ERROR: Title not found!');
                 }
@@ -3436,12 +3334,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renderPlayerReportsGraph(matchData, playerFilter = null) {
-        console.log('[GRAPH DEBUG] renderPlayerReportsGraph() called');
+        dbg('[GRAPH DEBUG] renderPlayerReportsGraph() called');
         showGraphLoading();
         
         try {
             if (!matchData || !matchData.reports || matchData.reports.length === 0) {
-                timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No reports found for this match.</p>';
+                timelineGraphContainer.innerHTML = '<p class="graph-empty">No reports found for this match.</p>';
                 hideGraphLoading();
                 return;
             }
@@ -3459,7 +3357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
             if (reports.length === 0) {
-                timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No reports found for the selected player.</p>';
+                timelineGraphContainer.innerHTML = '<p class="graph-empty">No reports found for the selected player.</p>';
                 hideGraphLoading();
                 return;
             }
@@ -3531,8 +3429,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const title = document.createElement('h3');
         title.className = 'graph-title';
-        title.textContent = 'Outgoing Reports - Reports Created';
-        title.style.cssText = 'margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.25rem; font-weight: 600;';
+        title.textContent = 'Reports the player made, by minute';
+        
         
         const canvas = document.createElement('canvas');
         canvas.id = 'timeline-graph';
@@ -3552,6 +3450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         title.style.visibility = 'hidden';
 
         const ctx = canvas.getContext('2d');
+        const T = LedgerUI.canvasTheme();
         const padding = { top: 60, right: 40, bottom: 60, left: 80 };
         const iconSize = 40;
         const iconSpacing = 5;
@@ -3588,11 +3487,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const teamRegionHeight = Math.max(120, maxStackHeight);
         const totalHeight = padding.top + teamRegionHeight * 2 + padding.bottom;
         
-        const containerWidth = Math.max(timelineGraphContainer.clientWidth || 1200, 800);
+        const containerWidth = Math.max((timelineGraphContainer.clientWidth || 1200) - 2, 760);
         const devicePixelRatio = window.devicePixelRatio || 1;
         canvas.width = containerWidth * devicePixelRatio;
         canvas.height = totalHeight * devicePixelRatio;
-        canvas.style.width = '100%';
+        canvas.style.width = containerWidth + 'px';
         canvas.style.height = `${totalHeight}px`;
         ctx.scale(devicePixelRatio, devicePixelRatio);
         
@@ -3909,10 +3808,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawIcons() {
             ctx.clearRect(0, 0, containerWidth, totalHeight);
-            ctx.fillStyle = '#0c0d11';
+            ctx.fillStyle = T.bg;
             ctx.fillRect(0, 0, containerWidth, totalHeight);
 
-            ctx.strokeStyle = '#262932';
+            ctx.strokeStyle = T.line;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(padding.left, padding.top);
@@ -3923,11 +3822,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight * 2);
             ctx.stroke();
 
-            ctx.fillStyle = '#9a9ca6';
-            ctx.font = '12px Geist, Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('FRIENDLY', containerWidth / 2, padding.top - 20);
-            ctx.fillText('ENEMY', containerWidth / 2, padding.top + teamRegionHeight + 20);
+            ctx.fillStyle = T.muted;
+            ctx.font = '600 12px Manrope, system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = T.good;
+            ctx.fillText(tr('Teammates'), padding.left + 8, padding.top - 20);
+            ctx.fillStyle = T.bad;
+            ctx.fillText(tr('Enemies'), padding.left + 8, padding.top + teamRegionHeight + 20);
 
             const numLabels = Math.min(20, Math.ceil(timeRange / 2));
             for (let i = 0; i <= numLabels; i++) {
@@ -3937,15 +3838,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const seconds = Math.floor((time - minutes) * 60);
                 const timeLabel = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 
-                ctx.strokeStyle = '#3a3d49';
+                ctx.strokeStyle = T.grid;
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.moveTo(x, padding.top);
                 ctx.lineTo(x, totalHeight - padding.bottom);
                 ctx.stroke();
                 
-                ctx.fillStyle = '#9a9ca6';
-                ctx.font = '11px Geist, Inter, sans-serif';
+                ctx.fillStyle = T.muted;
+                ctx.font = '11px Manrope, system-ui, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(timeLabel, x, totalHeight - padding.bottom + 18);
             }
@@ -3953,7 +3854,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iconPositions.forEach(({ report, x, y, team }) => {
                 const candidates = report.Candidates && report.Candidates.length > 0 ? report.Candidates : null;
                 const reportKey = `${report.Time}_${report.Slot}_${report.SteamID}`;
-                const tintColor = reportColors.get(reportKey) || '#9a9ca6';
+                const tintColor = reportColors.get(reportKey) || T.muted;
                 
                 if (candidates) {
                     const maxScore = Math.max(...candidates.map(c => c.Score));
@@ -3987,12 +3888,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             ctx.clip();
                             ctx.drawImage(img, borderX - scaledIconSize / 2, iconCenterY - scaledIconSize / 2, scaledIconSize, scaledIconSize);
                         } else {
-                            ctx.fillStyle = '#3a3d49';
+                            ctx.fillStyle = T.grid;
                             ctx.beginPath();
                             ctx.arc(borderX, iconCenterY, borderRadius, 0, Math.PI * 2);
                             ctx.fill();
-                            ctx.fillStyle = '#ecebe6';
-                            ctx.font = `${10 * scale}px Geist, Inter, sans-serif`;
+                            ctx.fillStyle = T.text;
+                            ctx.font = `${10 * scale}px Manrope, system-ui, sans-serif`;
                             ctx.textAlign = 'center';
                             ctx.fillText(heroName ? heroName.substring(0, 3).toUpperCase() : '?', borderX, iconCenterY + 3 * scale);
                         }
@@ -4004,7 +3905,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.globalCompositeOperation = 'source-over';
                         
                         if (isSelected) {
-                            ctx.strokeStyle = '#0c0d11';
+                            ctx.strokeStyle = T.bg;
                             ctx.lineWidth = 5;
                             ctx.lineCap = 'round';
                             ctx.lineJoin = 'round';
@@ -4012,7 +3913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ctx.arc(borderX, iconCenterY, borderRadius, 0, Math.PI * 2);
                             ctx.stroke();
                             
-                            ctx.strokeStyle = '#000000';
+                            ctx.strokeStyle = T.halo;
                             ctx.lineWidth = 3;
                             ctx.beginPath();
                             ctx.arc(borderX, iconCenterY, borderRadius, 0, Math.PI * 2);
@@ -4024,7 +3925,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ctx.arc(borderX, iconCenterY, borderRadius, 0, Math.PI * 2);
                             ctx.stroke();
                         } else {
-                            ctx.strokeStyle = '#0c0d11';
+                            ctx.strokeStyle = T.bg;
                             ctx.lineWidth = 5;
                             ctx.lineCap = 'round';
                             ctx.lineJoin = 'round';
@@ -4054,17 +3955,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.drawImage(img, x - iconSize / 2, y, iconSize, iconSize);
                         ctx.restore();
                     } else {
-                        ctx.fillStyle = '#3a3d49';
+                        ctx.fillStyle = T.grid;
                         ctx.beginPath();
                         ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.fillStyle = '#ecebe6';
-                        ctx.font = '10px Geist, Inter, sans-serif';
+                        ctx.fillStyle = T.text;
+                        ctx.font = '10px Manrope, system-ui, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.fillText(heroName ? heroName.substring(0, 3).toUpperCase() : '?', x, y + iconSize / 2 + 3);
                     }
                     
-                    ctx.strokeStyle = team === 'FRIENDLY' ? '#5fd0a0' : '#ff5d6c';
+                    ctx.strokeStyle = team === 'FRIENDLY' ? T.good : T.bad;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
@@ -4073,7 +3974,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        console.log('[GRAPH DEBUG] renderPlayerReportsGraph: Calling drawIcons()');
+        dbg('[GRAPH DEBUG] renderPlayerReportsGraph: Calling drawIcons()');
         drawIcons();
 
         function showGraph() {
@@ -4107,7 +4008,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showGraph();
 
-        console.log('[GRAPH DEBUG] Total images to load:', totalImages);
+        dbg('[GRAPH DEBUG] Total images to load:', totalImages);
         if (totalImages > 0) {
             imagesToLoad.forEach(iconUrl => {
                 const img = new Image();
@@ -4214,14 +4115,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         } catch (error) {
             console.error('Error rendering player reports graph:', error);
-            timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--danger-color); padding: 2rem;">Error rendering graph. Please try again.</p>';
+            timelineGraphContainer.innerHTML = '<p class="graph-empty bad">Error rendering graph. Please try again.</p>';
             hideGraphLoading();
         }
     }
 
     function renderScoreboardActivityGraph(matchData, playerFilter = null) {
         if (!matchData || !matchData.scoreboardActivities || matchData.scoreboardActivities.length === 0) {
-            timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No scoreboard activity found for this match.</p>';
+            timelineGraphContainer.innerHTML = '<p class="graph-empty">No scoreboard activity found for this match.</p>';
             hideGraphLoading();
             return;
         }
@@ -4238,7 +4139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (activities.length === 0) {
-            timelineGraphContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No scoreboard activity found for the selected player.</p>';
+            timelineGraphContainer.innerHTML = '<p class="graph-empty">No scoreboard activity found for the selected player.</p>';
             hideGraphLoading();
             return;
         }
@@ -4246,7 +4147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = document.createElement('h3');
         title.className = 'graph-title';
         title.textContent = 'Scoreboard Activity';
-        title.style.cssText = 'margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.25rem; font-weight: 600;';
+        
         
         const canvas = document.createElement('canvas');
         canvas.id = 'timeline-graph';
@@ -4266,17 +4167,18 @@ document.addEventListener('DOMContentLoaded', () => {
         title.style.visibility = 'hidden';
 
         const ctx = canvas.getContext('2d');
+        const T = LedgerUI.canvasTheme();
         const padding = { top: 40, right: 40, bottom: 60, left: 200 };
         const rowHeight = 50;
         const rowSpacing = 10;
         const totalRows = activities.length;
         const totalHeight = padding.top + (rowHeight + rowSpacing) * totalRows + padding.bottom;
 
-        const containerWidth = Math.max(timelineGraphContainer.clientWidth || 1200, 800);
+        const containerWidth = Math.max((timelineGraphContainer.clientWidth || 1200) - 2, 760);
         const devicePixelRatio = window.devicePixelRatio || 1;
         canvas.width = containerWidth * devicePixelRatio;
         canvas.height = totalHeight * devicePixelRatio;
-        canvas.style.width = '100%';
+        canvas.style.width = containerWidth + 'px';
         canvas.style.height = `${totalHeight}px`;
         ctx.scale(devicePixelRatio, devicePixelRatio);
 
@@ -4293,10 +4195,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeRange = Math.max(maxTime, 60);
 
         ctx.clearRect(0, 0, containerWidth, totalHeight);
-        ctx.fillStyle = '#0c0d11';
+        ctx.fillStyle = T.bg;
         ctx.fillRect(0, 0, containerWidth, totalHeight);
 
-        ctx.strokeStyle = '#262932';
+        ctx.strokeStyle = T.line;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(padding.left, padding.top);
@@ -4313,15 +4215,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const seconds = Math.floor((time - minutes) * 60);
             const timeLabel = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-            ctx.strokeStyle = '#3a3d49';
+            ctx.strokeStyle = T.grid;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(x, padding.top);
             ctx.lineTo(x, totalHeight - padding.bottom);
             ctx.stroke();
 
-            ctx.fillStyle = '#9a9ca6';
-            ctx.font = '9px Geist, Inter, sans-serif';
+            ctx.fillStyle = T.muted;
+            ctx.font = '9px Manrope, system-ui, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(timeLabel, x, totalHeight - padding.bottom + 16);
         }
@@ -4342,12 +4244,12 @@ document.addEventListener('DOMContentLoaded', () => {
             activities.forEach((activity, index) => {
                 const y = padding.top + index * (rowHeight + rowSpacing);
                 const playerColor = getSlotColor(activity.Slot);
-                const teamLabel = activity.Team === 2 ? 'RADIANT' : 'DIRE';
+                const teamLabel = activity.Team === 2 ? 'Radiant' : 'Dire';
 
-                ctx.fillStyle = '#14161b';
+                ctx.fillStyle = T.row;
                 ctx.fillRect(padding.left, y, graphWidth, rowHeight);
 
-                ctx.strokeStyle = '#262932';
+                ctx.strokeStyle = T.line;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(padding.left, y, graphWidth, rowHeight);
 
@@ -4368,14 +4270,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.strokeRect(startX, y + 5, barWidth, rowHeight - 10);
                 });
 
-                ctx.fillStyle = '#ecebe6';
-                ctx.font = '12px Geist, Inter, sans-serif';
+                ctx.fillStyle = T.text;
+                ctx.font = '12px Manrope, system-ui, sans-serif';
                 ctx.textAlign = 'left';
                 const playerName = activity.Name || `Slot ${activity.Slot}`;
                 ctx.fillText(playerName, 10, y + rowHeight / 2 + 4);
 
-                ctx.fillStyle = '#6d707c';
-                ctx.font = '10px Geist, Inter, sans-serif';
+                ctx.fillStyle = T.faint;
+                ctx.font = '10px Manrope, system-ui, sans-serif';
                 ctx.fillText(teamLabel, 10, y + rowHeight - 5);
 
                 if (activity.Hero) {
@@ -4393,12 +4295,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.drawImage(img, iconX, iconY, iconSize, iconSize);
                         ctx.restore();
                     } else {
-                        ctx.fillStyle = '#3a3d49';
+                        ctx.fillStyle = T.grid;
                         ctx.beginPath();
                         ctx.arc(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.fillStyle = '#ecebe6';
-                        ctx.font = '9px Geist, Inter, sans-serif';
+                        ctx.fillStyle = T.text;
+                        ctx.font = '9px Manrope, system-ui, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.fillText(activity.Hero ? activity.Hero.substring(0, 3).toUpperCase() : '?', iconX + iconSize / 2, iconY + iconSize / 2 + 3);
                     }
@@ -4524,6 +4426,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Player names come straight from the replay, so everything here is escaped.
+    function playerOptionHtml(option, withChevron) {
+        const iconUrl = option.hero ? getHeroIconUrl(option.hero) : null;
+        const color = getSlotColor(option.slot);
+        let html = '';
+        if (iconUrl) html += `<img src="${esc(iconUrl)}" alt="" class="player-selector-icon" loading="lazy">`;
+        else if (option.key) html += `<span class="player-selector-icon blank" style="--slot:${esc(color)}"></span>`;
+        html += `<span class="player-selector-name" style="color: ${esc(color)}">${esc(option.name)}</span>`;
+        if (option.hero) html += `<span class="player-selector-hero">${esc(option.hero)}</span>`;
+        if (option.reportCount > 0) html += `<span class="player-selector-count">${esc(option.reportCount)} report${option.reportCount !== 1 ? 's' : ''}</span>`;
+        if (withChevron) html += '<span class="select-chevron" aria-hidden="true"></span>';
+        return html;
+    }
+
     function renderPlayerSelector() {
         playerSelectorDropdown.innerHTML = '';
         
@@ -4532,19 +4448,8 @@ document.addEventListener('DOMContentLoaded', () => {
             optionEl.className = 'custom-select-option';
             optionEl.dataset.key = option.key;
             
-            const iconUrl = option.hero ? getHeroIconUrl(option.hero) : null;
-            const playerColor = getSlotColor(option.slot);
-            
-            let html = '';
-            if (iconUrl) {
-                html += `<img src="${iconUrl}" alt="${option.hero}" class="player-selector-icon" onerror="this.style.display='none'">`;
-            }
-            html += `<span class="player-selector-name" style="color: ${playerColor}">${option.name}</span>`;
-            if (option.reportCount > 0) {
-                html += `<span class="player-selector-count">${option.reportCount} report${option.reportCount !== 1 ? 's' : ''}</span>`;
-            }
-            
-            optionEl.innerHTML = html;
+            if (option.key === currentSelectedPlayer || (!option.key && !currentSelectedPlayer)) optionEl.classList.add('selected');
+            optionEl.innerHTML = playerOptionHtml(option, false);
             optionEl.addEventListener('click', () => {
                 selectPlayerOption(option.key);
                 playerSelectorDropdown.classList.add('hidden');
@@ -4554,7 +4459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function selectPlayerOption(key) {
-        console.log(`[FRONTEND] selectPlayerOption called with key: "${key}"`);
+        dbg(`[FRONTEND] selectPlayerOption called with key: "${key}"`);
         currentSelectedPlayer = key || null;
         const option = playerSelectorOptions.find(o => o.key === key);
         
@@ -4574,26 +4479,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (option) {
-            console.log(`[FRONTEND] Found option for key "${key}":`, { slot: option.slot, name: option.name, reportCount: option.reportCount });
-            const iconUrl = option.hero ? getHeroIconUrl(option.hero) : null;
-            const playerColor = getSlotColor(option.slot);
-            
-            let html = '';
-            if (iconUrl) {
-                html += `<img src="${iconUrl}" alt="${option.hero}" class="player-selector-icon" onerror="this.style.display='none'">`;
-            }
-            html += `<span class="player-selector-name" style="color: ${playerColor}">${option.name}</span>`;
-            if (option.reportCount > 0) {
-                html += `<span class="player-selector-count">${option.reportCount} report${option.reportCount !== 1 ? 's' : ''}</span>`;
-            }
-            html += '<span class="select-chevron">▼</span>';
-            playerSelectorDisplay.innerHTML = html;
+            dbg(`[FRONTEND] Found option for key "${key}":`, { slot: option.slot, name: option.name, reportCount: option.reportCount });
+            playerSelectorDisplay.innerHTML = playerOptionHtml(option, true);
+            playerSelectorDropdown.querySelectorAll('.custom-select-option').forEach(el => el.classList.toggle('selected', el.dataset.key === (option.key || '')));
         } else {
-            playerSelectorDisplay.innerHTML = '<span class="select-placeholder">Select a player...</span><span class="select-chevron">▼</span>';
+            playerSelectorDisplay.innerHTML = '<span class="select-placeholder">Select a player...</span><span class="select-chevron" aria-hidden="true"></span>';
         }
         
         const matchIndex = parseInt(matchSelector.value);
-        console.log(`[FRONTEND] Rendering graph with matchIndex: ${matchIndex}, playerFilter: "${currentSelectedPlayer}", currentGraphView: "${currentGraphView}"`);
+        dbg(`[FRONTEND] Rendering graph with matchIndex: ${matchIndex}, playerFilter: "${currentSelectedPlayer}", currentGraphView: "${currentGraphView}"`);
         if (matchIndex >= 0 && matchIndex < allMatchData.length) {
             renderCurrentGraph(allMatchData[matchIndex], currentSelectedPlayer);
             updateGraphsForPlayer(currentSelectedPlayer);
@@ -4656,6 +4550,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateGraphViewTabs();
 
+    // Canvases are drawn at a fixed pixel size: redraw when the space or the theme changes.
+    let lastGraphWidth = 0, resizeTimer = null;
+    function redrawGraph(force) {
+        const tab = document.getElementById('results-tab');
+        const i = parseInt(matchSelector.value);
+        if (!tab || !tab.classList.contains('active') || !(i >= 0 && i < allMatchData.length)) return;
+        const w = timelineGraphContainer.clientWidth;
+        if (!force && Math.abs(w - lastGraphWidth) < 24) return;
+        lastGraphWidth = w;
+        renderCurrentGraph(allMatchData[i], currentSelectedPlayer);
+    }
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => redrawGraph(false), 220); });
+    document.addEventListener('ledger:theme', () => {
+        redrawGraph(true);
+        if (allMatchData.length) { try { updateGraphsForPlayer(currentSelectedPlayer); } catch (_) {} }
+    });
+    const resultsTabBtn = document.querySelector('.workflow-tab[data-tab="results"]');
+    if (resultsTabBtn) resultsTabBtn.addEventListener('click', () => requestAnimationFrame(() => redrawGraph(false)));
+
     matchSelector.addEventListener('change', (e) => {
         const index = parseInt(e.target.value);
         if (index >= 0 && index < allMatchData.length) {
@@ -4665,18 +4578,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (analysisSteamID) {
                     steamIDToMatch = String(analysisSteamID);
-                    console.log('[MatchSelector] Using analysisSteamID:', steamIDToMatch);
+                    dbg('[MatchSelector] Using analysisSteamID:', steamIDToMatch);
                 } else {
                     const selectedProfile = getSelectedProfile();
                     if (selectedProfile && selectedProfile.id) {
                         steamIDToMatch = convertSteamIDTo64(String(selectedProfile.id));
-                        console.log('[MatchSelector] Using profile SteamID (converted):', steamIDToMatch);
+                        dbg('[MatchSelector] Using profile SteamID (converted):', steamIDToMatch);
                     }
                 }
                 
                 if (steamIDToMatch) {
-                    console.log('[MatchSelector] Looking for Steam ID:', steamIDToMatch);
-                    console.log('[MatchSelector] Available players:', playerSelectorOptions.map(opt => ({ key: opt.key, steamID: String(opt.steamID), name: opt.name, slot: opt.slot })));
+                    dbg('[MatchSelector] Looking for Steam ID:', steamIDToMatch);
+                    dbg('[MatchSelector] Available players:', playerSelectorOptions.map(opt => ({ key: opt.key, steamID: String(opt.steamID), name: opt.name, slot: opt.slot })));
                     
                     const matchingPlayer = playerSelectorOptions.find(opt => {
                         if (!opt.steamID) return false;
@@ -4684,11 +4597,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     
                     if (matchingPlayer) {
-                        console.log('[MatchSelector] Found matching player, selecting:', matchingPlayer.key, matchingPlayer.name);
+                        dbg('[MatchSelector] Found matching player, selecting:', matchingPlayer.key, matchingPlayer.name);
                         playerToSelect = matchingPlayer.key;
                     } else {
-                        console.log('[MatchSelector] No matching player found for Steam ID:', steamIDToMatch);
-                        console.log('[MatchSelector] Player SteamIDs:', playerSelectorOptions.map(opt => ({ name: opt.name, steamID: String(opt.steamID || 'null'), slot: opt.slot })));
+                        dbg('[MatchSelector] No matching player found for Steam ID:', steamIDToMatch);
+                        dbg('[MatchSelector] Player SteamIDs:', playerSelectorOptions.map(opt => ({ name: opt.name, steamID: String(opt.steamID || 'null'), slot: opt.slot })));
                     }
                 }
                 
@@ -4725,18 +4638,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (currentSelectedPlayer) {
                     const stillExists = playerSelectorOptions.find(opt => opt.key === currentSelectedPlayer);
                     if (stillExists) {
-                        console.log('[MatchSelector] Keeping current selection:', currentSelectedPlayer);
+                        dbg('[MatchSelector] Keeping current selection:', currentSelectedPlayer);
                         selectPlayerOption(currentSelectedPlayer);
                     } else {
                         if (analysisSteamID) {
                             const steamIDFilter = `steamid_${analysisSteamID}`;
                             const matchingPlayer = playerSelectorOptions.find(opt => opt.steamID && steamIDsMatch(opt.steamID, analysisSteamID));
                             if (matchingPlayer) {
-                                console.log('[MatchSelector] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
+                                dbg('[MatchSelector] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
                                 currentSelectedPlayer = matchingPlayer.key;
                                 selectPlayerOption(matchingPlayer.key);
                             } else {
-                            console.log('[MatchSelector] Current selection not found, using SteamID filter:', steamIDFilter);
+                            dbg('[MatchSelector] Current selection not found, using SteamID filter:', steamIDFilter);
                             currentSelectedPlayer = steamIDFilter;
                             const matchingOption = playerSelectorOptions.find(opt => opt.key === steamIDFilter);
                             if (!matchingOption) {
@@ -4754,7 +4667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             selectPlayerOption(steamIDFilter);
                             }
                         } else {
-                            console.log('[MatchSelector] Current selection not found in new match, showing all players');
+                            dbg('[MatchSelector] Current selection not found in new match, showing all players');
                             currentSelectedPlayer = null;
                             renderCurrentGraph(allMatchData[index], null);
                             updateGraphsForPlayer(null);
@@ -4764,12 +4677,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (analysisSteamID) {
                         const matchingPlayer = playerSelectorOptions.find(opt => opt.steamID && steamIDsMatch(opt.steamID, analysisSteamID));
                         if (matchingPlayer) {
-                            console.log('[MatchSelector] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
+                            dbg('[MatchSelector] Found matching player for analysisSteamID, selecting:', matchingPlayer.key);
                             currentSelectedPlayer = matchingPlayer.key;
                             selectPlayerOption(matchingPlayer.key);
                         } else {
                         const steamIDFilter = `steamid_${analysisSteamID}`;
-                        console.log('[MatchSelector] No player to select but analysisSteamID exists, using SteamID filter:', steamIDFilter);
+                        dbg('[MatchSelector] No player to select but analysisSteamID exists, using SteamID filter:', steamIDFilter);
                         currentSelectedPlayer = steamIDFilter;
                         const matchingOption = playerSelectorOptions.find(opt => opt.key === steamIDFilter);
                         if (!matchingOption) {
@@ -4787,7 +4700,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectPlayerOption(steamIDFilter);
                         }
                     } else {
-                        console.log('[MatchSelector] No player to select, showing all players');
+                        dbg('[MatchSelector] No player to select, showing all players');
                         currentSelectedPlayer = null;
                         renderCurrentGraph(allMatchData[index], null);
                         updateGraphsForPlayer(null);
@@ -4835,7 +4748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             foundPlayer = closestPlayer;
                             const actualSteamID = String(closestPlayer.SteamID);
                             if (actualSteamID !== targetSteamID) {
-                                console.log('[filterDataByPlayer] Correcting SteamID from', targetSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
+                                dbg('[filterDataByPlayer] Correcting SteamID from', targetSteamID, 'to', actualSteamID, 'based on match.players (diff:', minDiff.toString(), ')');
                                 if (analysisSteamID === targetSteamID) {
                                     analysisSteamID = actualSteamID;
                                 }
@@ -4856,7 +4769,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (foundPlayer && foundPlayer.Slot != null && foundPlayer.Slot >= 0 && foundPlayer.Slot < 10) {
-                    console.log(`[filterDataByPlayer] Found player by SteamID ${targetSteamID}, using slot ${foundPlayer.Slot} for filtering`);
+                    dbg(`[filterDataByPlayer] Found player by SteamID ${targetSteamID}, using slot ${foundPlayer.Slot} for filtering`);
                     const playerOption = playerSelectorOptions.find(opt => opt.key === playerFilter);
                     if (playerOption && (!playerOption.slot || playerOption.slot !== foundPlayer.Slot)) {
                         playerOption.slot = foundPlayer.Slot;
@@ -4866,7 +4779,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const playerOption = playerSelectorOptions.find(opt => opt.key === playerFilter);
                     if (playerOption && playerOption.slot != null && playerOption.slot >= 0 && playerOption.slot < 10) {
-                        console.log(`[filterDataByPlayer] Using slot ${playerOption.slot} from playerSelectorOptions for filter ${playerFilter}`);
+                        dbg(`[filterDataByPlayer] Using slot ${playerOption.slot} from playerSelectorOptions for filter ${playerFilter}`);
                         effectiveFilter = `slot_${playerOption.slot}`;
                     } else {
                         let reportWithSlot = filteredReports.find(r => r.TargetSteamID && steamIDsMatch(r.TargetSteamID, targetSteamID) && r.TargetSlot != null && r.TargetSlot >= 0 && r.TargetSlot < 10);
@@ -4888,7 +4801,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (!effectiveFilter.startsWith('slot_')) {
                             if (reportWithSlot) {
-                                console.log(`[filterDataByPlayer] Found slot ${reportWithSlot.TargetSlot} from reports for SteamID ${targetSteamID}`);
+                                dbg(`[filterDataByPlayer] Found slot ${reportWithSlot.TargetSlot} from reports for SteamID ${targetSteamID}`);
                                 if (playerOption) {
                                     playerOption.slot = reportWithSlot.TargetSlot;
                                     renderPlayerSelector();
@@ -4946,7 +4859,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             renderPlayerSelector();
                         }
                         effectiveFilter = `slot_${targetSlot}`;
-                        console.log(`[filterDataByPlayer] Found slot ${targetSlot} from reports with matching normalized SteamID, switching to slot filter`);
+                        dbg(`[filterDataByPlayer] Found slot ${targetSlot} from reports with matching normalized SteamID, switching to slot filter`);
                     }
                 }
             }
@@ -4955,13 +4868,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 filteredReports = filteredReports.filter(r => r.TargetSlot === targetSlot);
             } else if (effectiveFilter.startsWith('steamid_')) {
                 const targetSteamID = String(effectiveFilter.replace('steamid_', '')).trim();
-                console.log(`[filterDataByPlayer] Filtering by TargetSteamID: "${targetSteamID}"`);
+                dbg(`[filterDataByPlayer] Filtering by TargetSteamID: "${targetSteamID}"`);
                 filteredReports = filteredReports.filter(r => {
                     if (!r.TargetSteamID) return false;
                     const reportTargetSteamID = String(r.TargetSteamID).trim();
                     return steamIDsMatch(reportTargetSteamID, targetSteamID);
                 });
-                console.log(`[filterDataByPlayer] Filtered to ${filteredReports.length} reports for TargetSteamID: ${targetSteamID}`);
+                dbg(`[filterDataByPlayer] Filtered to ${filteredReports.length} reports for TargetSteamID: ${targetSteamID}`);
             }
             
             const countedSlots = new Set();
@@ -5143,7 +5056,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        console.log('Player Reports Per Match - Using Steam ID:', targetSteamID, 'Filter:', steamIDFilter);
+        dbg('Player Reports Per Match - Using Steam ID:', targetSteamID, 'Filter:', steamIDFilter);
         
         const filteredMatchData = filterDataByPlayer(allMatchDataOriginal, steamIDFilter);
         
@@ -5173,6 +5086,8 @@ document.addEventListener('DOMContentLoaded', () => {
             playerReportsPerMatchChart.destroy();
         }
         
+        if (typeof Chart === 'undefined') return;
+        const T = LedgerUI.canvasTheme();
         const ctx = document.getElementById('playerReportsPerMatchChart').getContext('2d');
         playerReportsPerMatchChart = new Chart(ctx, {
             type: 'bar',
@@ -5181,8 +5096,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Unique Reporters',
                     data: reportsPerMatch,
-                    backgroundColor: '#ff9b54',
-                    borderColor: '#a88f56',
+                    backgroundColor: T.accent,
+                    borderColor: T.accent,
                     borderWidth: 1
                 }]
             },
@@ -5192,28 +5107,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: {
                     legend: {
                         labels: {
-                            color: '#ecebe6'
+                            color: T.text
                         }
                     },
                     title: {
                         display: true,
                         text: `Unique Reporters Per Match (Steam ID: ${targetSteamID})`,
-                        color: '#ecebe6',
+                        color: T.text,
                         font: { size: 14, weight: 'bold' }
                     }
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#9a9ca6' },
-                        grid: { color: '#262932' }
+                        ticks: { color: T.muted },
+                        grid: { color: T.line }
                     },
                     y: {
                         ticks: { 
-                            color: '#9a9ca6',
+                            color: T.muted,
                             stepSize: 1,
                             precision: 0
                         },
-                        grid: { color: '#262932' },
+                        grid: { color: T.line },
                         beginAtZero: true
                     }
                 }
@@ -5228,6 +5143,8 @@ document.addEventListener('DOMContentLoaded', () => {
         totalUnconfirmedTeamReports, totalUnconfirmedEnemyReports, playerFilter) {
         chartInstances.forEach(chart => chart.destroy());
         chartInstances = [];
+        const T = LedgerUI.canvasTheme();
+        const chartsReady = typeof Chart !== 'undefined';
 
         // Calculate and display total unique report counts for current match/selection
         const totalFriendly = totalTeamReports;
@@ -5290,18 +5207,18 @@ document.addEventListener('DOMContentLoaded', () => {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#ecebe6'
+                        color: T.text
                     }
                 }
             },
             scales: {
                 x: {
-                    ticks: { color: '#9a9ca6' },
-                    grid: { color: '#262932' }
+                    ticks: { color: T.muted },
+                    grid: { color: T.line }
                 },
                 y: {
-                    ticks: { color: '#9a9ca6' },
-                    grid: { color: '#262932' }
+                    ticks: { color: T.muted },
+                    grid: { color: T.line }
                 }
             }
         };
@@ -5319,7 +5236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             unconfirmedTitle.style.display = hasUnconfirmed ? 'block' : 'none';
         }
 
-        if (totalUnconfirmedTeamReports + totalUnconfirmedEnemyReports > 0) {
+        if (chartsReady && totalUnconfirmedTeamReports + totalUnconfirmedEnemyReports > 0) {
             const unconfirmedTeamEnemyCtx = document.getElementById('unconfirmedTeamEnemyChart').getContext('2d');
             chartInstances.push(new Chart(unconfirmedTeamEnemyCtx, {
                 type: 'doughnut',
@@ -5327,8 +5244,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: ['Team Reports', 'Enemy Reports'],
                     datasets: [{
                         data: [totalUnconfirmedTeamReports, totalUnconfirmedEnemyReports],
-                        backgroundColor: ['#5fd0a0', '#ff5d6c'],
-                        borderColor: ['#3fae82', '#e0434f'],
+                        backgroundColor: [T.good, T.bad],
+                        borderColor: [T.good, T.bad],
                         borderWidth: 2
                     }]
                 },
@@ -5339,7 +5256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: {
                             display: true,
                             text: 'Unconfirmed: Team vs Enemy',
-                            color: '#ecebe6',
+                            color: T.text,
                             font: { size: 14, weight: 'bold' }
                         }
                     }
@@ -5354,8 +5271,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     datasets: [{
                         label: 'Unconfirmed Reports',
                         data: [totalUnconfirmedTeamReports, totalUnconfirmedEnemyReports],
-                        backgroundColor: '#e9b44c',
-                        borderColor: '#c4902f',
+                        backgroundColor: T.warn,
+                        borderColor: T.warn,
                         borderWidth: 1
                     }]
                 },
@@ -5366,7 +5283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: {
                             display: true,
                             text: 'Unconfirmed Reports by Team',
-                            color: '#ecebe6',
+                            color: T.text,
                             font: { size: 14, weight: 'bold' }
                         }
                     },
@@ -5391,15 +5308,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             {
                                 label: 'Team Reports',
                                 data: matchData.map(m => m.unconfirmedTeamReports),
-                                backgroundColor: '#5fd0a0',
-                                borderColor: '#3fae82',
+                                backgroundColor: T.good,
+                                borderColor: T.good,
                                 borderWidth: 1
                             },
                             {
                                 label: 'Enemy Reports',
                                 data: matchData.map(m => m.unconfirmedEnemyReports),
-                                backgroundColor: '#ff5d6c',
-                                borderColor: '#e0434f',
+                                backgroundColor: T.bad,
+                                borderColor: T.bad,
                                 borderWidth: 1
                             }
                         ]
@@ -5411,7 +5328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             title: {
                                 display: true,
                                 text: 'Unconfirmed Reports Per Match',
-                                color: '#ecebe6',
+                                color: T.text,
                                 font: { size: 14, weight: 'bold' }
                             }
                         },
@@ -5445,16 +5362,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         {
                             label: 'Team Reports',
                             data: unconfirmedFriendlyData,
-                            backgroundColor: '#5fd0a080',
-                            borderColor: '#5fd0a0',
+                            backgroundColor: T.good + '80',
+                            borderColor: T.good,
                             borderWidth: 2,
                             pointRadius: 5
                         },
                         {
                             label: 'Enemy Reports',
                             data: unconfirmedEnemyData,
-                            backgroundColor: '#ff5d6c80',
-                            borderColor: '#ff5d6c',
+                            backgroundColor: T.bad + '80',
+                            borderColor: T.bad,
                             borderWidth: 2,
                             pointRadius: 5
                         }
@@ -5467,7 +5384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: {
                             display: true,
                             text: 'Unconfirmed Reports Timeline (Match Minutes)',
-                            color: '#ecebe6',
+                            color: T.text,
                             font: { size: 14, weight: 'bold' }
                         },
                         tooltip: {
@@ -5486,7 +5403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             title: {
                                 display: true,
                                 text: 'Match Time (minutes)',
-                                color: '#9a9ca6'
+                                color: T.muted
                             }
                         },
                         y: {
@@ -5502,7 +5419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             title: {
                                 display: true,
                                 text: 'Report Type',
-                                color: '#9a9ca6'
+                                color: T.muted
                             }
                         }
                     }
@@ -5522,8 +5439,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         datasets: [{
                             label: 'Unconfirmed Report Count',
                             data: unconfirmedTopReportersArray.map(p => p[1]),
-                            backgroundColor: '#e9b44c',
-                            borderColor: '#c4902f',
+                            backgroundColor: T.warn,
+                            borderColor: T.warn,
                             borderWidth: 1
                         }]
                     },
@@ -5535,7 +5452,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             title: {
                                 display: true,
                                 text: 'Top Reporters (Unconfirmed)',
-                                color: '#ecebe6',
+                                color: T.text,
                                 font: { size: 14, weight: 'bold' }
                             }
                         },

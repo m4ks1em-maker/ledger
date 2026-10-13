@@ -4,11 +4,12 @@ gate/data/
 *.log
 
 # the replay engine is downloaded by setup.bat, not stored here
+engine/
 server.exe
 bot.exe
-server
-bot
-assets/
+/server
+/bot
+/assets/
 
 # replays
 *.dem

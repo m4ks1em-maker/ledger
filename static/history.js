@@ -1,46 +1,5 @@
-// Retry utility with exponential backoff
-async function fetchWithRetry(url, options = {}, maxRetries = 3, baseDelay = 1000) {
-    let lastError;
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => '');
-                if (response.status >= 500 && attempt < maxRetries) {
-                    throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
-                }
-                throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            return response;
-        } catch (error) {
-            lastError = error;
-            if (attempt < maxRetries) {
-                const isConnectionError = error.name === 'AbortError' || 
-                                        error.message.includes('Failed to fetch') ||
-                                        error.message.includes('NetworkError') ||
-                                        error.message.includes('timeout');
-                
-                if (isConnectionError || (error.message && error.message.includes('500'))) {
-                    const delay = baseDelay * Math.pow(2, attempt);
-                    console.log(`Request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`, error.message);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
-                }
-            }
-            throw error;
-        }
-    }
-    throw lastError;
-}
-
+// Debug output is off unless you run `window.LEDGER_DEBUG = true` in the console.
+const dbgH = (...a) => { if (window.LEDGER_DEBUG) console.log(...a); };
 // Check if Steam connection is ready and wait if needed
 async function waitForSteamConnection(maxWait = 30000, checkInterval = 1000) {
     const startTime = Date.now();
@@ -87,6 +46,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.getSelectedProfileName = getSelectedProfileName;
 
+    function normalizeSteamId(v) {
+        const s = String(v || '').trim();
+        const m = /^\[?U:1:(\d+)\]?$/i.exec(s);
+        try {
+            if (m) return (BigInt(m[1]) + 76561197960265728n).toString();
+            if (/^\d{1,20}$/.test(s)) { const n = BigInt(s); return (n < 76561197960265728n ? n + 76561197960265728n : n).toString(); }
+        } catch (_) {}
+        return '';
+    }
+    function showError(host, message, retry) {
+        host.textContent = '';
+        const p = document.createElement('div');
+        p.className = 'list-empty bad';
+        const t = document.createElement('span');
+        t.textContent = String(message || 'Something went wrong.').slice(0, 300);
+        p.appendChild(t);
+        if (retry) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'btn small-btn'; b.textContent = 'Try again';
+            b.addEventListener('click', retry);
+            p.appendChild(b);
+        }
+        host.appendChild(p);
+    }
+
     // Load saved Steam ID for history
     const savedHistorySteamId = localStorage.getItem('historySteamId');
     const savedHistoryLimit = localStorage.getItem('historyLimit');
@@ -109,12 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     fetchHistoryBtn.addEventListener('click', async () => {
-        const steamId = historySteamIdInput.value.trim();
-        const limit = historyLimitInput.value;
+        const steamId = normalizeSteamId(historySteamIdInput.value);
+        const limit = Math.max(1, Math.min(100, parseInt(historyLimitInput.value, 10) || 10));
         const turboOnly = historyTurboOnlyCheckbox.checked;
         
         if (!steamId) {
-            alert('Please enter a Steam ID');
+            LedgerUI.toast('Enter a Steam ID first.', 'info');
+            historySteamIdInput.focus();
             return;
         }
 
@@ -127,18 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 historyResults.innerHTML = '<p class="loading">Waiting for Steam connection...</p>';
                 const connected = await waitForSteamConnection(30000);
                 if (!connected) {
-                    alert('Steam connection required. Please connect to Steam first.');
-                    historyResults.innerHTML = '<p style="color:red">Steam connection timeout. Please connect to Steam and try again.</p>';
+                    showError(historyResults, 'Connect to Steam in Settings first.', () => fetchHistoryBtn.click());
                     return;
                 }
             }
         } catch (err) {
             console.error('Error checking Steam status:', err);
-            historyResults.innerHTML = '<p style="color:red">Error checking Steam connection status. Retrying...</p>';
+            historyResults.innerHTML = '<p class="loading">Checking the Steam connection...</p>';
             const connected = await waitForSteamConnection(15000);
             if (!connected) {
-                alert('Error checking Steam connection status.');
-                historyResults.innerHTML = '<p style="color:red">Could not verify Steam connection.</p>';
+                showError(historyResults, 'Could not check the Steam connection. Is the engine running?', () => fetchHistoryBtn.click());
                 return;
             }
         }
@@ -146,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         historyResults.innerHTML = '<p class="loading">Fetching match history...</p>';
         
         const turboParam = turboOnly ? '&turboOnly=true' : '';
-        fetchWithRetry(`/api/history?steamId=${steamId}&limit=${limit}${turboParam}`, {}, 3, 1000)
+        fetchWithRetry(`/api/history?steamId=${encodeURIComponent(steamId)}&limit=${limit}${turboParam}`, { timeout: 120000 }, 2, 1000)
             .then(res => res.json())
             .then(matches => {
                 renderHistory(matches);
@@ -156,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             })
             .catch(err => {
-                historyResults.innerHTML = `<p style="color:red">Error: ${err.message}. <button onclick="location.reload()" style="margin-left: 10px; padding: 4px 8px;">Retry</button></p>`;
+                showError(historyResults, err.message, () => fetchHistoryBtn.click());
             });
     });
 
@@ -178,13 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `
                         <li class="history-item" id="history-match-${m.id}">
                             <div class="match-row">
-                                <span class="match-id">Match ${m.id}</span>
+                                <span class="match-id">Match ${esc(m.id)}</span>
                             </div>
-                    <div class="match-actions" style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <span class="status-pill status-pending" id="status-${m.id}" style="visibility: hidden; min-width: 90px; text-align: center;">Checking...</span>
-                        <button class="small-btn download-btn" data-match="${m.id}" style="min-width: 130px;">Download Replay</button>
-                        <div class="progress-container hidden" id="progress-container-${m.id}" style="flex: 1; margin: 0 10px; height: 6px; background: #262932; border-radius: 3px;">
-                             <div class="progress-bar" id="progress-${m.id}" style="width: 0%; height: 100%; background: #5fd0a0; border-radius: 3px; transition: width 0.2s;"></div>
+                    <div class="match-actions">
+                        <span class="status-pill status-pending" id="status-${m.id}" style="visibility: hidden;">Checking...</span>
+                        <button class="btn small-btn download-btn" data-match="${esc(m.id)}">Download Replay</button>
+                        <div class="progress-container mini hidden" id="progress-container-${m.id}">
+                             <div class="progress-bar" id="progress-${m.id}"></div>
                         </div>
                         </div>
                     </li>
@@ -205,13 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `
                     <li class="history-item" id="history-match-${m.id}">
                         <div class="match-row">
-                            <span class="match-id">Match ${m.id}</span>
+                            <span class="match-id">Match ${esc(m.id)}</span>
                         </div>
-                        <div class="match-actions" style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <span class="status-pill status-pending" id="status-${m.id}" style="visibility: hidden; min-width: 90px; text-align: center;">Checking...</span>
-                            <button class="small-btn download-btn" data-match="${m.id}" style="min-width: 130px;">Download Replay</button>
-                            <div class="progress-container hidden" id="progress-container-${m.id}" style="flex: 1; margin: 0 10px; height: 6px; background: #262932; border-radius: 3px;">
-                                 <div class="progress-bar" id="progress-${m.id}" style="width: 0%; height: 100%; background: #5fd0a0; border-radius: 3px; transition: width 0.2s;"></div>
+                        <div class="match-actions">
+                            <span class="status-pill status-pending" id="status-${m.id}" style="visibility: hidden;">Checking...</span>
+                            <button class="btn small-btn download-btn" data-match="${esc(m.id)}">Download Replay</button>
+                            <div class="progress-container mini hidden" id="progress-container-${m.id}">
+                                 <div class="progress-bar" id="progress-${m.id}"></div>
                             </div>
                         </div>
                     </li>
@@ -252,13 +235,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!currentlyExists) {
                             item.classList.add('exists');
                         }
-                        if (btn && btn.textContent !== 'Redownload') { 
+                        if (btn && srcText(btn) !== 'Redownload') { 
                             btn.textContent = 'Redownload'; 
-                            btn.style.display = 'inline-block';
+                            btn.style.display = 'inline-flex';
                             btn.disabled = false;
                         }
                         if (status) {
-                            if (status.textContent !== 'Downloaded') {
+                            if (srcText(status) !== 'Downloaded') {
                                 status.textContent = 'Downloaded';
                             }
                             if (!status.classList.contains('status-success')) {
@@ -272,9 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (currentlyExists) {
                             item.classList.remove('exists');
                         }
-                        if (btn && btn.textContent !== 'Download Replay') { 
+                        if (btn && srcText(btn) !== 'Download Replay') { 
                             btn.textContent = 'Download Replay'; 
-                            btn.style.display = 'inline-block';
+                            btn.style.display = 'inline-flex';
                             btn.disabled = false;
                         }
                         if (status && status.style.visibility !== 'hidden') {
@@ -427,11 +410,12 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchWithRetry('/api/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                timeout: 15 * 60000,
                 body: JSON.stringify({ 
                     matchId: parseInt(matchId),
                     profileName: profileName
                 })
-            }, 3, 2000)
+            }, 0, 2000)
             .then(res => res.json())
             .then(data => {
                 eventSource.close();
@@ -485,8 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .finally(() => {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = 'Redownload';
-                    btn.style.display = 'inline-block';
+                    btn.textContent = status && status.classList.contains('status-error') ? 'Retry' : 'Redownload';
+                    btn.style.display = 'inline-flex';
                 }
                 if (progressContainer) progressContainer.classList.add('hidden');
                 if (progressBar) {
@@ -548,23 +532,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (findFatalGamesBtn) {
         findFatalGamesBtn.addEventListener('click', async () => {
-            const steamId = fatalSteamIdInput ? fatalSteamIdInput.value.trim() : '';
+            const steamId = fatalSteamIdInput ? normalizeSteamId(fatalSteamIdInput.value) : '';
             const maxDepth = fatalMaxDepthInput ? parseInt(fatalMaxDepthInput.value) : 1;
             const fatalGamesPerInput = document.getElementById('fatal-games-per');
             const gamesPerFatal = fatalGamesPerInput ? parseInt(fatalGamesPerInput.value) : 2;
             const profileName = getSelectedProfileName();
 
             if (!steamId) {
-                alert('Please enter a Steam ID');
+                LedgerUI.toast('Enter a Steam ID first.', 'info');
                 return;
             }
 
-            if (maxDepth < 1 || maxDepth > 10) {
+            if (!(maxDepth >= 1 && maxDepth <= 10)) {
                 alert('Max depth must be between 1 and 10');
                 return;
             }
 
-            if (gamesPerFatal < 1 || gamesPerFatal > 15) {
+            if (!(gamesPerFatal >= 1 && gamesPerFatal <= 15)) {
                 alert('Games per fatal must be between 1 and 15');
                 return;
             }
@@ -580,24 +564,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const connected = await waitForSteamConnection(30000);
                     if (!connected) {
-                        alert('Steam connection required. Please connect to Steam first.');
-                        if (fatalResults) {
-                            fatalResults.innerHTML = '<p style="color:red">Steam connection timeout. Please connect to Steam and try again.</p>';
-                        }
+                        if (fatalResults) showError(fatalResults, 'Connect to Steam in Settings first.', () => findFatalGamesBtn.click());
                         return;
                     }
                 }
             } catch (err) {
                 console.error('Error checking Steam status:', err);
-                if (fatalResults) {
-                    fatalResults.innerHTML = '<p style="color:red">Error checking Steam connection status. Retrying...</p>';
-                }
+                if (fatalResults) fatalResults.innerHTML = '<p class="loading">Checking the Steam connection...</p>';
                 const connected = await waitForSteamConnection(15000);
                 if (!connected) {
-                    alert('Error checking Steam connection status.');
-                    if (fatalResults) {
-                        fatalResults.innerHTML = '<p style="color:red">Could not verify Steam connection.</p>';
-                    }
+                    if (fatalResults) showError(fatalResults, 'Could not check the Steam connection. Is the engine running?', () => findFatalGamesBtn.click());
                     return;
                 }
             }
@@ -609,13 +585,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchWithRetry('/api/fatal-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                timeout: 10 * 60000,
                 body: JSON.stringify({
                     steamId: steamId,
                     maxDepth: maxDepth,
                     gamesPerFatal: gamesPerFatal,
                     profileName: profileName
                 })
-            }, 3, 1000)
+            }, 0, 1000)
             .then(async res => {
                 if (!res.ok) {
                     const text = await res.text();
@@ -632,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     fatalResults.innerHTML = `
-                        <p style="margin-bottom: 10px;"><strong>Found ${matches.length} fatal game(s):</strong></p>
+                        <p class="list-head">Found ${matches.length} fatal game(s)</p>
                         <ul>
                             ${matches.map((match, index) => {
                                 const matchId = match.fatalMatchId || match;
@@ -641,16 +618,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const additionalMatchIds = match.additionalMatchIds || [];
                                 const matchData = JSON.stringify({ matchId, singleDraftId, singleDraftDate, gamesPerFatal, steamId, additionalMatchIds });
                                 return `
-                                <li class="history-item" style="margin-bottom: 8px;" id="fatal-item-${matchId}">
+                                <li class="history-item" id="fatal-item-${esc(matchId)}">
                                     <div class="match-row">
-                                        <span class="match-id">Fatal Match ${matchId}${singleDraftId ? ` (SD: ${singleDraftId})` : ''}</span>
+                                        <span class="match-id">Fatal match ${esc(matchId)}${singleDraftId ? ` (SD: ${esc(singleDraftId)})` : ''}</span>
                                     </div>
-                                    <div class="match-actions" style="margin-top: 8px;">
-                                        <button class="small-btn download-fatal-btn" data-match='${matchData}' id="download-btn-${matchId}">Download to Fatal</button>
-                                        <div class="download-progress" id="progress-${matchId}" style="display: none; margin-top: 8px;">
+                                    <div class="match-actions">
+                                        <button class="btn small-btn download-fatal-btn" data-match='${esc(matchData)}' id="download-btn-${matchId}">Download to Fatal</button>
+                                        <div class="download-progress" id="fatal-progress-${matchId}" style="display: none; margin-top: 8px;">
                                             <div style="display: flex; align-items: center; gap: 8px;">
-                                                <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #262932; border-top-color: #5fd0a0; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-                                                <span class="progress-text" style="font-size: 0.85em; color: #9a9ca6;">Downloading...</span>
+                                                <div class="spinner"></div>
+                                                <span class="progress-text">Downloading...</span>
                                             </div>
                                         </div>
                                     </div>
@@ -658,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             `;
                             }).join('')}
                         </ul>
-                        <button class="btn secondary-btn" id="download-all-fatal" style="margin-top: 10px;">Download All to Fatal</button>
+                        <button class="btn secondary-btn" id="download-all-fatal">Download all to Fatal</button>
                     `;
 
                     // Add event listeners for individual downloads
@@ -680,16 +657,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
             .catch(err => {
-                if (fatalResults) {
-                    fatalResults.innerHTML = `<p style="color:red">Error: ${err.message} <button onclick="document.getElementById('find-fatal-games').click()" style="margin-left: 10px; padding: 4px 8px;">Retry</button></p>`;
-                }
+                if (fatalResults) showError(fatalResults, err.message, () => findFatalGamesBtn.click());
             });
         });
     }
 
     function downloadFatalReplay(matchData, profileName, btn) {
         const matchId = matchData.matchId;
-        const progressDiv = document.getElementById(`progress-${matchId}`);
+        const progressDiv = document.getElementById(`fatal-progress-${matchId}`);
         const progressText = progressDiv ? progressDiv.querySelector('.progress-text') : null;
         
         if (btn) {
@@ -742,8 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return fetchWithRetry('/api/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            timeout: 20 * 60000,
             body: JSON.stringify(payload)
-        }, 3, 2000)
+        }, 0, 2000)
         .then(async res => {
             if (progressInterval) clearInterval(progressInterval);
             let data;
@@ -768,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 if (progressText) {
                     progressText.textContent = '✓ Downloaded';
-                    progressText.style.color = '#5fd0a0';
+                    progressText.style.color = 'var(--radiant)';
                 }
                 if (progressDiv) {
                     setTimeout(() => {
@@ -777,8 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (btn) {
                     btn.textContent = 'Downloaded';
-                    btn.style.color = '#5fd0a0';
-                    btn.style.display = 'inline-block';
+                    btn.style.color = 'var(--radiant)';
+                    btn.style.display = 'inline-flex';
                     btn.disabled = false;
                 }
                 if (window.browseDirectory) {
@@ -788,12 +764,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data.status === 'queued') {
                 if (progressText) {
                     progressText.textContent = '⏳ Queued for parsing...';
-                    progressText.style.color = '#e9b44c';
+                    progressText.style.color = 'var(--aegis)';
                 }
                 if (btn) {
                     btn.textContent = 'Queued';
-                    btn.style.color = '#e9b44c';
-                    btn.style.display = 'inline-block';
+                    btn.style.color = 'var(--aegis)';
+                    btn.style.display = 'inline-flex';
                     btn.disabled = false;
                 }
                 if (progressDiv) {
@@ -810,12 +786,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(progressInterval);
             if (progressText) {
                 progressText.textContent = '✗ Failed: ' + err.message;
-                progressText.style.color = '#ff5d6c';
+                progressText.style.color = 'var(--dire)';
             }
             if (btn) {
                 btn.disabled = false;
                 btn.textContent = 'Retry';
-                btn.style.display = 'inline-block';
+                btn.style.display = 'inline-flex';
             }
             if (progressDiv) {
                 setTimeout(() => {
@@ -830,58 +806,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadAllBtn = document.getElementById('download-all-fatal');
         if (downloadAllBtn) {
             downloadAllBtn.disabled = true;
-            downloadAllBtn.textContent = `Downloading ${matches.length}...`;
+            downloadAllBtn.textContent = `Downloading 0/${matches.length}...`;
         }
-
-        let completed = 0;
+        let completed = 0, failed = 0;
+        const finishOne = () => {
+            completed++;
+            if (downloadAllBtn) downloadAllBtn.textContent = `Downloading ${completed}/${matches.length}...`;
+            if (completed !== matches.length) return;
+            if (downloadAllBtn) {
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.textContent = failed ? `Done, ${failed} failed` : 'All downloaded';
+                downloadAllBtn.classList.toggle('warn', !!failed);
+            }
+            if (window.browseDirectory) setTimeout(() => window.browseDirectory(''), 500);
+        };
         matches.forEach((match, index) => {
             setTimeout(() => {
                 const matchId = match.fatalMatchId || match;
-                const singleDraftId = match.singleDraftMatchId || null;
-                const singleDraftDate = match.singleDraftDate || null;
-                const additionalMatchIds = match.additionalMatchIds || [];
                 const fatalSteamIdInput = document.getElementById('fatal-steam-id');
-                const steamId = fatalSteamIdInput ? fatalSteamIdInput.value.trim() : '';
-                const matchData = { matchId, singleDraftId, singleDraftDate, gamesPerFatal, steamId, additionalMatchIds };
-                
-                downloadFatalReplay(matchData, profileName, null)
-                .then(() => {
-                    completed++;
-                    if (downloadAllBtn) {
-                        downloadAllBtn.textContent = `Downloading ${completed}/${matches.length}...`;
-                    }
-                    if (completed === matches.length) {
-                        if (downloadAllBtn) {
-                            const failedCount = matches.length - completed;
-                            if (failedCount > 0) {
-                                downloadAllBtn.textContent = `Completed (${failedCount} failed)`;
-                                downloadAllBtn.style.color = '#e9b44c';
-                            } else {
-                                downloadAllBtn.textContent = 'All Downloaded';
-                                downloadAllBtn.style.color = '#5fd0a0';
-                            }
-                        }
-                        if (window.browseDirectory) {
-                            setTimeout(() => window.browseDirectory(''), 500);
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error(`Failed to download match ${matchId}:`, err);
-                    completed++;
-                    if (downloadAllBtn) {
-                        downloadAllBtn.textContent = `Downloading ${completed}/${matches.length}...`;
-                    }
-                    if (completed === matches.length) {
-                        if (downloadAllBtn) {
-                            downloadAllBtn.textContent = 'Completed (some may have failed)';
-                            downloadAllBtn.style.color = '#e9b44c';
-                        }
-                        if (window.browseDirectory) {
-                            setTimeout(() => window.browseDirectory(''), 500);
-                        }
-                    }
-                });
+                const matchData = {
+                    matchId,
+                    singleDraftId: match.singleDraftMatchId || null,
+                    singleDraftDate: match.singleDraftDate || null,
+                    gamesPerFatal,
+                    steamId: fatalSteamIdInput ? normalizeSteamId(fatalSteamIdInput.value) : '',
+                    additionalMatchIds: match.additionalMatchIds || []
+                };
+                const btn = document.getElementById(`download-btn-${matchId}`);
+                downloadFatalReplay(matchData, profileName, btn)
+                    .then(finishOne)
+                    .catch(() => { failed++; finishOne(); });
             }, index * 1000);
         });
     }

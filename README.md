@@ -1,89 +1,74 @@
-# Ledger
+<p align="center">
+  <img src="docs/banner.png" alt="Ledger: кто тебя зарепортил и на какой минуте" width="100%">
+</p>
 
-See who reported whom in Dota 2 matches, and the minute they did it. Look a player up by Steam ID,
-fetch their recent replays (no Steam login), and read the incoming and outgoing reports on a timeline.
+<p align="center">
+  <a href="https://t.me/m4ks1em"><img src="https://img.shields.io/badge/Купить_ключ-@m4ks1em-2AABEE?style=for-the-badge&logo=telegram&logoColor=white" alt="Купить ключ в Telegram"></a>
+  &nbsp;
+  <a href="https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Скачать-ZIP-9DB4FF?style=for-the-badge&logo=github&logoColor=0b1230" alt="Скачать ZIP"></a>
+</p>
 
-Everything sits behind an **access-key gate**. Nobody gets in, and nobody gets the admin panel,
-unless the person running it issues them a key.
+Ledger разбирает реплеи Dota 2 и показывает каждый репорт на таймлайне: от союзников и от врагов. Вставь Steam ID, и реплеи скачаются сами, без входа в Steam.
 
-**[Русская версия ниже](#русская-версия)**
+<p align="center"><img src="docs/steps.png" alt="Как начать" width="100%"></p>
 
-## Run it (Windows)
+Ссылки из шагов: [Telegram @m4ks1em](https://t.me/m4ks1em) · [Download ZIP](https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip) · [Node.js](https://nodejs.org)
 
-1. Install [Node.js](https://nodejs.org) (LTS).
-2. Run `setup.bat` once. It downloads the replay engine from
-   [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT).
-3. Run `start.bat`. Open <http://localhost:8080>.
-4. On the **first** start the console prints an admin password once (`admin-…`). Write it down.
-   It is stored only as a salted scrypt hash. Lost it? `node gate\gate.js passwd "new password"`.
-5. Sign in with that password, open **Keys** and issue keys for other people
-   (name, validity, number of devices, role).
+Один ключ работает на одном компьютере. Реплеи разбираются у тебя на ПК, наружу уходит только проверка ключа. Без интернета Ledger работает до 3 дней.
 
-## Who can do what
+## Как это выглядит
 
-| | Admin (password or admin key) | Viewer key |
-|---|---|---|
-| Look up players, fetch and analyse replays, upload `.dem` | yes | yes |
-| Stats, Player, export CSV/JSON | yes | yes |
-| Settings, Steam login, delete replays | yes | no |
-| Issue / revoke keys, activity log, auto-sync | yes | no |
+| Вход по ключу | Главная |
+|---|---|
+| <img src="docs/login.png" alt="Вход"> | <img src="docs/home.png" alt="Главная"> |
+| **Таймлайн матча** | **Статистика** |
+| <img src="docs/matches.png" alt="Матч"> | <img src="docs/stats.png" alt="Статистика"> |
 
-There are no default accounts and no keys in this repository. Keys are shown once and stored only as HMAC digests
-in `gate/data/` (git-ignored).
-
-## How replays are fetched
-
-The **Player lookup** tile asks [OpenDota](https://www.opendota.com) for a player's recent matches, then downloads the
-replay from Valve's replay servers. No Steam account is involved. Valve only keeps replays for a short time, so
-older matches can't be fetched; upload the `.dem` file instead (drag it onto the page).
-The player's profile must have *Expose Public Match Data* enabled.
-Steam login in the engine is optional and only for the owner.
-
-## Putting it online
-
-By default the gate listens on `127.0.0.1` only. To let others in, either
-
-- put a tunnel or reverse proxy in front of port 8080 (Cloudflare Tunnel, Caddy, nginx) and set
-  `COOKIE_SECURE=1 TRUST_PROXY=1`, or
-- set `GATE_HOST=0.0.0.0` and open port 8080.
-
-**Block port 8081 from the outside.** `server.exe` listens there with no protection; the gate is the only safe way in:
-
-```
-netsh advfirewall firewall add rule name="Ledger8081" dir=in action=block protocol=TCP localport=8081
-```
-
-## Settings (environment variables)
-
-`ADMIN_PASSWORD`, `GATE_PORT` (8080), `GATE_HOST` (127.0.0.1), `UPSTREAM` (http://127.0.0.1:8081),
-`COOKIE_SECURE`, `TRUST_PROXY`, `GATE_DATA_DIR`, `OPENDOTA_KEY` (optional API key), `OPENDOTA_BASE`.
-
-CLI: `node gate\gate.js passwd <password>` and `node gate\gate.js newkey "Name" 30 viewer`.
-
-## Limits worth knowing
-
-- Sessions live in memory. Restarting the gate signs everybody out.
-- The replay folder is shared by all keys.
-- Stats and saved players live in each person's browser.
-- Uploads are capped at 700 MB per file and the replay library at 8 GB.
-
-## Credits
-
-See [NOTICE.md](NOTICE.md). MIT licensed.
+- Поиск игрока по Steam ID: последние матчи, реплеи качаются с серверов Valve сами.
+- Перетащи `.dem` на страницу, если реплей уже удалён с серверов.
+- Входящие и исходящие репорты, активность на табло, сводка по союзникам и врагам.
+- Статистика по всем разобранным матчам, экспорт в CSV и JSON.
+- Автосинк новых матчей, тёмная и светлая тема, русский и английский.
 
 ---
 
-## Русская версия
+## Для владельца: сервер ключей
 
-Ledger показывает, кто на кого репортил в матчах Dota 2 и в какую минуту. Вводишь Steam ID игрока, сервис
-находит его последние матчи, скачивает реплеи (без входа в Steam) и рисует входящие и исходящие репорты.
+Ключи живут в базе на Cloudflare (бесплатный тариф, работает 24/7, твой ПК включать не нужно). Там же админка: выдать, продлить, отозвать ключ, отвязать компьютер.
 
-Всё закрыто **ключами доступа**. Внутрь и в админку попадает только тот, кому владелец выдал ключ.
+<p align="center"><img src="docs/admin.png" alt="Админка ключей" width="100%"></p>
 
-**Запуск (Windows):** установи Node.js, один раз запусти `setup.bat` (скачает движок), потом `start.bat` и открой
-<http://localhost:8080>. При первом запуске в консоли один раз напечатается админ-пароль, запиши его.
-Забыл: `node gate\gate.js passwd "новый пароль"`. Войди паролем, открой «Keys» и выдавай ключи людям.
+**Первый запуск (один раз):**
 
-**Важно:** порт 8081 закрой файрволом снаружи (команда выше). Реплеи старше нескольких дней Valve не хранит,
-такие загружай файлом `.dem`. По умолчанию сервис слушает только `127.0.0.1`; чтобы пустить людей, поставь перед
-ним Cloudflare Tunnel или Caddy и задай `COOKIE_SECURE=1 TRUST_PROXY=1`.
+1. Заведи бесплатный аккаунт на [cloudflare.com](https://dash.cloudflare.com/sign-up).
+2. Открой `cloud\deploy.bat`. Он попросит войти в Cloudflare в браузере, создаст базу, выложит сервер и спросит пароль для админки.
+3. В конце он запишет адрес сервера в `ledger.config.json`. Залей этот файл на GitHub, чтобы все новые загрузки знали, куда стучаться.
+4. Админка: `https://ledger-keys.<твой-поддомен>.workers.dev/admin`.
+
+**Продажа:** «Выдать ключ» → «Сообщение покупателю» копирует готовый текст с ключом и инструкцией, его остаётся вставить в Telegram.
+
+Обновить сервер после правок: снова `cloud\deploy.bat`. Сменить пароль: `cloud\deploy.bat --password`. Контакт в Telegram меняется в `cloud/wrangler.toml` (`TELEGRAM`).
+
+<details>
+<summary>Как устроено</summary>
+
+```
+браузер ──► gate (localhost:8080) ──► движок server.exe (localhost:8081)
+                │
+                └──► сервер ключей на Cloudflare (Worker + D1)
+```
+
+- `gate/` — локальное приложение на Node.js без зависимостей. Проверяет ключ, сам запускает и перезапускает движок.
+- `static/` — интерфейс.
+- `cloud/` — сервер ключей: `/v1/activate`, `/v1/check`, админка `/admin`. Ключи хранятся только как SHA-256.
+- Ключ привязан к компьютеру. Проверка раз в 10 минут; отозванный ключ выкидывает сразу, при оффлайне есть 3 дня запаса.
+- Движок: [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT), скачивается `setup.bat` в папку `engine/`.
+
+Настройки через переменные окружения: `GATE_PORT` (8080), `UPSTREAM`, `LICENSE_SERVER`, `OPENDOTA_KEY`, `LEDGER_NO_ENGINE=1`.
+</details>
+
+## English
+
+Ledger shows who reported whom in your Dota 2 matches and the minute they did it. Buy a key from [@m4ks1em](https://t.me/m4ks1em) on Telegram, download the ZIP, install [Node.js](https://nodejs.org) LTS, run `setup.bat` once and then `start.bat`, and paste your key. One key works on one computer.
+
+Credits and licences: see [NOTICE.md](NOTICE.md). MIT licensed.

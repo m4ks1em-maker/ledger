@@ -96,6 +96,55 @@
         'No Steam login. Ever.': 'Без входа в Steam. Никогда.', 'Ledger never asks for your Steam password or Guard code. Replays come from public data.': 'Ledger никогда не просит пароль Steam или код Guard. Реплеи берутся из публичных данных.',
         'Keys & activity': 'Ключи и активность', 'Issue keys, see sign-ins, auto-sync': 'Выдача ключей, входы, автосинк',
         'Source': 'Источник', 'OpenDota (no Steam login)': 'OpenDota (без входа в Steam)', 'Steam (host login)': 'Steam (логин хоста)', 'Replay requested': 'Запрошен реплей',
+        // v2: settings, key, sync, dialogs, empty states
+        'Settings': 'Настройки', 'Steam connection (only needed for match history and fatal search)': 'Подключение к Steam (нужно только для истории матчей и поиска фаталов)',
+        'Replay folder': 'Папка с реплеями', 'Your Dota 2 replays folder. With a profile selected, replays are read from': 'Папка с реплеями Dota 2. Если выбран профиль, реплеи берутся из',
+        'Name (e.g. Main)': 'Имя (например, Main)',
+        'Only needed for match history and fatal search. Player lookup on the home tab works without it.': 'Нужно только для истории матчей и поиска фаталов. Поиск игрока на главной работает без него.',
+        'Steam username': 'Логин Steam', 'Steam password': 'Пароль Steam', 'Steam Guard code': 'Код Steam Guard',
+        'Submit Code': 'Отправить код', 'Connecting...': 'Подключение...', 'Submitting Code...': 'Отправка кода...', 'Connected': 'Подключено', 'Rate Limited': 'Лимит запросов', 'Disconnecting...': 'Отключение...',
+        'Ledger checks a player\'s new matches on a timer and downloads replays that are not in the folder yet (up to 5 per check).': 'Ledger по таймеру проверяет новые матчи игрока и скачивает реплеи, которых ещё нет в папке (до 5 за проверку).',
+        'Steam (your login)': 'Steam (твой логин)', 'On': 'Вкл.', 'just now': 'только что', 'min ago': 'мин назад', 'h ago': 'ч назад', 'last check': 'проверка', 'downloaded': 'скачано',
+        'Replays expired on Valve servers': 'Реплеи уже удалены с серверов Valve', 'Nothing could be downloaded': 'Ничего скачать не удалось', 'Could not save auto-sync.': 'Не удалось сохранить автосинк.',
+        'Steam is not connected': 'Steam не подключён',
+        'Your key': 'Твой ключ', 'days left': 'дней осталось', 'day left': 'день остался', 'no expiry': 'бессрочно', 'Renew in Telegram': 'Продлить в Telegram',
+        'Valid until': 'Действует до', 'Days left': 'Осталось дней', 'Computers': 'Компьютеры', 'Version': 'Версия', 'This key never expires.': 'Ключ бессрочный.', 'd': 'дн.',
+        'Sign out on this PC': 'Выйти на этом ПК', 'Sign out on this PC?': 'Выйти на этом ПК?', 'You will need the key to come back in.': 'Чтобы вернуться, понадобится ключ.', 'Sign out': 'Выйти',
+        'No connection to the key server. Ledger keeps working and checks again later.': 'Нет связи с сервером ключей. Ledger продолжает работать и проверит позже.',
+        'Player lookup needs no Steam login.': 'Поиск игрока работает без входа в Steam.',
+        'Replays come from public match data. Your Steam password stays out of it.': 'Реплеи берутся из публичных данных матчей. Пароль Steam не нужен.',
+        'Tick replays and they are analysed on their own. Open the Matches tab to see the timeline.': 'Отметь реплеи, и анализ запустится сам. Таймлайн смотри во вкладке «Матчи».',
+        'e.g. 76561198...': 'например, 76561198...', 'Filled in from your profile': 'Подставляется из профиля',
+        'Depth is how many low priority sessions to search. Games per fatal is how many matches to download at each one.': 'Глубина: сколько сессий низкого приоритета проверять. Игр на фатал: сколько матчей скачать для каждого.',
+        'Download all to Fatal': 'Скачать все в Fatal', 'Download to Fatal': 'Скачать в Fatal', 'All downloaded': 'Всё скачано', 'Retry': 'Повторить',
+        'No match open yet': 'Матч пока не открыт', 'Tick replays on the Replays tab or look a player up on Home. The timeline appears here.': 'Отметь реплеи во вкладке «Реплеи» или найди игрока на главной. Таймлайн появится здесь.',
+        'Open replays': 'Открыть реплеи', 'Reports on the selected player': 'Репорты на выбранного игрока', 'Reports the selected player made': 'Репорты, которые сделал игрок',
+        'When each player had the scoreboard open': 'Когда каждый игрок открывал табло', 'Teammates': 'Союзники', 'Enemies': 'Враги',
+        'No replays here yet': 'Здесь пока нет реплеев', 'Drop .dem files on the page or look a player up on the home tab.': 'Перетащи .dem на страницу или найди игрока на главной.',
+        'Try again': 'Повторить', 'Connect to Steam in Settings first.': 'Сначала подключись к Steam в настройках.',
+        'Could not check the Steam connection. Is the engine running?': 'Не удалось проверить подключение к Steam. Движок запущен?',
+        'Enter a Steam ID first.': 'Сначала введи Steam ID.', 'Select at least one replay.': 'Выбери хотя бы один реплей.', 'Select at least one replay to delete.': 'Выбери хотя бы один реплей для удаления.',
+        'Settings saved': 'Настройки сохранены', 'Cancel': 'Отмена', 'Delete profile': 'Удалить профиль', 'Disconnect from Steam?': 'Отключиться от Steam?',
+        'Match history and fatal search need a Steam connection.': 'Истории матчей и поиску фаталов нужно подключение к Steam.', 'Replays on disk stay where they are.': 'Реплеи на диске останутся на месте.',
+        'Are you sure?': 'Точно?', 'Close': 'Закрыть', 'Upload was interrupted.': 'Загрузка прервалась.', 'Only .dem files': 'Только файлы .dem',
+        'That is not a Dota 2 replay.': 'Это не реплей Dota 2.', 'File is empty or larger than 700 MB.': 'Файл пустой или больше 700 МБ.',
+        'Valve no longer keeps this replay. Upload the .dem file instead.': 'Valve уже не хранит этот реплей. Загрузи .dem файлом.',
+        'OpenDota did not answer. Try again in a minute.': 'OpenDota не отвечает. Попробуй через минуту.', 'Cannot reach the server.': 'Нет связи с сервером.',
+        'Could not look that up.': 'Не удалось найти.', 'Loading players...': 'Загрузка игроков...', 'All Players': 'Все игроки', 'Your Account': 'Твой аккаунт',
+        'The replay engine is not running. Close Ledger and open start.bat again.': 'Движок реплеев не запущен. Закрой Ledger и снова открой start.bat.',
+        'Press Ctrl+C to copy': 'Нажми Ctrl+C', 'Loading conduct scorecard...': 'Загрузка карточки поведения...',
+        // login
+        'Sign in with your key': 'Вход по ключу', 'Player who made reports': 'Игрок, который репортил', 'Player (scoreboard activity)': 'Игрок (активность на табло)', 'Reports on the player, by minute': 'Репорты на игрока по минутам', 'Reports the player made, by minute': 'Репорты игрока по минутам', 'Press Ctrl+V to paste the key.': 'Нажми Ctrl+V, чтобы вставить ключ.', 'Enter the key you bought to unlock Ledger on this computer.': 'Введи купленный ключ, чтобы открыть Ledger на этом компьютере.',
+        'No key yet?': 'Нет ключа?', 'Buy one in Telegram': 'Купи в Telegram', 'Paste': 'Вставить', 'Checking the key…': 'Проверяю ключ…',
+        'This key was revoked.': 'Этот ключ отозван.', 'This key has expired.': 'Срок действия ключа истёк.',
+        'This key is already used on another computer.': 'Этот ключ уже используется на другом компьютере.',
+        'This computer was signed out of that key. Enter it again.': 'Этот компьютер вышел из ключа. Введи ключ ещё раз.',
+        'This computer is no longer signed in with that key.': 'Этот компьютер больше не привязан к ключу. Введи ключ ещё раз.',
+        'Cannot reach the key server. Check your internet connection.': 'Нет связи с сервером ключей. Проверь интернет.',
+        'The key server address is not set in ledger.config.json.': 'В ledger.config.json не указан адрес сервера ключей.',
+        'Too many attempts. Try again in 15 min.': 'Слишком много попыток. Повтори через 15 мин.',
+        'Renew it in Telegram': 'Продли в Telegram', 'Ask for a reset in Telegram': 'Попроси сбросить в Telegram', 'Key server is not set up': 'Сервер ключей не настроен',
+        'Works on one computer per key. Keys are checked online, then Ledger keeps working offline for up to 3 days.': 'Один ключ на один компьютер. Ключ проверяется онлайн, без интернета Ledger работает до 3 дней.',
         // drop zone
         'Drop .dem files here': 'Перетащи .dem сюда', 'or click to choose': 'или нажми, чтобы выбрать', 'Uploading': 'Загрузка', 'Uploaded': 'Загружено'
     };
@@ -104,8 +153,22 @@
         [/^Match (\d+) \((\d+) reports?\)$/, (m) => 'Матч ' + m[1] + ' (' + m[2] + ' ' + plural(+m[2], 'репорт', 'репорта', 'репортов') + ')'],
         [/^Processing (\d+) \/ (\d+): (\d+)$/, (m) => 'Обработка ' + m[1] + ' / ' + m[2] + ': ' + m[3]],
         [/^Processing \((\d+)s\)\.\.\.$/, (m) => 'Обработка (' + m[1] + ' с)...'],
-        [/^Steam: (.+)$/, (m) => 'Steam: ' + ({ Connected: 'подключён', Disconnected: 'отключён', Connecting: 'подключение', 'GC Ready': 'готов' }[m[1]] || m[1])],
-        [/^Status: (.+)$/, (m) => 'Статус: ' + m[1]],
+        [/^Steam: (.+)$/, (m) => 'Steam: ' + ({ Connected: 'подключён', Disconnected: 'отключён', Connecting: 'подключение', 'GC Ready': 'готов', 'Need Steam Guard Code': 'нужен код Steam Guard', 'Connected to Steam': 'подключён', 'Dota 2 GC Ready': 'Dota 2 GC готов', 'Rate Limited (Wait 24h)': 'лимит запросов (подожди 24 ч)' }[m[1]] || m[1])],
+        [/^Status: (.+)$/, (m) => 'Статус: ' + ({ Disconnected: 'отключён', Connecting: 'подключение', 'Need Steam Guard Code': 'нужен код Steam Guard', 'Connected to Steam': 'подключён к Steam', 'Dota 2 GC Ready': 'Dota 2 GC готов', 'Rate Limited (Wait 24h)': 'лимит запросов (подожди 24 ч)', 'Disconnected (timeout)': 'отключён (таймаут)' }[m[1]] || m[1])],
+        [/^Could not open the replay folder: (.+)$/, (m) => 'Не удалось открыть папку с реплеями: ' + m[1]],
+        [/^Delete profile "(.+)"\?$/, (m) => 'Удалить профиль «' + m[1] + '»?'],
+        [/^Delete (\d+) replays?\?$/, (m) => 'Удалить ' + m[1] + ' ' + plural(+m[1], 'реплей', 'реплея', 'реплеев') + '?'],
+        [/^(.+)\. This cannot be undone\.$/, (m) => m[1] + '. Это нельзя отменить.'],
+        [/^Uploaded (\d+) \/ (\d+)$/, (m) => 'Загружено ' + m[1] + ' / ' + m[2]],
+        [/^Uploading (.+)$/, (m) => 'Загрузка ' + m[1]],
+        [/^Done, (\d+) failed$/, (m) => 'Готово, ошибок: ' + m[1]],
+        [/^Downloading (\d+)\/(\d+)\.\.\.$/, (m) => 'Скачиваю ' + m[1] + '/' + m[2] + '...'],
+        [/^Found (\d+) fatal game\(s\)$/, (m) => 'Найдено фаталов: ' + m[1]],
+        [/^(\d+) of (\d+) replays could not be read\. (.*)$/, (m) => m[1] + ' из ' + m[2] + ' реплеев не прочитались. ' + m[3]],
+        [/^Could not read the selected replays?\. (.*)$/, (m) => 'Не удалось прочитать выбранные реплеи. ' + m[1]],
+        [/^(\d+) reports?$/, (m) => m[1] + ' ' + plural(+m[1], 'репорт', 'репорта', 'репортов')],
+        [/^Fatal match (\d+)(.*)$/, (m) => 'Фатальный матч ' + m[1] + m[2]],
+        [/^Match (\d+)$/, (m) => 'Матч ' + m[1]],
         [/^played (.+)$/, (m) => 'играл на ' + m[1]],
         [/^(\d+) new keys$/, (m) => m[1] + ' ' + plural(+m[1], 'новый ключ', 'новых ключа', 'новых ключей')],
         [/^(\d+) days? once used$/, (m) => m[1] + ' ' + plural(+m[1], 'день', 'дня', 'дней') + ' с первого входа'],
@@ -175,7 +238,9 @@
 
     function setLang(l) {
         lang = l; set('ledgerLang', l); root.lang = l;
-        run(document.body); document.title = lang === 'ru' ? document.title.replace('Sign in', 'Вход').replace('Access keys', 'Ключи доступа') : document.title;
+        run(document.body);
+        if (!root.__title) root.__title = document.title;
+        document.title = lang === 'ru' ? root.__title.replace('Sign in', 'Вход').replace('Dota 2 report timeline', 'кто кого репортил в Dota 2') : root.__title;
         refreshSwitch();
         document.dispatchEvent(new CustomEvent('ledger:lang', { detail: l }));
     }
@@ -194,18 +259,27 @@
         sw = document.createElement('div'); sw.className = 'lx-switch';
         ['en', 'ru'].forEach((l) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.l = l; b.textContent = l.toUpperCase(); b.addEventListener('click', () => setLang(l)); sw.appendChild(b); });
         const t = document.createElement('button'); t.type = 'button'; t.dataset.t = '1'; t.addEventListener('click', () => setTheme(theme === 'light' ? 'dark' : 'light')); sw.appendChild(t);
-        const bar = document.querySelector('.header-actions, .admin-actions');
+        const bar = document.querySelector('.header-actions, .gate-top');
         if (bar) bar.insertBefore(sw, bar.firstChild); else { sw.classList.add('lx-float'); document.body.appendChild(sw); }
         refreshSwitch();
     }
 
-    window.LedgerI18n = { t: (s) => (lang === 'ru' ? tr(s) : s), get lang() { return lang; }, get theme() { return theme; }, plural };
+    function src(el) {
+        let out = '';
+        const visit = (n) => {
+            if (n.nodeType === 3) { const rec = store.get(n); out += rec && rec.text === n.nodeValue ? rec.original : n.nodeValue; }
+            else if (n.nodeType === 1) for (let c = n.firstChild; c; c = c.nextSibling) visit(c);
+        };
+        visit(el);
+        return out.trim();
+    }
+    window.LedgerI18n = { t: (s) => (lang === 'ru' ? tr(s) : s), src, get lang() { return lang; }, get theme() { return theme; }, plural };
     function start() {
         buildSwitch();
-        if (lang === 'ru') run(document.body);
+        if (lang === 'ru') { run(document.body); root.__title = document.title; document.title = document.title.replace('Sign in', 'Вход').replace('Dota 2 report timeline', 'кто кого репортил в Dota 2'); }
         mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
     // the app's header chip is added later by ledger.js; keep the switch first in the bar
-    window.addEventListener('load', () => { const bar = document.querySelector('.header-actions, .admin-actions'); if (bar && sw && sw.parentElement !== bar) { sw.classList.remove('lx-float'); bar.insertBefore(sw, bar.firstChild); } });
+    window.addEventListener('load', () => { const bar = document.querySelector('.header-actions, .gate-top'); if (bar && sw && sw.parentElement !== bar) { sw.classList.remove('lx-float'); bar.insertBefore(sw, bar.firstChild); } });
 })();

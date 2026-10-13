@@ -1,7 +1,7 @@
 // Ledger add-ons. Reads the existing UI only, never touches the parser.
-//  1. Shows the match ID of the selected match (copy + OpenDota / Dotabuff links).
-//  2. When running behind the access gate, shows who is signed in, a log-out
-//     button, and (for admins) a link to the key manager.
+//  1. Match ID of the selected match (copy + OpenDota / Dotabuff links)
+//  2. Your key: account chip, days left, renew in Telegram, sign out
+//  3. Auto-analysis, player lookup, export, uploads, stats, home, auto-sync
 (function () {
     'use strict';
 
@@ -36,8 +36,9 @@
             copy.textContent = 'Copy';
             copy.addEventListener('click', () => {
                 const done = () => { copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1400); };
-                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(id).then(done, done);
-                else done();
+                const fail = () => { LedgerUI.toast('Press Ctrl+C to copy: ' + id, 'info'); };
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(id).then(done, fail);
+                else fail();
             });
             pill.appendChild(copy);
             meta.appendChild(pill);
@@ -83,10 +84,11 @@
             // listeners here run before the page's own handlers tick the boxes, so only look inside the timer
             timer = setTimeout(() => {
                 if (!picked()) return;
-                window.ledgerNoJump = picked() > 1;   // one replay: jump straight to it; several: stay and let the person finish picking
+                // never yank the person away while they are still ticking: the bar under the tabs links to the result
+                window.ledgerNoJump = true;
                 window.ledgerPathOverride = null;
                 startBtn.click();
-            }, 800);
+            }, 1100);
         };
         list.addEventListener('change', schedule);
         ['select-all', 'select-last'].forEach((id) => { const b = document.getElementById(id); if (b) b.addEventListener('click', schedule); });
@@ -100,8 +102,10 @@
             t.textContent = n + (n === 1 ? ' match analysed' : ' matches analysed');
             const a = document.createElement('button'); a.type = 'button'; a.textContent = 'Open matches'; a.addEventListener('click', () => goTab('results'));
             const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Player lookup'; b.addEventListener('click', () => goTab('player'));
-            bar.append(t, a, b);
+            const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×'; x.setAttribute('aria-label', 'Close'); x.addEventListener('click', () => bar.classList.add('hidden'));
+            bar.append(t, a, b, x);
             bar.classList.remove('hidden');
+            clearTimeout(bar.__t); bar.__t = setTimeout(() => bar.classList.add('hidden'), 15000);
         });
     })();
 
@@ -319,15 +323,21 @@
             status.textContent = txt;
             if (pct != null) { const bar = document.createElement('span'); bar.className = 'dz-bar'; const i = document.createElement('i'); i.style.width = pct + '%'; bar.appendChild(i); status.appendChild(bar); }
         };
+        // the gate accepts [0-9A-Za-z_-]{1,60}.dem, so "My Replay (2).DEM" becomes "My_Replay__2_.dem"
+        function safeName(original) {
+            const base = String(original).replace(/\.dem$/i, '').replace(/[^0-9A-Za-z_-]/g, '_').replace(/^_+|_+$/g, '').slice(-60) || ('replay_' + Date.now());
+            return base + '.dem';
+        }
         function send(file) {
             return new Promise((resolve) => {
-                const name = file.name.replace(/[^0-9A-Za-z_.-]/g, '_').slice(-64);
+                const name = safeName(file.name);
                 const x = new XMLHttpRequest();
                 x.open('POST', '/_ledger/upload?name=' + encodeURIComponent(name));
                 x.setRequestHeader('X-Ledger', '1');
                 x.upload.onprogress = (e) => { if (e.lengthComputable) say(T('Uploading') + ' ' + name, Math.round((e.loaded / e.total) * 100)); };
                 x.onload = () => { let msg = ''; try { msg = JSON.parse(x.responseText).error || ''; } catch (_) {} resolve(x.status === 201 ? { ok: true } : { ok: false, msg: msg || ('HTTP ' + x.status) }); };
                 x.onerror = () => resolve({ ok: false, msg: 'Network error' });
+                x.onabort = () => resolve({ ok: false, msg: 'Upload was interrupted.' });
                 x.send(file);
             });
         }
@@ -337,6 +347,7 @@
             let ok = 0, last = '';
             for (const f of list) { const r = await send(f); if (r.ok) ok++; else last = f.name + ': ' + r.msg; }
             say(last || (T('Uploaded') + ' ' + ok + ' / ' + list.length));
+            if (last) LedgerUI.toast(last, 'bad'); else LedgerUI.toast(T('Uploaded') + ' ' + ok + ' / ' + list.length, 'ok');
             if (ok) {
                 const refresh = document.getElementById('refresh-replays');
                 if (typeof window.browseDirectory === 'function') window.browseDirectory('uploads'); else if (refresh) refresh.click();
@@ -405,7 +416,7 @@
             if (!rows.length) { host.appendChild(el('p', 'pl-none', '—')); return; }
             const top = rows[0].n || 1;
             rows.slice(0, max || 6).forEach((r) => {
-                const row = el('div', 'st-row');
+                const row = el('div', 'st-row' + (r.cls ? ' ' + r.cls : ''));
                 const name = el('span', null, r.label); if (r.sub) name.appendChild(el('small', null, r.sub));
                 const meter = el('div', 'st-meter'); const i = el('i'); i.style.width = Math.max(4, Math.round((r.n / top) * 100)) + '%'; meter.appendChild(i);
                 row.append(name, meter, el('b', null, String(r.n)));
@@ -418,7 +429,7 @@
             vals.forEach((v, i) => {
                 const b = el('div', 'st-bar'); b.title = labels[i] + ': ' + v;
                 b.appendChild(el('b', null, v ? String(v) : ''));
-                const bar = el('i'); bar.style.height = Math.round((v / top) * 100) + '%'; if (!v) bar.style.opacity = '0.25'; b.appendChild(bar);
+                const bar = el('i'); bar.style.height = Math.round((v / top) * 100) + '%'; bar.style.setProperty('--i', String(i)); if (!v) bar.style.opacity = '0.25'; b.appendChild(bar);
                 b.appendChild(el('em', null, labels[i]));
                 host.appendChild(b);
             });
@@ -457,7 +468,7 @@
 
             const toRows = (m) => [...m.values()].sort((a, b) => b.n - a.n || b.ms.size - a.ms.size).map((e) => ({ label: e.label, sub: e.sub ? e.sub : (e.ms.size > 1 ? e.ms.size + ' ' + T('Matches').toLowerCase() : ''), n: e.n }));
             list($('st-top'), toRows(got), 8); list($('st-reporters'), toRows(gave), 8); list($('st-heroes'), toRows(hero), 8);
-            list($('st-split'), [{ label: T('Teammate'), n: mate }, { label: T('Enemy'), n: total - mate }].filter((x) => x.n || total === 0).sort((a, b) => b.n - a.n), 2);
+            list($('st-split'), [{ label: T('Teammate'), n: mate, cls: 'mate' }, { label: T('Enemy'), n: total - mate, cls: 'enemy' }].filter((x) => x.n || total === 0).sort((a, b) => b.n - a.n), 2);
         }
         $('st-clear').addEventListener('click', () => { hist = {}; try { localStorage.removeItem(KEY); } catch (_) {} render(); });
         document.addEventListener('ledger:matches', () => { ingest(); render(); });
@@ -476,14 +487,14 @@
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
         // tiles that act like links
-        document.querySelectorAll('.tile[data-go]').forEach((t) => t.addEventListener('click', () => goTab(t.dataset.go)));
+        document.querySelectorAll('[data-go]').forEach((t) => t.addEventListener('click', () => goTab(t.dataset.go)));
 
         // numbers
         function numbers() {
             let hist = {}; try { hist = JSON.parse(localStorage.getItem('ledgerHistory') || '{}') || {}; } catch (_) {}
             const ids = Object.keys(hist);
-            $('hm-matches').textContent = String(ids.length);
-            $('hm-reports').textContent = String(ids.reduce((n, id) => n + ((hist[id].r || []).length), 0));
+            LedgerUI.countTo($('hm-matches'), ids.length);
+            LedgerUI.countTo($('hm-reports'), ids.reduce((n, id) => n + ((hist[id].r || []).length), 0));
         }
         // saved players
         function saved() {
@@ -512,7 +523,7 @@
         function build(list) {
             const host = $('lk-rows'); host.textContent = ''; rows = [];
             list.forEach((m, i) => {
-                const row = el('label', 'lk-row');
+                const row = el('label', 'lk-row'); row.style.setProperty('--i', String(Math.min(i, 12)));
                 const box = document.createElement('input'); box.type = 'checkbox'; box.checked = i < 5; box.addEventListener('change', count);
                 const who = el('div'); who.appendChild(el('b', null, m.hero)); who.appendChild(el('small', null, m.id));
                 const wl = el('span', 'lk-wl ' + (m.win ? 'w' : 'l'), m.win ? 'WIN' : 'LOSS');
@@ -591,38 +602,155 @@
         check();
     })();
 
-    /* ---------- 2. Gate session ---------- */
-    fetch('/_ledger/me', { credentials: 'same-origin', cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((me) => {
-            if (!me || !me.role) return;
-            document.documentElement.dataset.role = me.role;
+    /* ---------- 2. Your key: account chip, key tile, sign out ---------- */
+    (function account() {
+        const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
+        const DAY = 86400000;
+        let me = null, chip = null, pop = null;
+        const daysLeft = (m) => (m && m.expiresAt ? Math.max(0, Math.ceil((m.expiresAt - Date.now()) / DAY)) : null);
+        const fmtDate = (t) => new Date(t).toLocaleDateString(window.LedgerI18n && window.LedgerI18n.lang === 'ru' ? 'ru-RU' : undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+        const tgUrl = (m) => 'https://t.me/' + encodeURIComponent((m && m.telegram) || 'm4ks1em');
 
-            const bar = document.querySelector('.header-actions');
-            if (!bar) return;
-
-            const chip = document.createElement('div');
-            chip.className = 'account-chip';
-            const who = document.createElement('b');
-            who.textContent = me.label || (me.role === 'admin' ? 'Admin' : 'Viewer');
-            chip.appendChild(who);
-
-            if (me.role === 'admin') {
-                const keys = document.createElement('a');
-                keys.href = '/admin';
-                keys.textContent = 'Keys';
-                chip.appendChild(keys);
-            }
-
-            const out = document.createElement('button');
-            out.type = 'button';
-            out.textContent = 'Log out';
-            out.addEventListener('click', () => {
-                fetch('/_ledger/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-Ledger': '1' } })
-                    .finally(() => { location.href = '/login'; });
+        function signOut() {
+            fetch('/_ledger/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-Ledger': '1' } })
+                .finally(() => { location.href = '/login'; });
+        }
+        function closePop() {
+            if (!pop) return;
+            pop.remove(); pop = null;
+            if (chip) chip.setAttribute('aria-expanded', 'false');
+        }
+        function openPop() {
+            if (pop) { closePop(); return; }
+            const d = daysLeft(me);
+            pop = document.createElement('div');
+            pop.className = 'account-pop';
+            pop.setAttribute('role', 'dialog');
+            const h = document.createElement('h4'); h.textContent = me.label || T('Your key');
+            const tail = document.createElement('div'); tail.className = 'key-tail'; tail.textContent = 'LDG-••••-••••-••••-' + (me.tail || '????');
+            const dl = document.createElement('dl');
+            const row = (k, v) => { const dt = document.createElement('dt'); dt.textContent = T(k); const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); };
+            row('Valid until', me.expiresAt ? fmtDate(me.expiresAt) : T('No expiry'));
+            if (d != null) row('Days left', String(d));
+            row('Computers', (me.devices || 1) + ' / ' + (me.maxDevices || 1));
+            row('Version', me.version || '');
+            pop.append(h, tail, dl);
+            if (me.offline) { const o = document.createElement('p'); o.className = 'offline-note'; o.textContent = T('No connection to the key server. Ledger keeps working and checks again later.'); pop.appendChild(o); }
+            const actions = document.createElement('div'); actions.className = 'pop-actions';
+            const renew = document.createElement('a'); renew.className = 'tg-link'; renew.href = tgUrl(me); renew.target = '_blank'; renew.rel = 'noopener noreferrer';
+            renew.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/><path d="m9 13 9-7"/></svg>';
+            const rs = document.createElement('span'); rs.textContent = T('Renew in Telegram'); const rb = document.createElement('b'); rb.textContent = '@' + (me.telegram || 'm4ks1em');
+            renew.append(rs, rb);
+            const out = document.createElement('button'); out.type = 'button'; out.className = 'btn secondary-btn'; out.textContent = T('Sign out on this PC');
+            out.addEventListener('click', async () => {
+                const ok = await LedgerUI.confirm({ title: T('Sign out on this PC?'), text: T('You will need the key to come back in.'), ok: T('Sign out'), danger: false });
+                if (ok) signOut();
             });
-            chip.appendChild(out);
-            bar.insertBefore(chip, bar.firstChild);
-        })
-        .catch(() => { /* not behind the gate: nothing to add */ });
+            actions.append(renew, out);
+            pop.appendChild(actions);
+            chip.parentElement.appendChild(pop);
+            chip.setAttribute('aria-expanded', 'true');
+        }
+        document.addEventListener('mousedown', (e) => { if (pop && !pop.contains(e.target) && e.target !== chip && !chip.contains(e.target)) closePop(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
+
+        function paint() {
+            const bar = document.querySelector('.header-actions');
+            if (!bar || !me) return;
+            const d = daysLeft(me);
+            if (!chip) {
+                const wrap = document.createElement('div'); wrap.className = 'account';
+                chip = document.createElement('button'); chip.type = 'button'; chip.className = 'account-chip'; chip.setAttribute('aria-haspopup', 'dialog'); chip.setAttribute('aria-expanded', 'false');
+                chip.addEventListener('click', openPop);
+                wrap.appendChild(chip);
+                bar.appendChild(wrap);
+            }
+            chip.textContent = '';
+            const av = document.createElement('span'); av.className = 'avatar'; av.textContent = (me.label || 'L').trim().charAt(0).toUpperCase();
+            const who = document.createElement('span'); who.className = 'who'; who.textContent = me.label || T('Your key');
+            chip.append(av, who);
+            if (d != null) { const l = document.createElement('span'); l.className = 'left'; l.textContent = d + ' ' + T('d'); chip.appendChild(l); }
+            chip.classList.toggle('warn', d != null && d <= 3);
+            chip.title = me.offline ? T('No connection to the key server. Ledger keeps working and checks again later.') : '';
+
+            // the key tile on the home tab
+            const tile = document.getElementById('key-tile');
+            if (tile) {
+                const days = document.getElementById('key-days'), label = document.getElementById('key-days-label'), meta = document.getElementById('key-meta');
+                if (d == null) { days.textContent = '∞'; label.textContent = T('no expiry'); }
+                else { LedgerUI.countTo(days, d); label.textContent = window.LedgerI18n && window.LedgerI18n.lang === 'ru' ? window.LedgerI18n.plural(d, 'день остался', 'дня осталось', 'дней осталось') : (d === 1 ? 'day left' : 'days left'); }
+                tile.classList.toggle('warn', d != null && d <= 3 && d > 0);
+                tile.classList.toggle('bad', d === 0);
+                meta.textContent = (me.label ? me.label + '. ' : '') + (me.expiresAt ? T('Valid until') + ' ' + fmtDate(me.expiresAt) + '.' : T('This key never expires.'));
+                const renew = document.getElementById('key-renew'); if (renew) renew.href = tgUrl(me);
+                const tg = document.getElementById('key-tg'); if (tg) tg.textContent = '@' + (me.telegram || 'm4ks1em');
+            }
+        }
+        function load() {
+            return fetch('/_ledger/me', { credentials: 'same-origin', cache: 'no-store' })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((m) => { if (m) { me = m; paint(); } })
+                .catch(() => {});
+        }
+        load();
+        setInterval(load, 5 * 60000);
+        document.addEventListener('ledger:lang', paint);
+    })();
+
+    /* ---------- 9. Settings sheet: open/close with motion, auto-sync ---------- */
+    (function settingsSheet() {
+        const panel = document.getElementById('setup-panel'), toggle = document.getElementById('setup-toggle');
+        if (!panel || !toggle) return;
+        new MutationObserver(() => toggle.setAttribute('aria-expanded', String(!panel.classList.contains('hidden')))).observe(panel, { attributes: true, attributeFilter: ['class'] });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.classList.contains('hidden') && !document.querySelector('.dialog-back')) panel.classList.add('hidden'); });
+    })();
+
+    (function autoSync() {
+        const $ = (id) => document.getElementById(id);
+        if (!$('sync-section')) return;
+        const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
+        let cfg = null, timer = null;
+        const ago = (t) => { if (!t) return ''; const m = Math.round((Date.now() - t) / 60000); return m < 1 ? T('just now') : m < 60 ? m + ' ' + T('min ago') : Math.round(m / 60) + ' ' + T('h ago'); };
+        function show(j) {
+            if (!j || !j.config) return;
+            cfg = j.config;
+            if (document.activeElement !== $('sy-id')) $('sy-id').value = cfg.steamId || '';
+            $('sy-every').value = String(cfg.everyMin); $('sy-limit').value = String(cfg.limit); $('sy-source').value = cfg.source;
+            $('sy-on').checked = !!cfg.enabled;
+            const s = j.state || {};
+            const out = $('sy-state'); out.textContent = '';
+            const b = document.createElement('b'); b.textContent = T(s.running ? 'Working…' : (s.message || (cfg.enabled ? 'On' : 'Off')));
+            out.appendChild(b);
+            if (s.lastRun) out.appendChild(document.createTextNode(' · ' + T('last check') + ' ' + ago(s.lastRun)));
+            if (s.downloadedTotal) out.appendChild(document.createTextNode(' · ' + T('downloaded') + ' ' + s.downloadedTotal));
+            clearTimeout(timer);
+            timer = setTimeout(load, s.running ? 2000 : 30000);
+        }
+        function load() { return fetch('/_ledger/sync', { credentials: 'same-origin', cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then(show).catch(() => {}); }
+        function save(patch) {
+            return fetch('/_ledger/sync', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Ledger': '1' }, body: JSON.stringify(patch) })
+                .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) { LedgerUI.toast(j.error || 'Could not save auto-sync.', 'bad'); load(); return; } show(j); })
+                .catch(() => LedgerUI.toast('Could not save auto-sync.', 'bad'));
+        }
+        $('sy-id').addEventListener('change', () => save({ steamId: $('sy-id').value.trim() }));
+        ['sy-every', 'sy-limit', 'sy-source'].forEach((id) => $(id).addEventListener('change', () => save({ everyMin: $('sy-every').value, limit: $('sy-limit').value, source: $('sy-source').value })));
+        $('sy-on').addEventListener('change', () => {
+            if ($('sy-on').checked && !$('sy-id').value.trim()) { $('sy-on').checked = false; LedgerUI.toast(T('Set a Steam ID first'), 'info'); $('sy-id').focus(); return; }
+            save({ enabled: $('sy-on').checked, steamId: $('sy-id').value.trim() });
+        });
+        $('sy-run').addEventListener('click', () => {
+            if (!$('sy-id').value.trim()) { LedgerUI.toast(T('Set a Steam ID first'), 'info'); $('sy-id').focus(); return; }
+            save({ steamId: $('sy-id').value.trim() }).then(() => save({ action: 'run' })).then(() => setTimeout(load, 800));
+        });
+        load();
+    })();
+
+    /* ---------- 10. Matches tab: empty state until something is analysed ---------- */
+    (function resultsEmpty() {
+        const empty = document.getElementById('results-empty'), sec = document.getElementById('results-section');
+        if (!empty || !sec) return;
+        const sync = () => empty.classList.toggle('hidden', !sec.classList.contains('hidden'));
+        new MutationObserver(sync).observe(sec, { attributes: true, attributeFilter: ['class'] });
+        sync();
+    })();
 })();
