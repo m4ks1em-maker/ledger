@@ -1,3 +1,5 @@
+<p align="center"><b>Русский</b> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="docs/banner.png" alt="Ledger: кто тебя зарепортил и на какой минуте" width="100%">
 </p>
@@ -30,8 +32,6 @@ Ledger разбирает реплеи Dota 2 и показывает кажды
 - Статистика по всем разобранным матчам, экспорт в CSV и JSON.
 - Автосинк новых матчей, тёмная и светлая тема, русский и английский.
 
-## English
+## Лицензии
 
-Ledger shows who reported whom in your Dota 2 matches and the minute they did it. Buy a key from [@m4ks1em](https://t.me/m4ks1em) on Telegram, download the ZIP, install [Node.js](https://nodejs.org) LTS, run `setup.bat` once and then `start.bat`, and paste your key. One key works on one computer.
-
-Credits and licences: see [NOTICE.md](NOTICE.md). MIT licensed.
+Сторонние компоненты и лицензии: [NOTICE.md](NOTICE.md). Лицензия MIT.
