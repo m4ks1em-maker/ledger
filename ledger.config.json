@@ -1,5 +1,12 @@
 {
   "licenseServer": "https://ledger-keys.m4ks1em.workers.dev",
   "telegram": "m4ks1em",
-  "github": "https://github.com/m4ks1em-maker/ledger"
+  "github": "https://github.com/m4ks1em-maker/ledger",
+  "prices": [
+    { "days": 7, "usd": 1 },
+    { "days": 30, "usd": 2, "tag": "popular" },
+    { "days": 90, "usd": 5 },
+    { "days": 365, "usd": 15 },
+    { "days": 0, "usd": 30, "tag": "best" }
+  ]
 }

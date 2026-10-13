@@ -1,4 +1,4 @@
-// Ledger add-ons. Reads the existing UI only, never touches the parser.
+// DotaTraker add-ons. Reads the existing UI only, never touches the parser.
 //  1. Match ID of the selected match (copy + OpenDota / Dotabuff links)
 //  2. Your key: account chip, days left, renew in Telegram, sign out
 //  3. Auto-analysis, player lookup, export, uploads, stats, home, auto-sync
@@ -635,7 +635,7 @@
             row('Computers', (me.devices || 1) + ' / ' + (me.maxDevices || 1));
             row('Version', me.version || '');
             pop.append(h, tail, dl);
-            if (me.offline) { const o = document.createElement('p'); o.className = 'offline-note'; o.textContent = T('No connection to the key server. Ledger keeps working and checks again later.'); pop.appendChild(o); }
+            if (me.offline) { const o = document.createElement('p'); o.className = 'offline-note'; o.textContent = T('No connection to the key server. DotaTraker keeps working and checks again later.'); pop.appendChild(o); }
             const actions = document.createElement('div'); actions.className = 'pop-actions';
             const renew = document.createElement('a'); renew.className = 'tg-link'; renew.href = tgUrl(me); renew.target = '_blank'; renew.rel = 'noopener noreferrer';
             renew.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/><path d="m9 13 9-7"/></svg>';
@@ -666,12 +666,14 @@
                 bar.appendChild(wrap);
             }
             chip.textContent = '';
-            const av = document.createElement('span'); av.className = 'avatar'; av.textContent = (me.label || 'L').trim().charAt(0).toUpperCase();
-            const who = document.createElement('span'); who.className = 'who'; who.textContent = me.label || T('Your key');
+            const av = document.createElement('span'); av.className = 'avatar';
+            if (me.steam && me.steam.avatar) { const im = document.createElement('img'); im.src = me.steam.avatar; im.alt = ''; av.appendChild(im); av.classList.add('has-img'); }
+            else av.textContent = ((me.steam && me.steam.name) || me.label || 'D').trim().charAt(0).toUpperCase();
+            const who = document.createElement('span'); who.className = 'who'; who.textContent = (me.steam && me.steam.name) || me.label || T('Your key');
             chip.append(av, who);
             if (d != null) { const l = document.createElement('span'); l.className = 'left'; l.textContent = d + ' ' + T('d'); chip.appendChild(l); }
             chip.classList.toggle('warn', d != null && d <= 3);
-            chip.title = me.offline ? T('No connection to the key server. Ledger keeps working and checks again later.') : '';
+            chip.title = me.offline ? T('No connection to the key server. DotaTraker keeps working and checks again later.') : '';
 
             // the key tile on the home tab
             const tile = document.getElementById('key-tile');
@@ -686,15 +688,55 @@
                 const tg = document.getElementById('key-tg'); if (tg) tg.textContent = '@' + (me.telegram || 'm4ks1em');
             }
         }
+        // Steam account (official OpenID sign-in) in the settings sheet
+        function paintSteam() {
+            const box = document.getElementById('steam-account');
+            if (!box || !me) return;
+            box.textContent = '';
+            if (me.steam) {
+                const row = document.createElement('div'); row.className = 'steam-acc';
+                const im = document.createElement('img'); im.alt = ''; if (me.steam.avatar) im.src = me.steam.avatar;
+                const t = document.createElement('div'); t.className = 'sa-text';
+                const b = document.createElement('b'); b.textContent = me.steam.name || me.steam.id;
+                const sm = document.createElement('small'); sm.textContent = me.steam.id;
+                t.append(b, sm);
+                const out = document.createElement('button'); out.type = 'button'; out.className = 'btn secondary-btn'; out.textContent = T('Unlink');
+                out.addEventListener('click', () => {
+                    fetch('/_ledger/steam/unlink', { method: 'POST', credentials: 'same-origin', headers: { 'X-Ledger': '1' } }).finally(load);
+                });
+                row.append(im, t, out);
+                box.appendChild(row);
+            } else {
+                const a = document.createElement('a'); a.className = 'steam-signin'; a.href = '/_ledger/steam/start?from=app';
+                a.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#fff"/><circle cx="20.6" cy="12.4" r="4.3" fill="none" stroke="#171a21" stroke-width="1.9"/><circle cx="20.6" cy="12.4" r="2.1" fill="#171a21"/><circle cx="11.3" cy="21.1" r="3.4" fill="none" stroke="#171a21" stroke-width="1.9"/><path d="M2.5 17.6 9 20.3M13.8 18.6l3.7-3.3" stroke="#171a21" stroke-width="2.4" stroke-linecap="round"/></svg>';
+                const sp = document.createElement('span'); const b = document.createElement('b'); b.textContent = T('Sign in through Steam'); const sm = document.createElement('small'); sm.textContent = 'steamcommunity.com';
+                sp.append(b, sm); a.appendChild(sp);
+                box.appendChild(a);
+            }
+            // fill the player lookup with your own Steam ID when it is empty
+            const lk = document.getElementById('lk-id');
+            if (me.steam && lk && !lk.value) lk.value = me.steam.id;
+        }
+        function paintUpdate() {
+            const slot = document.getElementById('update-slot');
+            if (slot && window.LedgerUI && LedgerUI.updateBar) LedgerUI.updateBar(slot, me && me.update, me && me.github);
+        }
+        (function steamReturn() {
+            const q = new URLSearchParams(location.search).get('steam');
+            if (!q) return;
+            history.replaceState(null, '', location.pathname);
+            const msg = { ok: ['Steam account linked.', 'success'], other: ['This key is linked to another Steam account.', 'error'], cancel: ['Steam sign-in was cancelled.', 'info'], expired: ['The Steam sign-in took too long. Try again.', 'error'], fail: ['Steam could not confirm the sign-in. Try again.', 'error'], offline: ['Cannot reach Steam. Check your internet connection.', 'error'] }[q];
+            if (msg) setTimeout(() => LedgerUI.toast(T(msg[0]), msg[1]), 600);
+        })();
         function load() {
             return fetch('/_ledger/me', { credentials: 'same-origin', cache: 'no-store' })
                 .then((r) => (r.ok ? r.json() : null))
-                .then((m) => { if (m) { me = m; paint(); } })
+                .then((m) => { if (m) { me = m; paint(); paintSteam(); paintUpdate(); } })
                 .catch(() => {});
         }
         load();
         setInterval(load, 5 * 60000);
-        document.addEventListener('ledger:lang', paint);
+        document.addEventListener('ledger:lang', () => { paint(); paintSteam(); paintUpdate(); });
     })();
 
     /* ---------- 9. Settings sheet: open/close with motion, auto-sync ---------- */

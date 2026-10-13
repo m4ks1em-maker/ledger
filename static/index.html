@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="dark light">
-    <title>Ledger — Dota 2 report timeline</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="fonts.css?v=20">
-    <link rel="stylesheet" href="style.css?v=20">
-    <script src="i18n.js?v=20"></script>
-    <script src="ui.js?v=20"></script>
+    <title>DotaTraker — Dota 2 report timeline</title>
+    <link rel="icon" href="/img/logo-64.png" type="image/png">
+    <link rel="stylesheet" href="fonts.css?v=21">
+    <link rel="stylesheet" href="style.css?v=21">
+    <script src="i18n.js?v=21"></script>
+    <script src="ui.js?v=21"></script>
 </head>
 
 <body>
@@ -18,9 +18,9 @@
 
     <div class="app-container">
         <header class="main-header">
-            <a class="brand" href="/" aria-label="Ledger home">
-                <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.5" y="1.5" width="29" height="29" rx="9"/><path d="M8 21h16"/><circle cx="11" cy="21" r="2.6" class="m-r"/><circle cx="17.5" cy="21" r="2.6" class="m-d"/><path d="M11 11v6M17.5 8v9M24 14v3"/></svg>
-                <span class="brand-name">Ledger</span>
+            <a class="brand" href="/" aria-label="DotaTraker home">
+                <span class="medal" aria-hidden="true"><img src="/img/logo-192.webp" alt="" width="38" height="38"></span>
+                <span class="brand-name">Dota<b>Traker</b></span>
             </a>
 
             <nav class="workflow-tabs" role="tablist" data-glider=".workflow-tab">
@@ -86,9 +86,13 @@
                     </div>
                 </div>
 
-                <div class="setup-section">
-                    <h3>Steam connection</h3>
-                    <p class="hint">Only needed for match history and fatal search. Player lookup on the home tab works without it.</p>
+                <div class="setup-section" id="steam-section">
+                    <h3>Steam account</h3>
+                    <p class="hint">Sign in on the official Steam site. DotaTraker gets only your public Steam ID, never your password.</p>
+                    <div id="steam-account"></div>
+                    <details class="adv" id="steam-adv">
+                        <summary>Advanced: Steam bot for match history</summary>
+                    <p class="hint">Only needed for match history and fatal search through Valve. Use a spare account: the login goes to the engine on this PC only. Player lookup and auto-sync work without it.</p>
                     <p id="steam-status" class="steam-status">Status: Disconnected</p>
                     <div class="input-group">
                         <input type="text" id="steam-user" placeholder="Steam username" autocomplete="username" spellcheck="false">
@@ -103,11 +107,12 @@
                         <button id="steam-login-btn" class="btn primary-btn">Connect to Steam</button>
                         <button id="steam-disconnect-btn" class="btn danger-btn" style="display: none;">Disconnect</button>
                     </div>
+                    </details>
                 </div>
 
                 <div class="setup-section" id="sync-section">
                     <h3>Auto-sync</h3>
-                    <p class="hint">Ledger checks a player's new matches on a timer and downloads replays that are not in the folder yet (up to 5 per check).</p>
+                    <p class="hint">DotaTraker checks a player's new matches on a timer and downloads replays that are not in the folder yet (up to 5 per check).</p>
                     <div class="input-group">
                         <label for="sy-id">Steam ID to follow</label>
                         <input type="text" id="sy-id" placeholder="Steam ID" inputmode="numeric" spellcheck="false">
@@ -144,6 +149,7 @@
         </section>
 
         <main class="main-content">
+            <div id="update-slot" class="hidden"></div>
             <div id="ledger-status"></div>
 
             <div class="tab-content active" id="home-tab">
@@ -515,9 +521,9 @@
     </div>
 
     <script src="vendor/chart.umd.min.js?v=4.4.0"></script>
-    <script src="app.js?v=20"></script>
-    <script src="history.js?v=20"></script>
-    <script src="ledger.js?v=20"></script>
+    <script src="app.js?v=21"></script>
+    <script src="history.js?v=21"></script>
+    <script src="ledger.js?v=21"></script>
 </body>
 
 </html>

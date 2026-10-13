@@ -1,26 +1,49 @@
 <p align="center"><a href="README.md">Русский</a> &nbsp;·&nbsp; <b>English</b></p>
 
 <p align="center">
-  <img src="docs/banner.en.png" alt="Ledger: who reported you, and at what minute" width="100%">
+  <img src="docs/banner.en.png" alt="DotaTraker: who reported you, and at what minute" width="100%">
 </p>
 
 <p align="center">
   <a href="https://t.me/m4ks1em"><img src="https://img.shields.io/badge/Buy_a_key-@m4ks1em-2AABEE?style=for-the-badge&logo=telegram&logoColor=white" alt="Buy a key on Telegram"></a>
   &nbsp;
-  <a href="https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-9DB4FF?style=for-the-badge&logo=github&logoColor=0b1230" alt="Download ZIP"></a>
+  <a href="https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
 </p>
 
-Ledger reads your Dota 2 replays and puts every report on a timeline, from teammates and from enemies. Paste a Steam ID and the replays download on their own, no Steam login.
+DotaTraker reads your Dota 2 replays and puts every report on a timeline, from teammates and from enemies. Paste a Steam ID and the replays download on their own.
 
-<p align="center"><img src="docs/steps.en.png" alt="Getting started" width="100%"></p>
+## Getting started
 
-Links from the steps: [Telegram @m4ks1em](https://t.me/m4ks1em) · [Download ZIP](https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip) · [Node.js](https://nodejs.org)
+1. Install [Node.js](https://nodejs.org) (LTS).
+2. [Download the ZIP](https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip) and unpack it.
+3. Run `setup.bat` once, then `start.bat`.
+4. Sign in through Steam (the official steamcommunity.com page) and enter your key.
 
-One key works on one computer. Replays are processed on your PC; only the key check goes online. Without internet Ledger keeps working for up to 3 days.
+## Pricing
+
+| Period | Price |
+|---|---|
+| 7 days | $1 |
+| 30 days | $2 |
+| 90 days | $5 |
+| 1 year | $15 |
+| **Forever** | **$30** |
+
+Keys are sold on Telegram: [@m4ks1em](https://t.me/m4ks1em). One key works on one computer. Offline, DotaTraker keeps working for up to 3 days.
+
+## Safe by design
+
+- Sign-in goes through the **official Steam site** (OpenID). DotaTraker gets only your public Steam ID and never sees your password or Guard code.
+- Replays are processed on your PC; only the key check goes online.
+- The code is open, all of it is in this repository.
+
+## Updates
+
+When a new version is out, the app shows a "DotaTraker … is out" bar. The "Update now" button downloads it from GitHub and restarts the app. Your key, settings and replays stay where they are.
 
 ## What it looks like
 
-| Sign in with a key | Home |
+| Sign in | Home |
 |---|---|
 | <img src="docs/login.png" alt="Sign in"> | <img src="docs/home.png" alt="Home"> |
 | **Match timeline** | **Stats** |
@@ -31,23 +54,8 @@ One key works on one computer. Replays are processed on your PC; only the key ch
 - Incoming and outgoing reports, scoreboard activity, teammate vs enemy summary.
 - Stats across every analysed match, CSV and JSON export.
 - Auto-sync of new matches, dark and light theme, Russian and English.
-
-<details>
-<summary>How it works</summary>
-
-```
-browser ──► gate (localhost:8080) ──► engine server.exe (localhost:8081)
-                │
-                └──► key server (Cloudflare)
-```
-
-- `gate/` is the local Node.js app with no dependencies. It checks the key and starts and restarts the engine.
-- `static/` is the interface.
-- Keys are checked by a server on Cloudflare and stored there only as SHA-256.
-- A key is bound to the computer and checked every 10 minutes. A revoked key signs you out at once; offline you get 3 days.
-- Engine: [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT), downloaded by `setup.bat` into `engine/`.
-</details>
+- Reads replays from the latest Dota patches (manta 1.5.1 parser).
 
 ## Licences
 
-Third-party components and licences: [NOTICE.md](NOTICE.md). MIT licensed.
+Engine: [d3nd3/dota-report-timestamps](https://github.com/d3nd3/dota-report-timestamps) (MIT), built with [dotabuff/manta](https://github.com/dotabuff/manta) v1.5.1. Other components: [NOTICE.md](NOTICE.md). MIT licensed.

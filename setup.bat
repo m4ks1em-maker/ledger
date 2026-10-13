@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title Ledger setup
+title DotaTraker setup
 cd /d "%~dp0"
 echo.
-echo  Ledger setup
+echo  DotaTraker setup
 echo  ------------
 where node >nul 2>nul
 if errorlevel 1 (
@@ -34,7 +34,7 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-rem Ledger 1.x kept the engine next to this file; the engine folder replaces it
+rem DotaTraker 1.x kept the engine next to this file; the engine folder replaces it
 for %%f in (server.exe bot.exe) do if exist "%%f" del /q "%%f" >nul 2>nul
 if exist "assets\portraits" rmdir /s /q "assets" >nul 2>nul
 echo.

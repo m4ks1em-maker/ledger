@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 'use strict';
 /*
- * Ledger gate: the local web app, behind an access key.
+ * DotaTraker gate: the local web app, behind an access key.
  *
  *   browser ──► gate (127.0.0.1:8080) ──► server.exe (127.0.0.1:8081)
  *                  │
  *                  └──► key server in the cloud (activate / check the key)
  *
- * - The key is checked against the Ledger key server (see /cloud). Keys are sold by the owner.
+ * - The key is checked against the DotaTraker key server (see /cloud). Keys are sold by the owner.
  * - One key works on a limited number of computers. The key server remembers which ones.
- * - If the internet drops, Ledger keeps working for a while (OFFLINE_GRACE) and checks again later.
+ * - If the internet drops, DotaTraker keeps working for a while (OFFLINE_GRACE) and checks again later.
  * - Zero npm dependencies. Needs Node 18+.
  */
 
@@ -50,11 +50,17 @@ function writeJsonAtomic(file, data) {
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 });
     fs.renameSync(tmp, file);
 }
-const VERSION = (readJson(path.join(ROOT, 'package.json'), {}).version) || '2.0.0';
+const PKG = readJson(path.join(ROOT, 'package.json'), {});
+const VERSION = PKG.version || '2.0.0';
+const ENGINE_REV = String(PKG.engineRev || '');
 
 /* ----------------------------------------------------------------- config */
 
-const APP = Object.assign({ licenseServer: '', telegram: 'm4ks1em', github: 'https://github.com/m4ks1em-maker/ledger' },
+const DEFAULT_PRICES = [{ days: 7, usd: 1 }, { days: 30, usd: 2, tag: 'popular' }, { days: 90, usd: 5 }, { days: 365, usd: 15 }, { days: 0, usd: 30, tag: 'best' }];
+const APP = Object.assign({ licenseServer: '', telegram: 'm4ks1em', github: 'https://github.com/m4ks1em-maker/ledger', prices: DEFAULT_PRICES,
+    updateUrl: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger/main/package.json',
+    updateArchive: 'https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.tar.gz',
+    engineBase: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger/engine/' },
     readJson(path.join(ROOT, 'ledger.config.json'), {}));
 const LICENSE_SERVER = String(process.env.LICENSE_SERVER || APP.licenseServer || '').replace(/\/+$/, '');
 const SERVER_CONFIGURED = /^https?:\/\/[^/]+/.test(LICENSE_SERVER) && !/CHANGE-ME|example\./i.test(LICENSE_SERVER);
@@ -63,7 +69,7 @@ let GITHUB = String(APP.github || '');
 
 const SYNC_DEFAULTS = { enabled: false, source: 'opendota', steamId: '', everyMin: 10, limit: 10, turbo: false };
 const settings = Object.assign({
-    host: '127.0.0.1',            // loopback only: Ledger is a personal app
+    host: '127.0.0.1',            // loopback only: DotaTraker is a personal app
     port: 8080,
     upstream: 'http://127.0.0.1:8081',
     sessionDays: 30
@@ -83,7 +89,7 @@ const CHECK_EVERY = 10 * MIN;
 /* --------------------------------------------------------- this computer */
 
 // A stable id for this computer, so a key bought for one PC is not shared around.
-// Same machine + same Windows user ⇒ same id, even after reinstalling Ledger.
+// Same machine + same Windows user ⇒ same id, even after reinstalling DotaTraker.
 function machineFingerprint() {
     const parts = [];
     try {
@@ -138,7 +144,7 @@ const DENY_TEXT = {
 async function keyServer(pathname, payload, timeoutMs = 15000) {
     const r = await fetch(LICENSE_SERVER + pathname, {
         method: payload ? 'POST' : 'GET',
-        headers: Object.assign({ 'User-Agent': `Ledger/${VERSION}` }, payload ? { 'Content-Type': 'application/json' } : {}),
+        headers: Object.assign({ 'User-Agent': `DotaTraker/${VERSION}` }, payload ? { 'Content-Type': 'application/json' } : {}),
         body: payload ? JSON.stringify(payload) : undefined,
         signal: AbortSignal.timeout(timeoutMs)
     });
@@ -162,7 +168,7 @@ function checkLicense() {
     checking = (async () => {
         lic.lastCheck = now();
         try {
-            const { status, body } = await keyServer('/v1/check', { token: lic.token, device: DEVICE_ID, app: VERSION });
+            const { status, body } = await keyServer('/v1/check', { token: lic.token, device: DEVICE_ID, app: VERSION, steam: (settings.steam && settings.steam.id) || undefined });
             if (status === 200 && body.ok) {
                 lic.license = body.license; lic.lastOk = now(); lic.offline = false; lic.denied = null;
                 saveLicense();
@@ -289,7 +295,7 @@ function sameOrigin(req) {
 }
 const isUnsafe = (m) => m !== 'GET' && m !== 'HEAD' && m !== 'OPTIONS';
 
-// Only answer to names that point at this computer. Stops DNS-rebinding pages on the internet from talking to Ledger.
+// Only answer to names that point at this computer. Stops DNS-rebinding pages on the internet from talking to DotaTraker.
 const EXTRA_HOSTS = String(process.env.ALLOWED_HOSTS || '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
 function hostAllowed(req) {
     const host = String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
@@ -308,9 +314,9 @@ function safeJoin(dir, rel) {
 }
 
 function upstreamDown(req, res) {
-    if (String(req.url).startsWith('/api/')) return sendJson(res, 502, { error: 'The replay engine is not running. Close Ledger and open start.bat again.', code: 'engine' });
+    if (String(req.url).startsWith('/api/')) return sendJson(res, 502, { error: 'The replay engine is not running. Close DotaTraker and open start.bat again.', code: 'engine' });
     res.writeHead(502, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end('<!doctype html><meta charset="utf-8"><title>Engine offline</title><body style="font:15px system-ui;background:#0b1020;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><div><h2 style="font-weight:600">The replay engine is not running</h2><p style="color:#a3adc7">Close Ledger and open start.bat again.</p></div>');
+    res.end('<!doctype html><meta charset="utf-8"><title>Engine offline</title><body style="font:15px system-ui;background:#0b1020;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><div><h2 style="font-weight:600">The replay engine is not running</h2><p style="color:#a3adc7">Close DotaTraker and open start.bat again.</p></div>');
 }
 
 function proxy(req, res) {
@@ -365,7 +371,7 @@ function writable(dir) {
 }
 // The engine does not remember its settings between runs, so the gate does: the folder picked in
 // Settings is saved in gate/data/config.json and handed to the engine whenever it starts.
-// With nothing picked and Dota's default folder missing or read-only, <Ledger>/replays is used.
+// With nothing picked and Dota's default folder missing or read-only, <DotaTraker>/replays is used.
 let replayDirCache = { at: 0, dir: null };
 async function replayDir() {
     if (replayDirCache.dir && now() - replayDirCache.at < 30000) return replayDirCache.dir;
@@ -404,7 +410,7 @@ setTimeout(async function warm(tries = 0) {
 
 
 /* ------------------------------------------------- running the engine */
-// server.exe and bot.exe live in ./engine. Ledger starts them, restarts them if they crash and stops
+// server.exe and bot.exe live in ./engine. DotaTraker starts them, restarts them if they crash and stops
 // them on exit. The engine gets its own folder with a tiny static page, so opening :8081 directly
 // only redirects to the gate: the app itself is served here, behind the key.
 
@@ -425,7 +431,7 @@ function portOpen(host, port) {
 function ensureDecoy() {
     const dir = path.join(ENGINE_DIR, 'static');
     const file = path.join(dir, 'index.html');
-    const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=http://localhost:${settings.port}/"><title>Ledger</title><body style="font:15px system-ui;background:#0a0f1f;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><a style="color:#9db4ff" href="http://localhost:${settings.port}/">Open Ledger</a>`;
+    const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=http://localhost:${settings.port}/"><title>DotaTraker</title><body style="font:15px system-ui;background:#0a0f1f;color:#eaf0ff;display:grid;place-items:center;height:100vh;margin:0"><a style="color:#9db4ff" href="http://localhost:${settings.port}/">Open DotaTraker</a>`;
     try { fs.mkdirSync(dir, { recursive: true }); if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== html) fs.writeFileSync(file, html); } catch (_) {}
 }
 function supervise(name, file, extraEnv) {
@@ -456,6 +462,7 @@ async function startEngine() {
     if (process.env.LEDGER_NO_ENGINE === '1') return;
     const up = new URL(settings.upstream);
     if (!/^(127\.0\.0\.1|localhost)$/.test(up.hostname)) return;
+    if (fs.existsSync(engineExe('server')) && !(await portOpen(up.hostname, up.port || 80))) await ensureEngine();
     if (await portOpen(up.hostname, up.port || 80)) { console.log('  Engine:  already running'); return; }
     if (!fs.existsSync(engineExe('server'))) {
         console.log('  ! The replay engine is missing. Run setup.bat first.');
@@ -537,7 +544,7 @@ function httpGet(urlStr, { timeout = 20000, onHead, onData } = {}) {
     return new Promise((resolve, reject) => {
         let u; try { u = new URL(urlStr); } catch (_) { return reject(new Error('bad url')); }
         const lib = u.protocol === 'https:' ? https : http;
-        const r = lib.get(u, { timeout, headers: { 'User-Agent': `Ledger/${VERSION} (+replay report viewer)`, Accept: '*/*' } }, (ur) => {
+        const r = lib.get(u, { timeout, headers: { 'User-Agent': `DotaTraker/${VERSION} (+replay report viewer)`, Accept: '*/*' } }, (ur) => {
             if (ur.statusCode >= 300 && ur.statusCode < 400 && ur.headers.location) { ur.resume(); return reject(Object.assign(new Error('redirect'), { status: ur.statusCode })); }
             if (ur.statusCode !== 200) { ur.resume(); return reject(Object.assign(new Error('HTTP ' + ur.statusCode), { status: ur.statusCode })); }
             if (onHead) { try { onHead(ur); } catch (e) { ur.destroy(); return reject(e); } }
@@ -771,6 +778,220 @@ function syncApi(req, res) {
     });
 }
 
+/* ------------------------------------------------------ downloads helper */
+
+async function fetchBuf(urlStr, { timeout = 30000, max = 5 * 1024 * 1024, method = 'GET', body, headers } = {}) {
+    const r = await fetch(urlStr, {
+        method, body, redirect: 'follow', signal: AbortSignal.timeout(timeout),
+        headers: Object.assign({ 'User-Agent': `DotaTraker/${VERSION}` }, headers || {})
+    });
+    if (!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
+    const len = Number(r.headers.get('content-length') || 0);
+    if (len && len > max) throw new Error('too large');
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > max) throw new Error('too large');
+    return buf;
+}
+function writeFileAtomic(file, buf) {
+    const tmp = file + '.part';
+    fs.writeFileSync(tmp, buf);
+    fs.renameSync(tmp, file);
+}
+
+/* ------------------------------------------------- patched replay engine */
+// The stock engine ships manta v1.5.0, which stops on replays from Dota build 6951+ with
+// "nextByte: insufficient buffer". Our build (branch "engine") has manta v1.5.1. It is fetched
+// once per engineRev from package.json, so a new engine reaches everyone with a normal update.
+
+async function ensureEngine() {
+    if (process.platform !== 'win32' || !ENGINE_REV) return;
+    const marker = path.join(ENGINE_DIR, 'engine-rev.txt');
+    let cur = '';
+    try { cur = fs.readFileSync(marker, 'utf8').trim(); } catch (_) {}
+    if (cur === ENGINE_REV) return;
+    console.log('  Engine:  downloading the updated replay parser…');
+    const names = ['server.exe', 'bot.exe'];
+    try {
+        fs.mkdirSync(ENGINE_DIR, { recursive: true });
+        for (const n of names) {
+            const buf = await fetchBuf(APP.engineBase + n + '?rev=' + encodeURIComponent(ENGINE_REV), { timeout: 180000, max: 120 * 1024 * 1024 });
+            if (buf.length < 1024 * 1024 || buf[0] !== 0x4d || buf[1] !== 0x5a) throw new Error('bad file ' + n);
+            writeFileAtomic(path.join(ENGINE_DIR, n + '.new'), buf);
+        }
+        for (const n of names) fs.renameSync(path.join(ENGINE_DIR, n + '.new'), path.join(ENGINE_DIR, n));
+        fs.writeFileSync(marker, ENGINE_REV);
+        console.log('  Engine:  updated');
+    } catch (e) {
+        for (const n of names) { try { fs.unlinkSync(path.join(ENGINE_DIR, n + '.new')); } catch (_) {} }
+        console.log(`  ! Could not update the engine (${e.message}). The current one keeps working; will try again next start.`);
+    }
+}
+
+/* ------------------------------------------------------------- app update */
+// Checks package.json on GitHub. "Update" downloads the main branch, copies it over this folder
+// (keeps gate/data, engine and replays) and exits with code 75: start.bat starts DotaTraker again.
+
+const update = { latest: null, notes: '', checkedAt: 0, state: 'idle', error: null };
+function newer(a, b) {
+    const pa = String(a || '').split('.').map((n) => parseInt(n, 10) || 0), pb = String(b || '').split('.').map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0); }
+    return false;
+}
+async function checkUpdate() {
+    if (!APP.updateUrl || process.env.DOTATRAKER_NO_UPDATE === '1') return;
+    try {
+        const j = JSON.parse((await fetchBuf(APP.updateUrl + '?t=' + now(), { timeout: 15000, max: 64 * 1024 })).toString('utf8'));
+        if (j && /^\d+\.\d+\.\d+$/.test(j.version || '')) {
+            update.latest = j.version;
+            update.notes = String(j.releaseNotes || '').slice(0, 600);
+            update.notesRu = String(j.releaseNotesRu || '').slice(0, 600);
+        }
+        update.checkedAt = now();
+        if (updateView()) console.log(`  Update:  DotaTraker ${update.latest} is out. Open the app and press "Update".`);
+    } catch (_) {}
+}
+function updateView() {
+    if (!update.latest || !newer(update.latest, VERSION)) return null;
+    return { version: update.latest, notes: update.notes, notesRu: update.notesRu, state: update.state, error: update.error, auto: process.platform === 'win32' || process.env.DOTATRAKER_SELF_UPDATE === '1' };
+}
+setInterval(() => { checkUpdate(); }, 30 * MIN).unref();
+
+const KEEP = new Set(['gate/data', 'engine', 'replays', 'uploads', 'cloud', '.git', 'node_modules']);
+function copyTree(src, dst, rel = '') {
+    let n = 0;
+    for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
+        const r = rel ? rel + '/' + ent.name : ent.name;
+        if (KEEP.has(r)) continue;
+        const s = path.join(src, ent.name), d = path.join(dst, ent.name);
+        if (ent.isDirectory()) { fs.mkdirSync(d, { recursive: true }); n += copyTree(s, d, r); continue; }
+        if (!ent.isFile()) continue;
+        const buf = fs.readFileSync(s);
+        let same = false;
+        try { same = fs.readFileSync(d).equals(buf); } catch (_) {}
+        if (same) continue;                       // never rewrite unchanged files (start.bat is running)
+        writeFileAtomic(d, buf); n++;
+    }
+    return n;
+}
+async function selfUpdate() {
+    if (update.state === 'downloading' || update.state === 'installing' || update.state === 'restarting') return;
+    update.state = 'downloading'; update.error = null;
+    let tmp;
+    try {
+        tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dotatraker-'));
+        const tgz = path.join(tmp, 'src.tar.gz');
+        fs.writeFileSync(tgz, await fetchBuf(APP.updateArchive + '?t=' + now(), { timeout: 120000, max: 80 * 1024 * 1024 }));
+        update.state = 'installing';
+        const winTar = process.env.SystemRoot ? path.join(process.env.SystemRoot, 'System32', 'tar.exe') : '';
+        const tar = winTar && fs.existsSync(winTar) ? winTar : 'tar';
+        execFileSync(tar, ['-xzf', 'src.tar.gz'], { cwd: tmp, windowsHide: true, stdio: 'ignore', timeout: 120000 });
+        const dir = fs.readdirSync(tmp, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => path.join(tmp, e.name))
+            .find((d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'gate', 'gate.js')));
+        if (!dir) throw new Error('archive looks wrong');
+        const pkg = readJson(path.join(dir, 'package.json'), {});
+        if (!/^\d+\.\d+\.\d+$/.test(pkg.version || '')) throw new Error('archive has no version');
+        const changed = copyTree(dir, ROOT);
+        console.log(`[gate] updated to ${pkg.version} (${changed} files). Restarting…`);
+        update.state = 'restarting';
+        setTimeout(() => restart(), 900);
+    } catch (e) {
+        update.state = 'error'; update.error = e.message;
+        console.error('[gate] update failed:', e.message);
+    } finally {
+        if (tmp) { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {} }
+    }
+}
+function restart() {
+    try { writeJsonAtomic(SESSIONS_FILE, [...sessions.entries()]); } catch (_) {}
+    stopEngine();
+    process.env.LEDGER_OPEN = '0';
+    if (process.env.DOTATRAKER_LOOP === '1') return setTimeout(() => process.exit(75), 400);
+    // started without the start.bat loop: start a fresh copy of ourselves, then leave
+    setTimeout(() => {
+        try {
+            server.close();
+            const child = spawn(process.execPath, [path.join(__dirname, 'gate.js')], { cwd: ROOT, stdio: 'inherit', env: Object.assign({}, process.env, { LEDGER_OPEN: '0' }) });
+            child.on('exit', (c) => process.exit(c || 0));
+        } catch (_) { process.exit(75); }
+    }, 600);
+}
+
+/* ------------------------------------------------------- Steam sign-in */
+// Official Steam OpenID: the user signs in on steamcommunity.com, Steam sends back a signed
+// SteamID, and we ask Steam to confirm the signature. DotaTraker never sees a password.
+
+const STEAM_OP = 'https://steamcommunity.com/openid/login';
+const steamStates = new Map();   // state -> { at, from }
+const AVATAR_FILE = path.join(DATA_DIR, 'steam-avatar.jpg');
+const originOf = (req) => `http://${String(req.headers.host || ('localhost:' + settings.port))}`;
+
+function steamStart(req, res, url) {
+    for (const [k, v] of steamStates) if (now() - v.at > 10 * MIN) steamStates.delete(k);
+    if (steamStates.size > 50) steamStates.clear();
+    const state = b64url(crypto.randomBytes(18));
+    steamStates.set(state, { at: now(), from: url.searchParams.get('from') === 'app' ? 'app' : 'login' });
+    const origin = originOf(req);
+    const q = new URLSearchParams({
+        'openid.ns': 'http://specs.openid.net/auth/2.0',
+        'openid.mode': 'checkid_setup',
+        'openid.return_to': `${origin}/_ledger/steam/return?state=${state}`,
+        'openid.realm': origin,
+        'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+        'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
+    });
+    res.writeHead(302, { Location: `${STEAM_OP}?${q}`, 'Cache-Control': 'no-store' });
+    res.end();
+}
+async function steamProfile(id) {
+    const xml = (await fetchBuf(`https://steamcommunity.com/profiles/${id}/?xml=1`, { timeout: 12000, max: 512 * 1024 })).toString('utf8');
+    const tag = (t) => { const m = new RegExp(`<${t}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${t}>`).exec(xml); return m ? (m[1] != null ? m[1] : m[2] || '').trim() : ''; };
+    return { name: tag('steamID').slice(0, 64), avatar: tag('avatarFull') || tag('avatarMedium') };
+}
+async function steamReturn(req, res, url) {
+    const p = url.searchParams;
+    const st = steamStates.get(p.get('state') || '');
+    steamStates.delete(p.get('state') || '');
+    const go = (where) => { res.writeHead(302, { Location: where, 'Cache-Control': 'no-store' }); res.end(); };
+    const back = (code) => go((st && st.from === 'app' ? '/?steam=' : '/login?steam=') + code);
+    if (!st || now() - st.at > 10 * MIN) return back('expired');
+    if (p.get('openid.mode') !== 'id_res') return back('cancel');
+    const origin = originOf(req);
+    const m = /^https:\/\/steamcommunity\.com\/openid\/id\/(7656119\d{10})$/.exec(p.get('openid.claimed_id') || '');
+    if (!m || p.get('openid.op_endpoint') !== STEAM_OP || !String(p.get('openid.return_to') || '').startsWith(`${origin}/_ledger/steam/return?`)) return back('fail');
+    try {
+        const form = new URLSearchParams();
+        for (const [k, v] of p) if (k.startsWith('openid.')) form.set(k, v);
+        form.set('openid.mode', 'check_authentication');
+        const txt = (await fetchBuf(STEAM_OP, { method: 'POST', body: form.toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000, max: 64 * 1024 })).toString('utf8');
+        if (!/^is_valid\s*:\s*true\s*$/m.test(txt)) return back('fail');
+    } catch (_) { return back('offline'); }
+
+    const id = m[1];
+    const prof = await steamProfile(id).catch(() => ({ name: '', avatar: '' }));
+    settings.steam = { id, name: prof.name || id, at: now() };
+    if (!settings.sync.steamId) settings.sync.steamId = id;
+    saveSettings();
+    try {
+        if (prof.avatar && /^https:\/\/[a-z0-9.-]+\.(steamstatic|akamaihd)\.(com|net)\//.test(prof.avatar)) {
+            const img = await fetchBuf(prof.avatar, { timeout: 12000, max: 1024 * 1024 });
+            fs.mkdirSync(DATA_DIR, { recursive: true }); writeFileAtomic(AVATAR_FILE, img);
+        } else { fs.rmSync(AVATAR_FILE, { force: true }); }
+    } catch (_) {}
+
+    // a working key on this PC + the same Steam account = signed in
+    if (lic.token && !licenseProblem()) {
+        if (lic.steamId && lic.steamId !== id) return back('other');
+        if (!lic.steamId) { lic.steamId = id; saveLicense(); }
+        if (!getSession(req)) { const { sid, exp } = openSession(req); setSessionCookie(res, sid, exp); }
+        return go('/?steam=ok');
+    }
+    return back('ok');
+}
+function steamView() {
+    if (!settings.steam || !settings.steam.id) return null;
+    return { id: settings.steam.id, name: settings.steam.name || settings.steam.id, avatar: fs.existsSync(AVATAR_FILE) ? '/_ledger/steam/avatar?v=' + (settings.steam.at || 0) : '' };
+}
+
 /* ------------------------------------------------------------- login API */
 
 function meView() {
@@ -778,7 +999,8 @@ function meView() {
     return {
         label: l.label || '', tail: l.tail || '', status: l.status || '', expiresAt: l.expiresAt || null,
         activatedAt: l.activatedAt || null, maxDevices: l.maxDevices || 1, devices: l.devices || 1,
-        offline: !!lic.offline, lastOk: lic.lastOk || 0, telegram: TELEGRAM, github: GITHUB, version: VERSION, serverTime: now()
+        offline: !!lic.offline, lastOk: lic.lastOk || 0, telegram: TELEGRAM, github: GITHUB, version: VERSION, serverTime: now(),
+        steam: steamView(), update: updateView()
     };
 }
 
@@ -796,12 +1018,12 @@ async function login(req, res) {
 
     let r;
     try {
-        r = await keyServer('/v1/activate', { key: raw, device: DEVICE_ID, name: DEVICE_NAME, app: VERSION });
+        r = await keyServer('/v1/activate', { key: raw, device: DEVICE_ID, name: DEVICE_NAME, app: VERSION, steam: (settings.steam && settings.steam.id) || undefined });
     } catch (_) {
         return sendJson(res, 502, { error: DENY_TEXT.offline, code: 'offline' });
     }
     if (r.status === 200 && r.body.ok && r.body.token) {
-        lic = { token: r.body.token, license: r.body.license, lastOk: now(), lastCheck: now(), offline: false, denied: null };
+        lic = { token: r.body.token, license: r.body.license, lastOk: now(), lastCheck: now(), offline: false, denied: null, steamId: (settings.steam && settings.steam.id) || '' };
         saveLicense();
         const { sid, exp } = openSession(req);
         setSessionCookie(res, sid, exp);
@@ -817,7 +1039,7 @@ async function login(req, res) {
 
 async function handle(req, res) {
     baseHeaders(res);
-    if (!hostAllowed(req)) { res.writeHead(421, { 'Content-Type': 'text/plain' }); return res.end('Open Ledger at http://localhost:' + settings.port); }
+    if (!hostAllowed(req)) { res.writeHead(421, { 'Content-Type': 'text/plain' }); return res.end('Open DotaTraker at http://localhost:' + settings.port); }
     const url = new URL(req.url, 'http://gate');
     const pathname = url.pathname;
     const method = req.method;
@@ -825,7 +1047,7 @@ async function handle(req, res) {
     if (isUnsafe(method) && !sameOrigin(req)) return sendJson(res, 403, { error: 'Cross-site request blocked' });
 
     // ---- public
-    if (pathname === '/favicon.ico' || pathname === '/favicon.svg') return sendFile(req, res, path.join(STATIC_DIR, 'favicon.svg'));
+    if (pathname === '/favicon.ico' || pathname === '/favicon.svg' || pathname === '/favicon.png') return sendFile(req, res, path.join(STATIC_DIR, 'img', 'logo-64.png'));
     if (pathname === '/login' && (method === 'GET' || method === 'HEAD')) {
         if (getSession(req) && !licenseProblem()) { res.writeHead(302, { Location: '/' }); return res.end(); }
         return sendFile(req, res, path.join(PUBLIC_DIR, 'login.html'), { page: true });
@@ -836,15 +1058,30 @@ async function handle(req, res) {
         return sendJson(res, 200, {
             telegram: TELEGRAM, github: GITHUB, configured: SERVER_CONFIGURED, version: VERSION,
             problem: problem === 'none' ? null : problem,
-            denied: lic.denied, label: lic.license ? lic.license.label : '', offline: !!lic.offline
+            denied: lic.denied, label: lic.license ? lic.license.label : '', offline: !!lic.offline,
+            prices: Array.isArray(APP.prices) ? APP.prices.slice(0, 8) : DEFAULT_PRICES, steam: steamView(), update: updateView()
         });
+    }
+    if (pathname === '/_ledger/update' && method === 'POST') {
+        if (!updateView()) { await checkUpdate(); if (!updateView()) return sendJson(res, 200, { ok: true, update: null }); }
+        if (!updateView().auto) return sendJson(res, 400, { error: 'Download the update from GitHub.' });
+        selfUpdate();
+        return sendJson(res, 202, { ok: true, update: updateView() });
+    }
+    if (pathname === '/_ledger/update' && method === 'GET') return sendJson(res, 200, { update: updateView(), version: VERSION });
+    if (pathname === '/_ledger/steam/start' && method === 'GET') return steamStart(req, res, url);
+    if (pathname === '/_ledger/steam/return' && method === 'GET') return steamReturn(req, res, url);
+    if (pathname === '/_ledger/steam/avatar' && (method === 'GET' || method === 'HEAD')) {
+        if (!fs.existsSync(AVATAR_FILE)) { res.writeHead(404); return res.end(); }
+        res.setHeader('Content-Type', 'image/jpeg'); res.setHeader('Cache-Control', 'private, max-age=86400');
+        return res.end(method === 'HEAD' ? undefined : fs.readFileSync(AVATAR_FILE));
     }
     if (pathname.startsWith('/gate/') && (method === 'GET' || method === 'HEAD')) {
         const f = safeJoin(PUBLIC_DIR, pathname.slice('/gate/'.length));
         if (f && ['.css', '.js', '.svg', '.png', '.woff2'].includes(path.extname(f))) return sendFile(req, res, f);
         res.writeHead(404); return res.end('Not found');
     }
-    if ((/^\/(style\.css|fonts\.css|i18n\.js|ui\.js|favicon\.svg)$/.test(pathname) || /^\/fonts\/[a-z0-9-]+\.woff2$/.test(pathname)) && (method === 'GET' || method === 'HEAD')) {
+    if ((/^\/(style\.css|fonts\.css|i18n\.js|ui\.js|favicon\.svg)$/.test(pathname) || /^\/fonts\/[a-z0-9-]+\.woff2$/.test(pathname) || /^\/img\/[a-z0-9-]+\.(webp|png)$/.test(pathname)) && (method === 'GET' || method === 'HEAD')) {
         return sendFile(req, res, path.join(STATIC_DIR, pathname.slice(1)));
     }
 
@@ -865,6 +1102,10 @@ async function handle(req, res) {
         sessions.delete(session.hash); saveSessions();
         if (url.searchParams.get('forget') !== '0') { lic.token = ''; lic.denied = null; saveLicense(); }
         clearSessionCookie(res);
+        return sendJson(res, 200, { ok: true });
+    }
+    if (pathname === '/_ledger/steam/unlink' && method === 'POST') {
+        delete settings.steam; saveSettings(); try { fs.rmSync(AVATAR_FILE, { force: true }); } catch (_) {}
         return sendJson(res, 200, { ok: true });
     }
     if (pathname === '/_ledger/sync') { try { return await syncApi(req, res); } catch (_) { return sendJson(res, 400, { error: 'Bad request' }); } }
@@ -897,7 +1138,7 @@ const server = http.createServer((req, res) => {
 server.requestTimeout = 0;      // long downloads / SSE must not be cut
 server.headersTimeout = 20000;
 server.on('error', (e) => {
-    if (e.code === 'EADDRINUSE') console.error(`\n  Port ${settings.port} is busy. Is Ledger already open? Close the other window or set GATE_PORT.\n`);
+    if (e.code === 'EADDRINUSE') console.error(`\n  Port ${settings.port} is busy. Is DotaTraker already open? Close the other window or set GATE_PORT.\n`);
     else console.error('[gate]', e.message);
     process.exit(1);
 });
@@ -905,13 +1146,14 @@ server.on('error', (e) => {
 server.listen(settings.port, settings.host, () => {
     const line = '─'.repeat(58);
     console.log('\n' + line);
-    console.log(`  Ledger ${VERSION} is running`);
+    console.log(`  DotaTraker ${VERSION} is running`);
     console.log(`  Open:  http://localhost:${settings.port}`);
     if (!SERVER_CONFIGURED) console.log('\n  ! Key server is not set. Put its address into ledger.config.json');
     else if (lic.license && lic.token) console.log(`  Key:   ${lic.license.label || '…' + (lic.license.tail || '')}`);
     console.log(line + '\n');
     refreshInfo();
     setTimeout(() => checkLicense(), 1500).unref();
+    setTimeout(() => checkUpdate(), 4000).unref();
     startEngine().then(() => {
         if (process.platform === 'win32' && process.env.LEDGER_OPEN !== '0') {
             try { spawn('cmd', ['/c', 'start', '', `http://localhost:${settings.port}/`], { detached: true, stdio: 'ignore', windowsHide: true }).unref(); } catch (_) {}

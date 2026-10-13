@@ -27,8 +27,7 @@
     input.addEventListener('input', () => {
         const before = input.value;
         const caretAtEnd = input.selectionStart === before.length;
-        const s = symbols(before);
-        const next = format(s);
+        const next = format(symbols(before));
         if (next !== before && caretAtEnd) input.value = next;
         paint();
         clearError();
@@ -86,13 +85,72 @@
         }
     });
 
-    // contact and the reason we are here (key expired, revoked, offline...)
+    // card light follows the pointer
+    form.addEventListener('pointermove', (e) => { const r = form.getBoundingClientRect(); form.style.setProperty('--mx', (e.clientX - r.left) + 'px'); form.style.setProperty('--my', (e.clientY - r.top) + 'px'); });
+
+    /* ---------- pricing ---------- */
+    function periodName(days) {
+        if (!days) return 'Forever';
+        if (days === 365) return '1 year';
+        return days + (days === 1 ? ' day' : ' days');
+    }
+    function perDay(p) {
+        if (!p.days) return 'One payment, yours for good';
+        const v = p.usd / p.days;
+        return '$' + (v >= 0.1 ? v.toFixed(2) : v.toFixed(3).replace(/0$/, '')) + ' a day';
+    }
+    function renderPrices(list) {
+        const box = $('prices'); box.textContent = '';
+        list.forEach((p, i) => {
+            const a = document.createElement('a');
+            a.className = 'price-row' + (p.tag === 'best' ? ' best' : '');
+            a.href = 'https://t.me/' + encodeURIComponent(telegram); a.target = '_blank'; a.rel = 'noopener noreferrer';
+            a.style.animationDelay = (0.32 + i * 0.06) + 's';
+            const name = document.createElement('span'); name.className = 'pr-name';
+            const nm = document.createElement('span'); nm.textContent = periodName(Number(p.days) || 0); name.appendChild(nm);
+            if (p.tag === 'popular' || p.tag === 'best') { const t = document.createElement('span'); t.className = 'pr-tag'; t.textContent = p.tag === 'best' ? 'Best value' : 'Popular'; name.appendChild(t); }
+            const sub = document.createElement('span'); sub.className = 'pr-sub'; sub.textContent = perDay({ days: Number(p.days) || 0, usd: Number(p.usd) || 0 });
+            const price = document.createElement('span'); price.className = 'pr-price';
+            const cur = document.createElement('small'); cur.textContent = '$';
+            price.append(cur, document.createTextNode(String(Number(p.usd) || 0)));
+            a.append(name, price, sub);
+            box.appendChild(a);
+        });
+    }
+    renderPrices([{ days: 7, usd: 1 }, { days: 30, usd: 2, tag: 'popular' }, { days: 90, usd: 5 }, { days: 365, usd: 15 }, { days: 0, usd: 30, tag: 'best' }]);
+
+    /* ---------- Steam ---------- */
+    const steamMsg = {
+        ok: ['Steam account linked. Now enter your key.', 'ok'],
+        other: ['This key is linked to another Steam account.', 'bad'],
+        cancel: ['Steam sign-in was cancelled.', 'bad'],
+        expired: ['The Steam sign-in took too long. Try again.', 'bad'],
+        fail: ['Steam could not confirm the sign-in. Try again.', 'bad'],
+        offline: ['Cannot reach Steam. Check your internet connection.', 'bad']
+    };
+    function renderSteam(st) {
+        if (!st) return;
+        $('steam-btn').classList.add('hidden');
+        $('steam-me').classList.remove('hidden');
+        $('steam-name').textContent = st.name || st.id;
+        if (st.avatar) $('steam-av').src = st.avatar; else $('steam-av').removeAttribute('src');
+    }
+    const q = new URLSearchParams(location.search).get('steam');
+    if (q && steamMsg[q]) {
+        const n = $('steam-note'); n.textContent = steamMsg[q][0]; n.className = 'steam-note ' + steamMsg[q][1];
+        history.replaceState(null, '', '/login');
+    }
+
+    // contact, prices, Steam and the reason we are here (key expired, revoked, offline...)
     fetch('/_ledger/info', { cache: 'no-store' }).then((r) => r.json()).then((info) => {
         if (info.telegram) {
             telegram = info.telegram;
-            $('buy').href = 'https://t.me/' + encodeURIComponent(telegram);
-            $('buy-handle').textContent = '@' + telegram;
+            ['buy', 'price-cta'].forEach((id) => { $(id).href = 'https://t.me/' + encodeURIComponent(telegram); });
+            $('buy-handle').textContent = '@' + telegram; $('price-handle').textContent = '@' + telegram;
         }
+        if (Array.isArray(info.prices) && info.prices.length) renderPrices(info.prices);
+        renderSteam(info.steam);
+        if (window.LedgerUI) LedgerUI.updateBar($('update'), info.update, info.github);
         if (!info.configured) showError('The key server address is not set in ledger.config.json.', 'setup');
         else if (info.denied && info.denied.code) showError(info.denied.message, info.denied.code);
         else if (info.problem === 'expired') showError('This key has expired.', 'expired');
@@ -100,5 +158,5 @@
     }).catch(() => {});
 
     paint();
-    setTimeout(() => input.focus(), 350);
+    setTimeout(() => input.focus({ preventScroll: true }), 450);
 })();

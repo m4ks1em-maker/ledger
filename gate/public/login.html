@@ -5,47 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex">
     <meta name="color-scheme" content="dark light">
-    <title>Ledger — Sign in</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/fonts.css?v=20">
-    <link rel="stylesheet" href="/style.css?v=20">
-    <link rel="stylesheet" href="/gate/gate.css?v=20">
-    <script src="/i18n.js?v=20"></script>
-    <script src="/ui.js?v=20"></script>
+    <title>DotaTraker — Sign in</title>
+    <link rel="icon" href="/img/logo-64.png" type="image/png">
+    <link rel="stylesheet" href="/fonts.css?v=21">
+    <link rel="stylesheet" href="/style.css?v=21">
+    <link rel="stylesheet" href="/gate/gate.css?v=21">
+    <script src="/i18n.js?v=21"></script>
+    <script src="/ui.js?v=21"></script>
 </head>
 <body class="gate">
-    <div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+    <div class="aurora copper" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
     <div class="gate-top"></div>
 
     <main class="gate-shell">
-        <div class="gate-stack">
-            <div class="gate-brand">
-                <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.5" y="1.5" width="29" height="29" rx="9"/><path d="M8 21h16"/><circle cx="11" cy="21" r="2.6" class="m-r"/><circle cx="17.5" cy="21" r="2.6" class="m-d"/><path d="M11 11v6M17.5 8v9M24 14v3"/></svg>
-                <span>Ledger</span>
-            </div>
-            <h1 class="gate-title">Sign in with your key</h1>
-            <p class="gate-sub">Enter the key you bought to unlock Ledger on this computer.</p>
+        <div id="update" class="gate-update hidden" role="status"></div>
 
-            <form id="form" class="gate-card" autocomplete="off" novalidate>
-                <label for="key">Access key</label>
-                <div class="field">
-                    <input id="key" name="key" type="text" placeholder="LDG-XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters" autocorrect="off" autocomplete="off" maxlength="40" required>
-                    <button type="button" id="paste" class="paste">Paste</button>
+        <header class="gate-hero">
+            <div class="medal" aria-hidden="true"><img src="/img/logo-512.webp" alt="" width="148" height="148"></div>
+            <h1 class="gate-name">Dota<span>Traker</span></h1>
+            <p class="gate-tag">Who reported whom in your Dota 2 matches — minute by minute, straight from the replay.</p>
+        </header>
+
+        <div class="gate-grid">
+            <section class="gate-col" aria-label="Sign in">
+                <div class="steam-box" id="steam-box">
+                    <a class="steam-btn" id="steam-btn" href="/_ledger/steam/start">
+                        <svg class="steam-logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" class="s-bg"/><circle cx="20.6" cy="12.4" r="4.3" class="s-ring"/><circle cx="20.6" cy="12.4" r="2.1" class="s-dot"/><circle cx="11.3" cy="21.1" r="3.4" class="s-ring"/><path d="M2.5 17.6 9 20.3M13.8 18.6l3.7-3.3" class="s-arm"/></svg>
+                        <span class="steam-txt"><b>Sign in through Steam</b><small>steamcommunity.com</small></span>
+                        <svg class="steam-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </a>
+                    <div class="steam-me hidden" id="steam-me">
+                        <img id="steam-av" alt="" width="44" height="44">
+                        <span class="steam-txt"><small>Steam account</small><b id="steam-name"></b></span>
+                        <i class="steam-ok" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i>
+                    </div>
+                    <p class="steam-note" id="steam-note">Official Steam page. DotaTraker never sees your password or Guard code.</p>
                 </div>
-                <div class="key-dots" id="dots" aria-hidden="true"></div>
-                <div id="error" class="gate-error" role="alert" aria-live="polite"></div>
-                <button id="submit" class="btn primary-btn large-btn" type="submit" disabled>Enter</button>
-            </form>
 
-            <a class="buy" id="buy" href="https://t.me/m4ks1em" target="_blank" rel="noopener noreferrer">
-                <span class="buy-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.2 2.9 11.3c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/><path d="m7.8 14.6 10-7.2"/></svg></span>
-                <span class="buy-text"><b>No key yet?</b><span>Buy one in Telegram</span></span>
-                <span class="buy-handle" id="buy-handle">@m4ks1em</span>
-            </a>
+                <form id="form" class="gate-card" autocomplete="off" novalidate>
+                    <div class="card-head"><label for="key">Access key</label></div>
+                    <div class="field">
+                        <input id="key" name="key" type="text" placeholder="LDG-XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters" autocorrect="off" autocomplete="off" maxlength="40" required>
+                        <button type="button" id="paste" class="paste">Paste</button>
+                    </div>
+                    <div class="key-dots" id="dots" aria-hidden="true"></div>
+                    <div id="error" class="gate-error" role="alert" aria-live="polite"></div>
+                    <button id="submit" class="btn primary-btn large-btn copper-btn" type="submit" disabled>Unlock DotaTraker</button>
+                </form>
 
-            <p class="gate-foot">Works on one computer per key. Keys are checked online, then Ledger keeps working offline for up to 3 days.</p>
+                <a class="buy" id="buy" href="https://t.me/m4ks1em" target="_blank" rel="noopener noreferrer">
+                    <span class="buy-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.2 2.9 11.3c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/><path d="m7.8 14.6 10-7.2"/></svg></span>
+                    <span class="buy-text"><b>No key yet?</b><span>Buy one in Telegram</span></span>
+                    <span class="buy-handle" id="buy-handle">@m4ks1em</span>
+                </a>
+            </section>
+
+            <section class="price-card" aria-labelledby="price-title">
+                <div class="price-head">
+                    <span class="price-kicker">Access</span>
+                    <h2 id="price-title">Pricing</h2>
+                    <p>One key, one PC. No auto-renewal: you pay once for the period you pick.</p>
+                </div>
+                <div class="price-list" id="prices"></div>
+                <a class="price-cta" id="price-cta" href="https://t.me/m4ks1em" target="_blank" rel="noopener noreferrer">
+                    <span>Get a key in Telegram</span><b id="price-handle">@m4ks1em</b>
+                </a>
+                <ul class="price-perks">
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Key in minutes after payment</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>All updates included</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Works offline for up to 3 days</span></li>
+                </ul>
+            </section>
         </div>
+
+        <ul class="gate-trust">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg><b>Official Steam sign-in</b><span>Through steamcommunity.com. No passwords are typed here.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><b>Runs on your PC</b><span>Replays are read locally and never uploaded anywhere.</span></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg><b>Open source</b><span>The code is public on GitHub.</span></li>
+        </ul>
+        <p class="gate-foot">Works on one computer per key. Keys are checked online, then DotaTraker keeps working offline for up to 3 days.</p>
     </main>
-    <script src="/gate/login.js?v=20"></script>
+    <script src="/gate/login.js?v=21"></script>
 </body>
 </html>

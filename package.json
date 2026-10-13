@@ -1,8 +1,11 @@
 {
-  "name": "ledger",
-  "version": "2.0.0",
+  "name": "dotatraker",
+  "version": "2.1.0",
+  "engineRev": "2",
+  "releaseNotes": "Steam sign-in through the official site, replays from new Dota patches parse again, new look, update button.",
+  "releaseNotesRu": "Вход через официальный сайт Steam, снова читаются реплеи с новых патчей Dota, новый дизайн, кнопка обновления.",
   "private": true,
-  "description": "Who reported whom in Dota 2 matches, behind an access-key gate.",
+  "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
   "engines": { "node": ">=18" },
   "scripts": { "start": "node gate/gate.js" }

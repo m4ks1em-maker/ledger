@@ -1,4 +1,4 @@
-// Ledger UI kit: shared helpers loaded before the app.
+// DotaTraker UI kit: shared helpers loaded before the app.
 //  - esc(): HTML-escape anything that came from a replay (player names are attacker-controlled)
 //  - fetchWithRetry(): timeouts that don't cut long downloads, no blind re-sending of POSTs
 //  - toasts instead of alert(), a real dialog instead of confirm()
@@ -254,7 +254,61 @@
         card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
     }
 
-    window.LedgerUI = { esc, toast, confirm: confirmBox, glider, countTo, watchNumbers, canvasTheme, reduced };
+
+    /* "new version" banner, shared by the app and the sign-in page */
+    function updateBar(box, upd, github) {
+        if (!box) return;
+        if (!upd) { box.classList.add('hidden'); box.textContent = ''; return; }
+        const T = (s) => (window.LedgerI18n ? window.LedgerI18n.t(s) : s);
+        const ru = window.LedgerI18n && window.LedgerI18n.lang === 'ru';
+        box.textContent = '';
+        box.classList.remove('hidden');
+        const bar = document.createElement('div'); bar.className = 'update-bar';
+        const dot = document.createElement('i'); dot.className = 'ub-dot';
+        const txt = document.createElement('div'); txt.className = 'ub-text';
+        const b = document.createElement('b'); b.textContent = T('DotaTraker ' + upd.version + ' is out');
+        const sp = document.createElement('span'); sp.textContent = (ru && upd.notesRu) || upd.notes || T('A new version is on GitHub.');
+        txt.append(b, sp);
+        const act = document.createElement('div'); act.className = 'ub-actions';
+        const gh = document.createElement('a'); gh.className = 'btn'; gh.target = '_blank'; gh.rel = 'noopener noreferrer';
+        gh.href = github || 'https://github.com/m4ks1em-maker/ledger'; gh.textContent = T('GitHub');
+        act.appendChild(gh);
+        if (upd.auto) {
+            const go = document.createElement('button'); go.type = 'button'; go.className = 'btn ub-go';
+            const busy = { downloading: 'Downloading…', installing: 'Installing…', restarting: 'Restarting…' }[upd.state];
+            go.textContent = T(busy || 'Update now');
+            if (busy) go.disabled = true;
+            go.addEventListener('click', async () => {
+                go.disabled = true; go.textContent = T('Downloading…');
+                try {
+                    await fetch('/_ledger/update', { method: 'POST', credentials: 'same-origin', headers: { 'X-Ledger': '1' } });
+                } catch (_) {}
+                waitForRestart(go, upd.version);
+            });
+            act.appendChild(go);
+        }
+        if (upd.state === 'error') sp.textContent = T('Update failed. Download it from GitHub.');
+        bar.append(dot, txt, act);
+        box.appendChild(bar);
+    }
+    function waitForRestart(btn, version) {
+        const T = (s) => (window.LedgerI18n ? window.LedgerI18n.t(s) : s);
+        let tries = 0, sawDown = false;
+        const tick = async () => {
+            tries++;
+            try {
+                const r = await fetch('/_ledger/info', { cache: 'no-store' });
+                const j = await r.json();
+                if (j.version === version || (sawDown && !j.update)) { btn.textContent = T('Done'); setTimeout(() => location.reload(), 500); return; }
+                if (j.update && j.update.state === 'error') { btn.disabled = false; btn.textContent = T('Update failed. Download it from GitHub.'); return; }
+                if (j.update && j.update.state) btn.textContent = T({ downloading: 'Downloading…', installing: 'Installing…', restarting: 'Restarting…' }[j.update.state] || 'Downloading…');
+            } catch (_) { sawDown = true; btn.textContent = T('Restarting…'); }
+            if (tries < 120) setTimeout(tick, 1500);
+        };
+        setTimeout(tick, 1200);
+    }
+
+    window.LedgerUI = { esc, toast, confirm: confirmBox, glider, countTo, watchNumbers, canvasTheme, reduced, updateBar };
 
     function start() {
         document.documentElement.classList.add('js');

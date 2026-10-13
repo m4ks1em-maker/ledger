@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Ledger
+   DotaTraker
    Night-ink glass. Radiant teal and Dire red carry meaning (teammates and
    enemies) and nothing else; periwinkle is the one interactive colour.
    Unbounded for display, Manrope for reading, JetBrains Mono for IDs.
@@ -969,3 +969,80 @@ input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
     .aurora i { opacity: 1; }
     .hl-axis { stroke-dashoffset: 0; } .hl-ticks path { opacity: 1; } .hl-dot { transform: none; }
 }
+
+/* ---------- DotaTraker medallion: soft copper pulse ---------- */
+:root { --copper: #d08a52; --copper-hi: #f1b98a; --copper-deep: #8a4f28; --copper-glow: rgba(214, 132, 72, 0.55); }
+.medal { position: relative; display: inline-grid; place-items: center; border-radius: 50%; isolation: isolate; }
+.medal img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; position: relative; z-index: 1; animation: medal-glow 3.6s ease-in-out infinite; }
+.medal::before {
+    content: ""; position: absolute; inset: -14%; border-radius: 50%; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle, var(--copper-glow) 0%, rgba(214, 132, 72, 0.18) 42%, transparent 68%);
+    animation: medal-halo 3.6s ease-in-out infinite;
+}
+.medal::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; z-index: 2; pointer-events: none;
+    background: conic-gradient(from 0deg, transparent 0 30%, rgba(255, 214, 170, 0.32) 38%, transparent 46% 100%);
+    mix-blend-mode: soft-light; animation: medal-sheen 7s linear infinite;
+}
+@keyframes medal-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(214, 132, 72, 0.35)) brightness(1); }
+    50% { filter: drop-shadow(0 0 18px rgba(236, 156, 92, 0.85)) brightness(1.08); }
+}
+@keyframes medal-halo { 0%, 100% { opacity: 0.45; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes medal-sheen { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .medal img, .medal::before, .medal::after { animation: none; } }
+
+.brand .medal { width: 38px; height: 38px; flex-shrink: 0; }
+.brand .medal::before { inset: -22%; }
+.brand-name b { font-weight: 600; background: linear-gradient(120deg, var(--copper-hi), var(--copper)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* update banner (app + sign-in) */
+.update-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin: 0 0 18px; padding: 12px 14px 12px 16px; border-radius: 20px;
+    background: linear-gradient(110deg, rgba(208, 138, 82, 0.2), rgba(208, 138, 82, 0.06) 60%), var(--glass);
+    border: 1px solid rgba(214, 140, 84, 0.45);
+    box-shadow: 0 18px 40px -24px rgba(214, 132, 72, 0.7);
+    animation: rise 0.5s var(--ease) both;
+}
+.update-bar .ub-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--copper-hi); box-shadow: 0 0 0 0 var(--copper-glow); animation: ub-ping 2s ease-out infinite; flex-shrink: 0; }
+@keyframes ub-ping { 0% { box-shadow: 0 0 0 0 var(--copper-glow); } 80%, 100% { box-shadow: 0 0 0 12px rgba(214, 132, 72, 0); } }
+.update-bar .ub-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 260px; }
+.update-bar .ub-text b { font-weight: 700; }
+.update-bar .ub-text span { font-size: 0.85rem; color: var(--text-secondary); }
+.update-bar .ub-actions { display: flex; gap: 8px; margin-left: auto; }
+.update-bar .btn { height: 40px; padding: 0 16px; border-radius: 13px; }
+.copper-btn, .update-bar .ub-go {
+    background: linear-gradient(140deg, #f3c08f, #d08a52 55%, #a9612f) !important; color: #2a1405 !important;
+    border: 0 !important; box-shadow: 0 12px 28px -14px rgba(214, 132, 72, 0.9), inset 0 1px 0 rgba(255, 236, 214, 0.6) !important;
+}
+.copper-btn:disabled { filter: saturate(0.35) brightness(0.8); opacity: 0.7; }
+.update-bar .ub-go.loading-btn { pointer-events: none; }
+html[data-theme="light"] .update-bar { background: linear-gradient(110deg, rgba(208, 138, 82, 0.18), rgba(255, 255, 255, 0.7)); }
+
+/* Steam account in settings */
+.account-chip .avatar.has-img { padding: 0; overflow: hidden; background: #1b2838; }
+.account-chip .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.steam-signin {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; border-radius: 16px; margin: 4px 0 6px;
+    background: linear-gradient(135deg, #1b2838, #171a21); color: #fff; text-decoration: none;
+    border: 1px solid rgba(102, 192, 244, 0.3); transition: transform 0.3s var(--spring), border-color 0.3s;
+}
+.steam-signin:hover { transform: translateY(-2px); border-color: #66c0f4; }
+.steam-signin svg { width: 36px; height: 36px; flex-shrink: 0; }
+.steam-signin span { display: flex; flex-direction: column; }
+.steam-signin b { font-weight: 700; }
+.steam-signin small { font-size: 0.76rem; color: #8fa6bf; font-weight: 600; }
+.steam-acc { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: var(--glass-soft); border: 1px solid var(--hair); margin: 4px 0 6px; }
+.steam-acc img { width: 40px; height: 40px; border-radius: 11px; background: #1b2838; object-fit: cover; }
+.steam-acc .sa-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.steam-acc b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.steam-acc small { font: 500 0.74rem var(--font-mono); color: var(--text-tertiary); }
+.steam-acc .btn { height: 36px; padding: 0 12px; border-radius: 12px; }
+details.adv { margin-top: 14px; border-top: 1px solid var(--hair); padding-top: 12px; }
+details.adv summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 0.86rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.25s var(--ease); }
+details.adv[open] summary::before { transform: rotate(45deg); }
+details.adv[open] > *:not(summary) { animation: rise 0.3s var(--ease) both; }
+#update-slot { margin-bottom: 4px; }
