@@ -186,6 +186,7 @@
         "Advanced: Steam bot for match history": "Дополнительно: Steam-бот для истории матчей",
         "Only needed for match history and fatal search through Valve. Use a spare account: the login goes to the engine on this PC only. Player lookup and auto-sync work without it.": "Нужен только для истории матчей и поиска фаталов через Valve. Используй запасной аккаунт: логин уходит только в движок на этом ПК. Поиск игрока и автосинк работают без него.",
         "Unlink": "Отвязать",
+        "Click to copy the match ID": "Нажми, чтобы скопировать ID матча", "Match ID copied": "ID матча скопирован", "Press Ctrl+C to copy": "Нажми Ctrl+C, чтобы скопировать", "Copied": "Скопировано",
         "Search by match ID": "Поиск по ID матча", "Search replays": "Поиск реплеев",
         "asking OpenDota…": "запрос в OpenDota…",
         "OpenDota could not get this replay from Valve (too old, or not available yet). Upload the .dem file instead.": "OpenDota не смог получить реплей у Valve (слишком старый или ещё не готов). Загрузи .dem файл.",
@@ -200,7 +201,7 @@
         "GitHub": "GitHub",
     };
     const PAT = [
-        [/^(\d+) matches? analysed$/, (m) => m[1] + ' ' + plural(+m[1], 'матч', 'матча', 'матчей') + ' проанализировано'],
+        [/^(\d+) match(?:es)? analysed$/, (m) => m[1] + ' ' + plural(+m[1], 'матч', 'матча', 'матчей') + ' проанализировано'],
         [/^Match (\d+) \((\d+) reports?\)$/, (m) => 'Матч ' + m[1] + ' (' + m[2] + ' ' + plural(+m[2], 'репорт', 'репорта', 'репортов') + ')'],
         [/^Processing (\d+) \/ (\d+): (\d+)$/, (m) => 'Обработка ' + m[1] + ' / ' + m[2] + ': ' + m[3]],
         [/^Processing \((\d+)s\)\.\.\.$/, (m) => 'Обработка (' + m[1] + ' с)...'],

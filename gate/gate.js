@@ -57,10 +57,10 @@ const ENGINE_REV = String(PKG.engineRev || '');
 /* ----------------------------------------------------------------- config */
 
 const DEFAULT_PRICES = [{ days: 7, usd: 1 }, { days: 30, usd: 2, tag: 'popular' }, { days: 90, usd: 5 }, { days: 365, usd: 15 }, { days: 0, usd: 30, tag: 'best' }];
-const APP = Object.assign({ licenseServer: '', telegram: 'm4ks1em', github: 'https://github.com/m4ks1em-maker/ledger', prices: DEFAULT_PRICES,
-    updateUrl: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger/main/package.json',
-    updateArchive: 'https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.tar.gz',
-    engineBase: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger/engine/' },
+const APP = Object.assign({ licenseServer: '', telegram: 'm4ks1em', github: 'https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder', prices: DEFAULT_PRICES,
+    updateUrl: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger---Dota-Report-FInder/main/package.json',
+    updateArchive: 'https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.tar.gz',
+    engineBase: 'https://raw.githubusercontent.com/m4ks1em-maker/ledger---Dota-Report-FInder/engine/' },
     readJson(path.join(ROOT, 'ledger.config.json'), {}));
 const LICENSE_SERVER = String(process.env.LICENSE_SERVER || APP.licenseServer || '').replace(/\/+$/, '');
 const SERVER_CONFIGURED = /^https?:\/\/[^/]+/.test(LICENSE_SERVER) && !/CHANGE-ME|example\./i.test(LICENSE_SERVER);
@@ -896,7 +896,13 @@ function newer(a, b) {
 async function checkUpdate() {
     if (!APP.updateUrl || process.env.DOTATRAKER_NO_UPDATE === '1') return;
     try {
-        const j = JSON.parse((await fetchBuf(APP.updateUrl + '?t=' + now(), { timeout: 15000, max: 64 * 1024 })).toString('utf8'));
+        // GitHub API first (fresh within a minute), raw.githubusercontent as a fallback (cached up to 5 min)
+        let j = null;
+        const api = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/.exec(APP.updateUrl);
+        if (api) {
+            try { j = JSON.parse((await fetchBuf(`https://api.github.com/repos/${api[1]}/${api[2]}/contents/${api[4]}?ref=${api[3]}`, { timeout: 15000, max: 64 * 1024, headers: { Accept: 'application/vnd.github.raw+json' } })).toString('utf8')); } catch (_) { j = null; }
+        }
+        if (!j) j = JSON.parse((await fetchBuf(APP.updateUrl + '?t=' + now(), { timeout: 15000, max: 64 * 1024 })).toString('utf8'));
         if (j && /^\d+\.\d+\.\d+$/.test(j.version || '')) {
             update.latest = j.version;
             update.notes = String(j.releaseNotes || '').slice(0, 600);
@@ -910,7 +916,7 @@ function updateView() {
     if (!update.latest || !newer(update.latest, VERSION)) return null;
     return { version: update.latest, notes: update.notes, notesRu: update.notesRu, state: update.state, error: update.error, auto: process.platform === 'win32' || process.env.DOTATRAKER_SELF_UPDATE === '1' };
 }
-setInterval(() => { checkUpdate(); }, 30 * MIN).unref();
+setInterval(() => { checkUpdate(); }, 10 * MIN).unref();
 
 const KEEP = new Set(['gate/data', 'engine', 'replays', 'uploads', 'cloud', '.git', 'node_modules']);
 function copyTree(src, dst, rel = '') {

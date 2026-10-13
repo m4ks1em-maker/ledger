@@ -271,7 +271,7 @@
         txt.append(b, sp);
         const act = document.createElement('div'); act.className = 'ub-actions';
         const gh = document.createElement('a'); gh.className = 'btn'; gh.target = '_blank'; gh.rel = 'noopener noreferrer';
-        gh.href = github || 'https://github.com/m4ks1em-maker/ledger'; gh.textContent = T('GitHub');
+        gh.href = github || 'https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder'; gh.textContent = T('GitHub');
         act.appendChild(gh);
         if (upd.auto) {
             const go = document.createElement('button'); go.type = 'button'; go.className = 'btn ub-go';

@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://t.me/m4ks1em"><img src="https://img.shields.io/badge/Buy_a_key-@m4ks1em-2AABEE?style=for-the-badge&logo=telegram&logoColor=white" alt="Buy a key on Telegram"></a>
   &nbsp;
-  <a href="https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
+  <a href="https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
 </p>
 
 DotaTraker reads your Dota 2 replays and puts every report on a timeline, from teammates and from enemies. Paste a Steam ID and the replays download on their own.
@@ -15,7 +15,7 @@ DotaTraker reads your Dota 2 replays and puts every report on a timeline, from t
 ## Getting started
 
 1. Install [Node.js](https://nodejs.org) (LTS).
-2. [Download the ZIP](https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip) and unpack it.
+2. [Download the ZIP](https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.zip) and unpack it.
 3. Run `setup.bat` once, then `start.bat`.
 4. Sign in through Steam (the official steamcommunity.com page) and enter your key.
 

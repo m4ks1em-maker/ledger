@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://t.me/m4ks1em"><img src="https://img.shields.io/badge/Купить_ключ-@m4ks1em-2AABEE?style=for-the-badge&logo=telegram&logoColor=white" alt="Купить ключ в Telegram"></a>
   &nbsp;
-  <a href="https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Скачать-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Скачать ZIP"></a>
+  <a href="https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Скачать-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Скачать ZIP"></a>
 </p>
 
 DotaTraker разбирает реплеи Dota 2 и показывает каждый репорт на таймлайне: от союзников и от врагов. Вставь Steam ID, и реплеи скачаются сами.
@@ -15,7 +15,7 @@ DotaTraker разбирает реплеи Dota 2 и показывает каж
 ## Как начать
 
 1. Установи [Node.js](https://nodejs.org) (версия LTS).
-2. [Скачай ZIP](https://github.com/m4ks1em-maker/ledger/archive/refs/heads/main.zip) и распакуй.
+2. [Скачай ZIP](https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.zip) и распакуй.
 3. Открой `setup.bat` (один раз), потом `start.bat`.
 4. Войди через Steam (официальный сайт steamcommunity.com) и введи ключ.
 

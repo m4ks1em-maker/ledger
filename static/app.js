@@ -2284,6 +2284,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = document.createElement('option');
             option.value = index;
             option.textContent = `Match ${match.matchID} (${match.teamReports + match.enemyReports} reports)`;
+            option.dataset.matchId = String(match.matchID || '');
             matchSelector.appendChild(option);
         });
         if (matchData.length > 0) {

@@ -16,7 +16,8 @@
         const currentMatch = () => {
             const opt = select.options[select.selectedIndex];
             if (!opt || opt.value === '') return null;
-            const m = /Match\s+(\d+)/.exec(opt.textContent || '');
+            if (opt.dataset && /^\d+$/.test(opt.dataset.matchId || '')) return opt.dataset.matchId;
+            const m = /(\d{6,})/.exec(opt.textContent || '');
             return m ? m[1] : null;
         };
 
@@ -27,20 +28,24 @@
             meta.textContent = '';
             if (!id) { meta.classList.add('hidden'); return; }
 
-            const pill = document.createElement('span');
+            const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
+            const pill = document.createElement('button');
+            pill.type = 'button';
             pill.className = 'match-meta-id';
-            pill.appendChild(document.createTextNode(id));
-
-            const copy = document.createElement('button');
-            copy.type = 'button';
-            copy.textContent = 'Copy';
-            copy.addEventListener('click', () => {
-                const done = () => { copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1400); };
-                const fail = () => { LedgerUI.toast('Press Ctrl+C to copy: ' + id, 'info'); };
-                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(id).then(done, fail);
-                else fail();
+            pill.title = T('Click to copy the match ID');
+            const lab = document.createElement('small'); lab.textContent = 'ID';
+            const num = document.createElement('b'); num.textContent = id;
+            const copy = document.createElement('span'); copy.className = 'mm-copy'; copy.textContent = 'Copy';
+            pill.append(lab, num, copy);
+            pill.addEventListener('click', () => {
+                const done = () => { copy.textContent = 'Copied'; pill.classList.add('copied'); LedgerUI.toast(T('Match ID copied') + ': ' + id, 'success'); setTimeout(() => { copy.textContent = 'Copy'; pill.classList.remove('copied'); }, 1400); };
+                const fallback = () => {
+                    try { const ta = document.createElement('textarea'); ta.value = id; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); if (ok) return done(); } catch (_) {}
+                    LedgerUI.toast(T('Press Ctrl+C to copy') + ': ' + id, 'info');
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(id).then(done, fallback);
+                else fallback();
             });
-            pill.appendChild(copy);
             meta.appendChild(pill);
 
             [['OpenDota', 'https://www.opendota.com/matches/' + id], ['Dotabuff', 'https://www.dotabuff.com/matches/' + id]].forEach(([label, href]) => {
@@ -99,7 +104,7 @@
             if (!n || window.ledgerSilentDone) { bar.classList.add('hidden'); return; }
             bar.textContent = '';
             const t = document.createElement('span');
-            t.textContent = n + (n === 1 ? ' match analysed' : ' matches analysed');
+            t.textContent = (window.LedgerI18n ? window.LedgerI18n.t : (x) => x)(n + (n === 1 ? ' match analysed' : ' matches analysed'));
             const a = document.createElement('button'); a.type = 'button'; a.textContent = 'Open matches'; a.addEventListener('click', () => goTab('results'));
             const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Player lookup'; b.addEventListener('click', () => goTab('player'));
             const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×'; x.setAttribute('aria-label', 'Close'); x.addEventListener('click', () => bar.classList.add('hidden'));

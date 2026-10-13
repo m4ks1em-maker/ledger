@@ -1,7 +1,7 @@
 {
   "licenseServer": "https://ledger-keys.m4ks1em.workers.dev",
   "telegram": "m4ks1em",
-  "github": "https://github.com/m4ks1em-maker/ledger",
+  "github": "https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder",
   "prices": [
     { "days": 7, "usd": 1 },
     { "days": 30, "usd": 2, "tag": "popular" },

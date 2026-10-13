@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "engineRev": "2",
-  "releaseNotes": "Search in the replay list. Fresh matches download again: DotaTraker asks OpenDota for the replay and follows Valve redirects.",
-  "releaseNotesRu": "Поиск по реплеям. Свежие матчи снова скачиваются: DotaTraker сам запрашивает реплей у OpenDota.",
+  "releaseNotes": "Match ID on every match view: click it to copy. Faster update checks.",
+  "releaseNotesRu": "ID матча в каждом окне матча: нажми, чтобы скопировать. Обновления находятся быстрее.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

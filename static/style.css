@@ -1056,3 +1056,14 @@ details.adv[open] > *:not(summary) { animation: rise 0.3s var(--ease) both; }
 .replay-search .rs-count { position: absolute; right: 12px; font: 600 0.72rem var(--font-mono); color: var(--text-tertiary); pointer-events: none; }
 .replay-item.search-miss { display: none !important; }
 @media (max-width: 700px) { .replay-search { order: 3; max-width: none; flex-basis: 100%; margin: 8px 0 0; } }
+
+/* match ID pill: the whole pill copies */
+button.match-meta-id { cursor: pointer; color: var(--text-primary); padding: 0 5px 0 12px; transition: border-color 0.25s, background 0.25s, transform 0.25s var(--spring); }
+button.match-meta-id:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+button.match-meta-id:active { transform: scale(0.97); }
+.match-meta-id small { font: 800 0.62rem var(--font-ui); letter-spacing: 0.1em; color: var(--text-tertiary); }
+.match-meta-id b { font: 600 0.86rem var(--font-mono); letter-spacing: 0.02em; }
+.match-meta-id .mm-copy { height: 24px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 999px; background: var(--hover); color: var(--text-secondary); font: 700 0.72rem var(--font-ui); transition: background 0.2s, color 0.2s; }
+button.match-meta-id:hover .mm-copy { background: var(--accent); color: var(--accent-ink); }
+button.match-meta-id.copied { border-color: var(--radiant); }
+button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221a; }
