@@ -7,10 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <title>DotaTraker — Dota 2 report timeline</title>
     <link rel="icon" href="/img/logo-64.png" type="image/png">
-    <link rel="stylesheet" href="fonts.css?v=25">
-    <link rel="stylesheet" href="style.css?v=25">
-    <script src="i18n.js?v=25"></script>
-    <script src="ui.js?v=25"></script>
+    <link rel="stylesheet" href="fonts.css?v=26">
+    <link rel="stylesheet" href="style.css?v=26">
+    <script src="i18n.js?v=26"></script>
+    <script src="ui.js?v=26"></script>
 </head>
 
 <body>
@@ -43,6 +43,10 @@
                 <button class="workflow-tab" data-tab="player" role="tab">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></span>
                     <span class="tab-label">Player</span>
+                </button>
+                <button class="workflow-tab tab-bot" data-tab="bot" role="tab">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 2.9 11.4c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/></svg></span>
+                    <span class="tab-label">Bot</span>
                 </button>
             </nav>
 
@@ -415,6 +419,97 @@
                 </section>
             </div>
 
+            <div class="tab-content" id="bot-tab">
+                <div class="bot-landing">
+                    <div class="bot-aurora" aria-hidden="true"><i></i><i></i></div>
+
+                    <header class="bot-hero">
+                        <div class="bot-badge" aria-hidden="true">
+                            <img src="/img/logo-192.webp" alt="" width="112" height="112">
+                            <span class="bot-tg"><svg viewBox="0 0 24 24"><path d="M21.5 4.3 2.9 11.4c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/></svg></span>
+                        </div>
+                        <span class="bot-eyebrow">Telegram bot</span>
+                        <h1 class="bot-name">Dota Tracker Bot</h1>
+                        <p class="bot-tag">Know about every Dota 2 update the moment it drops — client patches, web patch notes, hero win rates and what Valve is working on, straight to your Telegram.</p>
+                        <div class="bot-cta">
+                            <a class="btn bot-open" href="https://t.me/dota2traker_bot" target="_blank" rel="noopener noreferrer">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 2.9 11.4c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/></svg>
+                                Open the bot
+                            </a>
+                            <a class="btn bot-channel" href="https://t.me/dota2traker" target="_blank" rel="noopener noreferrer">Join the channel</a>
+                        </div>
+                        <div class="bot-handles">
+                            <a href="https://t.me/dota2traker_bot" target="_blank" rel="noopener noreferrer">@dota2traker_bot</a>
+                            <span>·</span>
+                            <a href="https://t.me/dota2traker" target="_blank" rel="noopener noreferrer">@dota2traker</a>
+                        </div>
+                    </header>
+
+                    <section class="bot-showcase">
+                        <div class="bot-feats">
+                            <article class="bot-feat">
+                                <span class="bf-ic bf-bell"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
+                                <h3>Instant update alerts</h3>
+                                <p>The bot watches Valve around the clock and pings the channel the second a new client or web patch goes live.</p>
+                            </article>
+                            <article class="bot-feat">
+                                <span class="bf-ic bf-notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg></span>
+                                <h3>Full patch breakdown</h3>
+                                <p>Client build, files changed, localization text updates — each post links straight to GitHub, SteamDB and dota2.com.</p>
+                            </article>
+                            <article class="bot-feat">
+                                <span class="bf-ic bf-dev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></span>
+                                <h3>Valve dev activity</h3>
+                                <p>See how long ago Valve last committed and which patch is current — know when the next update is close.</p>
+                            </article>
+                            <article class="bot-feat">
+                                <span class="bf-ic bf-win"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg></span>
+                                <h3>Hero win rates</h3>
+                                <p>Top and bottom heroes by win rate from OpenDota, so you always know who is strong this patch.</p>
+                            </article>
+                        </div>
+
+                        <div class="bot-phone" aria-hidden="true">
+                            <div class="bp-top"><img src="/img/logo-64.png" alt="" width="34" height="34"><div class="bp-id"><b>Dota Tracker</b><small>channel</small></div></div>
+                            <div class="bp-feed">
+                                <div class="bp-msg">
+                                    <div class="bp-hd"><span class="bp-dot"></span>New Dota 2 update!</div>
+                                    <div class="bp-line bp-web">WEB · PATCH NOTES</div>
+                                    <div class="bp-block">
+                                        <b>CLIENT UPDATE</b>
+                                        <span>125 files · 13.10.2026 13:00 UTC</span>
+                                        <span class="bp-tx">Texts: localization update</span>
+                                    </div>
+                                    <div class="bp-links"><i>GitHub</i><i>SteamDB</i><i>dota2.com</i></div>
+                                    <time>15:01</time>
+                                </div>
+                                <div class="bp-msg">
+                                    <div class="bp-hd"><span class="bp-dot green"></span>Valve developers</div>
+                                    <div class="bp-row"><span>Last commit</span><b>3 h ago</b></div>
+                                    <div class="bp-row"><span>Current patch</span><b>7.41f</b></div>
+                                    <div class="bp-rank"><em>Top win rate</em><span>Wraith King · 55.2%</span><span>Spectre · 53.5%</span></div>
+                                    <time>15:01</time>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bot-steps">
+                        <div class="bs-step"><span class="bs-n">1</span><div><b>Open the bot</b><p>Tap the button and press Start in Telegram.</p></div></div>
+                        <div class="bs-step"><span class="bs-n">2</span><div><b>Join the channel</b><p>All updates are posted to @dota2traker — subscribe once.</p></div></div>
+                        <div class="bs-step"><span class="bs-n">3</span><div><b>Stay ahead</b><p>Get every patch, dev update and win-rate shift before everyone else.</p></div></div>
+                    </section>
+
+                    <div class="bot-foot">
+                        <a class="btn bot-open large-btn" href="https://t.me/dota2traker_bot" target="_blank" rel="noopener noreferrer">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 2.9 11.4c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/></svg>
+                            Open Dota Tracker Bot
+                        </a>
+                        <p class="bot-ads"><span>Advertising</span> · <a href="https://t.me/m4ks1em" target="_blank" rel="noopener noreferrer">@m4ks1em</a></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="tab-content" id="results-tab">
                 <div id="results-empty" class="card empty-card">
                     <div class="empty-art" aria-hidden="true"><i class="r"></i><i class="d"></i><i class="r"></i></div>
@@ -526,9 +621,9 @@
     </div>
 
     <script src="vendor/chart.umd.min.js?v=4.4.0"></script>
-    <script src="app.js?v=25"></script>
-    <script src="history.js?v=25"></script>
-    <script src="ledger.js?v=25"></script>
+    <script src="app.js?v=26"></script>
+    <script src="history.js?v=26"></script>
+    <script src="ledger.js?v=26"></script>
 </body>
 
 </html>
