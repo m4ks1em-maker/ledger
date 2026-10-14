@@ -194,9 +194,9 @@ html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(
 /* 7 tabs: show the label only on the active tab so the bar always fits; the rest are icons with tooltips */
 @media (min-width: 1121px) {
     .main-header .workflow-tab .tab-label { display: none; }
-    .main-header .workflow-tab.active .tab-label { display: inline; animation: tab-lab 0.35s var(--ease) both; }
+    .main-header .workflow-tab.active .tab-label { display: inline; animation: tab-lab 0.3s var(--ease) both; }
 }
-@keyframes tab-lab { from { opacity: 0; max-width: 0; } to { opacity: 1; max-width: 160px; } }
+@keyframes tab-lab { from { opacity: 0; } to { opacity: 1; } }
 
 /* ---------- Segmented controls with a sliding glider ---------- */
 .workflow-tabs, .graph-view-selector {

@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.4.3",
+  "version": "2.4.4",
   "engineRev": "2",
-  "releaseNotes": "Fixed the number alignment in the smurf-check gauge.",
-  "releaseNotesRu": "Исправлена центровка числа в кружке проверки смурфов.",
+  "releaseNotes": "Fixed the active tab pill being clipped right after switching tabs.",
+  "releaseNotesRu": "Исправлено: пилюля активной вкладки больше не обрезается сразу после переключения.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
