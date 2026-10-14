@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "engineRev": "4",
-  "releaseNotes": "Fixed match chat: the full in-game chat (all and team) is now captured with the right player and time.",
-  "releaseNotesRu": "Починен чат матча: теперь ловится весь игровой чат (общий и командный) с правильным игроком и временем.",
+  "releaseNotes": "Removed the unused fatal game search panel to keep the match history tab clean.",
+  "releaseNotesRu": "Убрана ненужная панель поиска фатальных игр — вкладка истории матчей стала чище.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
