@@ -22,6 +22,12 @@
 
 ---
 
+## Демо
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Демо DotaTraker" width="86%">
+</p>
+
 ## Что умеет
 
 <p align="center">
