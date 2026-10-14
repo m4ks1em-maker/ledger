@@ -147,7 +147,9 @@
             telegram = info.telegram;
             ['buy', 'price-cta'].forEach((id) => { $(id).href = 'https://t.me/' + encodeURIComponent(telegram); });
             $('buy-handle').textContent = '@' + telegram; $('price-handle').textContent = '@' + telegram;
+            const fb = $('feat-buy'); if (fb) fb.href = 'https://t.me/' + encodeURIComponent(telegram);
         }
+        if (info.github) { const fg = $('feat-gh'); if (fg) fg.href = info.github; }
         if (Array.isArray(info.prices) && info.prices.length) renderPrices(info.prices);
         renderSteam(info.steam);
         if (window.LedgerUI) LedgerUI.updateBar($('update'), info.update, info.github);
@@ -156,6 +158,25 @@
         else if (info.problem === 'expired') showError('This key has expired.', 'expired');
         else if (info.problem === 'offline') showError('Cannot reach the key server. Check your internet connection.', 'offline');
     }).catch(() => {});
+
+    // Sign in / Features switch
+    (function switchView() {
+        const sw = document.querySelector('.gate-switch'), vSign = $('view-signin'), vFeat = $('view-features');
+        const bSign = $('sw-signin'), bFeat = $('sw-features');
+        if (!sw || !vSign || !vFeat) return;
+        function show(features) {
+            sw.classList.toggle('f', features);
+            bSign.classList.toggle('on', !features); bFeat.classList.toggle('on', features);
+            bSign.setAttribute('aria-selected', String(!features)); bFeat.setAttribute('aria-selected', String(features));
+            vSign.classList.toggle('hidden', features); vFeat.classList.toggle('hidden', !features);
+            const shown = features ? vFeat : vSign;
+            shown.style.animation = 'none'; void shown.offsetWidth; shown.style.animation = '';
+            try { history.replaceState(null, '', features ? '#features' : '/login'); } catch (_) {}
+        }
+        bSign.addEventListener('click', () => show(false));
+        bFeat.addEventListener('click', () => show(true));
+        if (location.hash === '#features') show(true);
+    })();
 
     paint();
     setTimeout(() => input.focus({ preventScroll: true }), 450);
