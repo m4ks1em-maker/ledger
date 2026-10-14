@@ -4,13 +4,30 @@
   <img src="docs/banner.en.png" alt="DotaTraker: who reported you, and at what minute" width="100%">
 </p>
 
+<h1 align="center">DotaTraker</h1>
+
+<p align="center">
+  <b>Reads your Dota 2 replays and puts every report on a timeline.</b><br>
+  From teammates and from enemies. Paste a Steam ID — the replays download on their own.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.5.2-d08a52?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/platform-Windows-2d2d2d?style=flat-square&logo=windows&logoColor=white" alt="Windows">
+  <img src="https://img.shields.io/badge/engine-Go%20·%20manta%201.5.1-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go engine">
+  <img src="https://img.shields.io/badge/server-Node.js%2018%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT">
+</p>
+
 <p align="center">
   <a href="https://t.me/m4ks1em"><img src="https://img.shields.io/badge/Buy_a_key-@m4ks1em-2AABEE?style=for-the-badge&logo=telegram&logoColor=white" alt="Buy a key on Telegram"></a>
   &nbsp;
   <a href="https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-D08A52?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
 </p>
 
-DotaTraker reads your Dota 2 replays and puts every report on a timeline, from teammates and from enemies. Paste a Steam ID and the replays download on their own.
+<p align="center"><i>Star the repo if it helped — it makes the project easier to find.</i></p>
+
+---
 
 ## Getting started
 

@@ -1,0 +1,31 @@
+name: 🐞 Баг
+description: Что-то работает не так
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось
+      description: Опиши проблему и что ты ожидал увидеть.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия DotaTraker
+      placeholder: "например, 2.5.2"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+  - type: textarea
+    id: extra
+    attributes:
+      label: Скриншоты / логи
+      description: По желанию — скриншот или текст ошибки из окна приложения.
