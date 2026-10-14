@@ -1280,3 +1280,29 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
     .chat-line { grid-template-columns: auto auto 1fr; }
     .chat-line .cl-name { grid-column: 2; } .chat-line .cl-text { grid-column: 1 / -1; }
 }
+
+/* ---------- Ward map ---------- */
+.wardmap-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+.wardmap-col { min-width: 0; }
+.ward-legend { display: flex; gap: 18px; margin-bottom: 10px; }
+.ward-legend .wl { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--text-dim, #c3ad9b); }
+.ward-legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.ward-legend .dot.obs { background: #ffd65c; box-shadow: 0 0 8px #ffd65c; }
+.ward-legend .dot.sen { background: #5cc8ff; box-shadow: 0 0 8px #5cc8ff; }
+.wardmap { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1 / 1; margin: 0 auto;
+  background: #120b08 url('/img/map.png') center/cover no-repeat; border-radius: 14px;
+  border: 1px solid rgba(241,185,138,.18); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.wmk { position: absolute; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 2px solid rgba(10,8,6,.85); cursor: default; transition: transform .1s ease; }
+.wmk:hover { transform: translate(-50%, -50%) scale(1.35); z-index: 3; }
+.wmk.obs { background: #ffd65c; box-shadow: 0 0 10px #ffd65c; }
+.wmk.sen { background: #5cc8ff; box-shadow: 0 0 10px #5cc8ff; }
+.ward-stats { display: flex; flex-direction: column; gap: 10px; }
+.ward-stat { display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+  border: 1px solid rgba(241,185,138,.14); border-radius: 13px; padding: 13px 16px; }
+.ward-stat span { font-size: 14px; font-weight: 600; color: var(--text-dim, #c3ad9b); }
+.ward-stat b { font-size: 22px; font-weight: 900; color: var(--text, #f6ede3); }
+.ward-stat b.y { color: #ffd65c; }
+.ward-stat b.b { color: #5cc8ff; }
+@media (max-width: 720px) { .wardmap-grid { grid-template-columns: 1fr; } .ward-stats { flex-direction: row; flex-wrap: wrap; } .ward-stat { flex: 1 1 140px; } }

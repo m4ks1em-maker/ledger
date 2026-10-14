@@ -1217,7 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 scoreboardActivities: result.scoreboardActivities || [],
                 players: result.Players || [],
                 events: result.Events || [],
-                chat: result.Chat || []
+                chat: result.Chat || [],
+                wards: result.Wards || []
             });
             
             if (result.Reports) {
@@ -2165,7 +2166,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     scoreboardActivities: result.scoreboardActivities || [],
                     players: result.Players || [],
                     events: result.Events || [],
-                    chat: result.Chat || []
+                    chat: result.Chat || [],
+                    wards: result.Wards || []
                 });
 
                 if (result.Reports) {

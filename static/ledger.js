@@ -914,6 +914,55 @@
         evPane.appendChild(list);
     }
 
+    const wardPane = document.getElementById('moments-wards');
+    const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    function wardName(m, slot) {
+        const pl = (m && (m.players || m.Players)) || [];
+        const p = pl[slot];
+        if (p) return p.Hero || p.hero || p.Name || p.name || (T('Slot') + ' ' + slot);
+        return slot >= 0 ? T('Slot') + ' ' + slot : '?';
+    }
+    function renderWards(m) {
+        if (!wardPane) return;
+        const wards = (m && m.wards) || [];
+        wardPane.textContent = '';
+        if (!wards.length) { wardPane.innerHTML = '<p class="moments-empty">' + T('No ward data in this replay. Rebuild the engine to enable it.') + '</p>'; return; }
+        const obs = wards.filter((w) => w.Type === 'obs');
+        const sen = wards.filter((w) => w.Type === 'sen');
+        const livedObs = obs.filter((w) => w.LifeSecs > 0);
+        const avgLife = livedObs.length ? Math.round(livedObs.reduce((a, w) => a + w.LifeSecs, 0) / livedObs.length) : 0;
+        const mmss = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+        const legend = document.createElement('div'); legend.className = 'ward-legend';
+        legend.innerHTML = '<span class="wl"><i class="dot obs"></i>' + esc(T('Observers')) + '</span>'
+            + '<span class="wl"><i class="dot sen"></i>' + esc(T('Sentries')) + '</span>';
+
+        const map = document.createElement('div'); map.className = 'wardmap';
+        wards.forEach((w) => {
+            const nx = clamp01((w.CellX + (w.VecX || 0) / 128 - 64) / 128);
+            const ny = clamp01((w.CellY + (w.VecY || 0) / 128 - 64) / 128);
+            const d = document.createElement('div');
+            d.className = 'wmk ' + (w.Type === 'sen' ? 'sen' : 'obs');
+            d.style.left = (nx * 100).toFixed(1) + '%';
+            d.style.top = ((1 - ny) * 100).toFixed(1) + '%';
+            const kind = w.Type === 'sen' ? T('Sentry') : T('Observer');
+            d.title = kind + ' · ' + wardName(m, w.Slot) + ' · ' + w.PlaceTime + (w.DeathTime ? ' → ' + w.DeathTime : '');
+            map.appendChild(d);
+        });
+
+        const stats = document.createElement('div'); stats.className = 'ward-stats';
+        const stat = (label, val, cls) => '<div class="ward-stat"><span>' + esc(label) + '</span><b class="' + (cls || '') + '">' + esc(val) + '</b></div>';
+        stats.innerHTML = stat(T('Observers placed'), obs.length, 'y')
+            + stat(T('Sentries placed'), sen.length, 'b')
+            + stat(T('Average observer lifetime'), avgLife ? mmss(avgLife) : '—');
+
+        const grid = document.createElement('div'); grid.className = 'wardmap-grid';
+        const mapCol = document.createElement('div'); mapCol.className = 'wardmap-col';
+        mapCol.append(legend, map);
+        grid.append(mapCol, stats);
+        wardPane.appendChild(grid);
+    }
+
     function current() {
         const list = window.ledgerMatches || [];
         if (!list.length) return null;
@@ -922,16 +971,18 @@
     }
     function paint() {
         const m = current();
-        const has = m && ((m.chat && m.chat.length) || (m.events && m.events.length));
+        const has = m && ((m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
         sec.classList.toggle('hidden', !has);
         if (!has) return;
-        renderChat(m); renderEvents(m);
+        renderChat(m); renderEvents(m); renderWards(m);
+        if (sw) { const wb = sw.querySelector('[data-m="wards"]'); if (wb) wb.classList.toggle('hidden', !(m.wards && m.wards.length)); }
     }
     if (sw) sw.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
         sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
         const m = b.dataset.m;
         chatPane.classList.toggle('hidden', m !== 'chat');
         evPane.classList.toggle('hidden', m !== 'events');
+        if (wardPane) wardPane.classList.toggle('hidden', m !== 'wards');
     }));
     document.addEventListener('ledger:matches', paint);
     if (sel) { sel.addEventListener('change', paint); new MutationObserver(paint).observe(sel, { childList: true }); }

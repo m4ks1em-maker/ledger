@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "engineRev": "4",
-  "releaseNotes": "Removed the unused fatal game search panel to keep the match history tab clean.",
-  "releaseNotesRu": "Убрана ненужная панель поиска фатальных игр — вкладка истории матчей стала чище.",
+  "releaseNotes": "Added a ward map to the match view — observers and sentries plotted on the Dota map with stats. Lights up after the next engine update.",
+  "releaseNotesRu": "Добавлена карта вардов в обзор матча — обсы и сентри на карте Доты со статистикой. Заработает после ближайшего обновления движка.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
