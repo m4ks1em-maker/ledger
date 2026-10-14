@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "engineRev": "2",
-  "releaseNotes": "New \"Features\" view on the sign-in screen: everything the app does in one place, with a roadmap of tools coming soon.",
-  "releaseNotesRu": "Новая вкладка «Функции» на входе: всё, что умеет приложение, в одном месте, плюс список инструментов, которые скоро.",
+  "releaseNotes": "New Tools tab with three working tools: draft helper (counter-picks), personal coach (your stats) and smurf check — all from live OpenDota data.",
+  "releaseNotesRu": "Новая вкладка «Инструменты» с тремя рабочими тулзами: помощник по драфту (контрпики), личный тренер (твоя статистика) и проверка смурфов — на живых данных OpenDota.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

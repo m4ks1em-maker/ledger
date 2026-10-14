@@ -7,10 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <title>DotaTraker — Dota 2 report timeline</title>
     <link rel="icon" href="/img/logo-64.png" type="image/png">
-    <link rel="stylesheet" href="fonts.css?v=27">
-    <link rel="stylesheet" href="style.css?v=27">
-    <script src="i18n.js?v=27"></script>
-    <script src="ui.js?v=27"></script>
+    <link rel="stylesheet" href="fonts.css?v=28">
+    <link rel="stylesheet" href="style.css?v=28">
+    <script src="i18n.js?v=28"></script>
+    <script src="ui.js?v=28"></script>
 </head>
 
 <body>
@@ -24,29 +24,33 @@
             </a>
 
             <nav class="workflow-tabs" role="tablist" data-glider=".workflow-tab">
-                <button class="workflow-tab active" data-tab="home" role="tab">
+                <button class="workflow-tab active" data-tab="home" role="tab" title="Home">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/></svg></span>
                     <span class="tab-label">Home</span>
                 </button>
-                <button class="workflow-tab" data-tab="browse" role="tab">
+                <button class="workflow-tab" data-tab="browse" role="tab" title="Replays">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
                     <span class="tab-label">Replays</span>
                 </button>
-                <button class="workflow-tab" data-tab="results" role="tab">
+                <button class="workflow-tab" data-tab="results" role="tab" title="Matches">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18"/><circle cx="7" cy="12" r="2.2"/><circle cx="14" cy="12" r="2.2"/><path d="M18 8v8"/></svg></span>
                     <span class="tab-label">Matches</span>
                 </button>
-                <button class="workflow-tab" data-tab="stats" role="tab">
+                <button class="workflow-tab" data-tab="stats" role="tab" title="Stats">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg></span>
                     <span class="tab-label">Stats</span>
                 </button>
-                <button class="workflow-tab" data-tab="player" role="tab">
+                <button class="workflow-tab" data-tab="player" role="tab" title="Player">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></span>
                     <span class="tab-label">Player</span>
                 </button>
-                <button class="workflow-tab tab-bot" data-tab="bot" role="tab">
+                <button class="workflow-tab tab-bot" data-tab="bot" role="tab" title="Bot">
                     <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 2.9 11.4c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.6.1 1.8-.7l3.2-15.2c.2-1-.8-1.8-1.7-1.5z"/></svg></span>
                     <span class="tab-label">Bot</span>
+                </button>
+                <button class="workflow-tab tab-tools" data-tab="tools" role="tab" title="Tools">
+                    <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg></span>
+                    <span class="tab-label">Tools</span>
                 </button>
             </nav>
 
@@ -510,6 +514,61 @@
                 </div>
             </div>
 
+            <div class="tab-content" id="tools-tab">
+                <div class="tools-wrap">
+                    <div class="tools-switch" role="tablist" aria-label="Tool">
+                        <button type="button" class="on" data-tool="draft" role="tab">Draft helper</button>
+                        <button type="button" data-tool="coach" role="tab">Personal coach</button>
+                        <button type="button" data-tool="smurf" role="tab">Smurf check</button>
+                    </div>
+
+                    <section class="tool-panel" id="tool-draft">
+                        <div class="card main-card">
+                            <div class="card-header"><h2>Draft helper</h2><span class="hint">Pick the enemy heroes — get the best counters by win rate.</span></div>
+                            <div class="card-body">
+                                <div class="draft-field">
+                                    <div class="draft-chips" id="draft-chips"></div>
+                                    <input id="draft-q" type="text" placeholder="Add an enemy hero…" autocomplete="off" spellcheck="false" aria-label="Enemy hero">
+                                    <div class="draft-pop hidden" id="draft-pop"></div>
+                                </div>
+                                <p id="draft-hint" class="hint draft-tip">Add 1–5 enemy heroes. Data is from millions of public matches (OpenDota).</p>
+                                <div id="draft-out" class="draft-out"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tool-panel hidden" id="tool-coach">
+                        <div class="card main-card">
+                            <div class="card-header"><h2>Personal coach</h2><span class="hint">Your recent matches in numbers.</span></div>
+                            <div class="card-body">
+                                <form id="coach-form" class="pl-form" autocomplete="off">
+                                    <input id="coach-id" type="text" inputmode="numeric" placeholder="Steam ID (64-bit, 32-bit or [U:1:…])" spellcheck="false" aria-label="Steam ID">
+                                    <button class="btn primary-btn" type="submit">Analyse</button>
+                                </form>
+                                <p id="coach-msg" class="inline-error"></p>
+                                <div id="coach-out" class="hidden"></div>
+                                <div id="coach-empty" class="pl-empty">Paste a Steam ID to see KDA, GPM, win rate and your most played heroes from recent public matches.</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tool-panel hidden" id="tool-smurf">
+                        <div class="card main-card">
+                            <div class="card-header"><h2>Smurf check</h2><span class="hint">Spot smurfs and boosters by the numbers.</span></div>
+                            <div class="card-body">
+                                <form id="smurf-form" class="pl-form" autocomplete="off">
+                                    <input id="smurf-id" type="text" inputmode="numeric" placeholder="Steam ID (64-bit, 32-bit or [U:1:…])" spellcheck="false" aria-label="Steam ID">
+                                    <button class="btn primary-btn" type="submit">Check</button>
+                                </form>
+                                <p id="smurf-msg" class="inline-error"></p>
+                                <div id="smurf-out" class="hidden"></div>
+                                <div id="smurf-empty" class="pl-empty">Paste a Steam ID. We estimate how likely the account is a smurf from win rate, rank and how many games it has.</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
             <div class="tab-content" id="results-tab">
                 <div id="results-empty" class="card empty-card">
                     <div class="empty-art" aria-hidden="true"><i class="r"></i><i class="d"></i><i class="r"></i></div>
@@ -621,9 +680,10 @@
     </div>
 
     <script src="vendor/chart.umd.min.js?v=4.4.0"></script>
-    <script src="app.js?v=27"></script>
-    <script src="history.js?v=27"></script>
-    <script src="ledger.js?v=27"></script>
+    <script src="app.js?v=28"></script>
+    <script src="history.js?v=28"></script>
+    <script src="ledger.js?v=28"></script>
+    <script src="tools.js?v=28"></script>
 </body>
 
 </html>

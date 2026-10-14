@@ -737,6 +737,68 @@ function enqueue(matchId) {
     return j;
 }
 
+let heroListCache = { at: 0, list: [] };
+async function heroList() {
+    if (now() - heroListCache.at < 12 * HOUR && heroListCache.list.length) return heroListCache.list;
+    const list = await odJson('/heroes');
+    const out = (Array.isArray(list) ? list : []).map((h) => ({
+        id: h.id, name: h.name, localized: h.localized_name,
+        short: String(h.name || '').replace('npc_dota_hero_', ''),
+        attr: h.primary_attr, roles: h.roles || []
+    })).filter((h) => h.id && h.short);
+    if (out.length) heroListCache = { at: now(), list: out };
+    return heroListCache.list;
+}
+const matchupCache = new Map();   // heroId -> { at, rows }
+async function heroMatchups(id) {
+    const c = matchupCache.get(id);
+    if (c && now() - c.at < 6 * HOUR) return c.rows;
+    const rows = await odJson('/heroes/' + id + '/matchups', 25000);
+    const r = Array.isArray(rows) ? rows : [];
+    matchupCache.set(id, { at: now(), rows: r });
+    if (matchupCache.size > 250) matchupCache.delete(matchupCache.keys().next().value);
+    return r;
+}
+async function playerProfile(acc) {
+    const [p, wl, recent] = await Promise.all([
+        odJson('/players/' + acc, 20000).catch(() => ({})),
+        odJson('/players/' + acc + '/wl', 20000).catch(() => ({ win: 0, lose: 0 })),
+        odJson('/players/' + acc + '/recentMatches', 20000).catch(() => [])
+    ]);
+    const heroes = await heroNames().catch(() => ({}));
+    const prof = (p && p.profile) || {};
+    const rec = (Array.isArray(recent) ? recent : []).slice(0, 20).map((m) => {
+        const isRad = m.player_slot < 128;
+        return {
+            id: String(m.match_id), hero: heroes[m.hero_id] || ('Hero ' + m.hero_id), heroId: m.hero_id,
+            k: m.kills, d: m.deaths, a: m.assists, gpm: m.gold_per_min, xpm: m.xp_per_min,
+            lh: m.last_hits, dur: m.duration, win: isRad ? !!m.radiant_win : !m.radiant_win, start: m.start_time
+        };
+    });
+    const n = rec.length || 1;
+    const sum = (f) => rec.reduce((t, m) => t + (Number(m[f]) || 0), 0);
+    const wins = rec.filter((m) => m.win).length;
+    const heroCount = {};
+    rec.forEach((m) => { heroCount[m.heroId] = (heroCount[m.heroId] || 0) + 1; });
+    const topHeroes = Object.entries(heroCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([hid, c]) => ({ heroId: Number(hid), hero: heroes[hid] || ('Hero ' + hid), games: c }));
+    const totalGames = (wl.win || 0) + (wl.lose || 0);
+    return {
+        account: acc, name: prof.personaname || ('Player ' + acc), avatar: prof.avatarfull || '',
+        rankTier: p.rank_tier || null, leaderboard: p.leaderboard_rank || null,
+        wins: wl.win || 0, losses: wl.lose || 0, totalGames,
+        winRate: totalGames ? Math.round((wl.win / totalGames) * 1000) / 10 : null,
+        recent: rec,
+        avg: {
+            kda: Math.round(((sum('k') + sum('a')) / Math.max(1, sum('d'))) * 100) / 100,
+            k: Math.round(sum('k') / n * 10) / 10, d: Math.round(sum('d') / n * 10) / 10, a: Math.round(sum('a') / n * 10) / 10,
+            gpm: Math.round(sum('gpm') / n), xpm: Math.round(sum('xpm') / n), lh: Math.round(sum('lh') / n),
+            recentWR: Math.round((wins / n) * 1000) / 10, n: rec.length
+        },
+        topHeroes
+    };
+}
+
 async function odApi(req, res, url, pathname) {
     if (pathname === '/_ledger/od/player' && req.method === 'GET') {
         const acc = accountId(url.searchParams.get('id'));
@@ -755,6 +817,31 @@ async function odApi(req, res, url, pathname) {
     if (pathname === '/_ledger/od/job' && req.method === 'GET') {
         const j = jobs.get(String(url.searchParams.get('id') || ''));
         return j ? sendJson(res, 200, publicJob(j)) : sendJson(res, 404, { error: 'Unknown job' });
+    }
+    if (pathname === '/_ledger/od/heroes' && req.method === 'GET') {
+        try { return sendJson(res, 200, { heroes: await heroList() }, { 'Cache-Control': 'private, max-age=3600' }); }
+        catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
+    }
+    if (pathname === '/_ledger/od/matchups' && req.method === 'GET') {
+        const id = Number(url.searchParams.get('hero'));
+        if (!(id > 0 && id < 500)) return sendJson(res, 400, { error: 'Bad hero id.' });
+        try { return sendJson(res, 200, { hero: id, matchups: await heroMatchups(id) }); }
+        catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
+    }
+    if (pathname === '/_ledger/od/profile' && req.method === 'GET') {
+        const acc = accountId(url.searchParams.get('id'));
+        if (!acc) return sendJson(res, 400, { error: 'That does not look like a Steam ID.' });
+        try { return sendJson(res, 200, await playerProfile(acc)); }
+        catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
+    }
+    if (pathname === '/_ledger/od/heroimg' && (req.method === 'GET' || req.method === 'HEAD')) {
+        const h = String(url.searchParams.get('h') || '').toLowerCase();
+        if (!/^[a-z0-9_]{1,40}$/.test(h)) { res.writeHead(400); return res.end(); }
+        try {
+            const buf = await fetchBuf('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/' + h + '.png', { timeout: 12000, max: 2 * 1024 * 1024 });
+            res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=604800' });
+            return res.end(req.method === 'HEAD' ? undefined : buf);
+        } catch (_) { res.writeHead(404); return res.end(); }
     }
     return sendJson(res, 404, { error: 'Not found' });
 }
