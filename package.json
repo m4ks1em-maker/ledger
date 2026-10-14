@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "engineRev": "2",
-  "releaseNotes": "Fixed the active tab being clipped on the right in the top menu.",
-  "releaseNotesRu": "Исправлено: активная вкладка больше не обрезается справа в меню.",
+  "releaseNotes": "Fixed the number alignment in the smurf-check gauge.",
+  "releaseNotesRu": "Исправлена центровка числа в кружке проверки смурфов.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

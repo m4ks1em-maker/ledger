@@ -1230,10 +1230,10 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .cm-gpm { font-size: 0.8rem; color: var(--text-tertiary); }
 
 /* smurf */
-.smurf-gauge { display: grid; place-items: center; width: 78px; height: 78px; border-radius: 50%; flex-shrink: 0; background: conic-gradient(var(--g, var(--aegis)) calc(var(--p, 0) * 1%), var(--hair) 0); position: relative; }
-.smurf-gauge::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg-2); }
-.smurf-gauge b, .smurf-gauge i { position: relative; z-index: 1; font: 600 1.6rem var(--font-display); font-style: normal; }
-.smurf-gauge i { font-size: 0.85rem; align-self: flex-start; margin-top: 16px; }
+.smurf-gauge { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 84px; height: 84px; border-radius: 50%; flex-shrink: 0; position: relative; background: conic-gradient(var(--g, var(--aegis)) calc(var(--p, 0) * 1%), var(--hair) 0); }
+.smurf-gauge::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--glass-strong); }
+.smurf-gauge b { position: relative; z-index: 1; font: 600 1.55rem/1 var(--font-display); font-style: normal; font-variant-numeric: tabular-nums; }
+.smurf-gauge i { position: relative; z-index: 1; font-style: normal; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-secondary); }
 .smurf-gauge.ok { --g: var(--radiant); } .smurf-gauge.warn { --g: var(--aegis); } .smurf-gauge.bad { --g: var(--dire); }
 .sv-ok { color: var(--radiant); } .sv-warn { color: var(--aegis); } .sv-bad { color: var(--dire); }
 .smurf-reasons { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
