@@ -1246,3 +1246,37 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
     .tool-stats { grid-template-columns: 1fr 1fr; }
     .coach-heroes { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ======================= Chat & moments ======================= */
+.moments-switch { margin-left: auto; }
+.moments-pane { animation: swap 0.35s var(--ease) both; }
+.moments-empty { padding: 24px; text-align: center; color: var(--text-tertiary); }
+
+.chat-line { display: grid; grid-template-columns: auto auto auto 1fr auto; align-items: baseline; gap: 10px; padding: 7px 12px; border-radius: var(--r-sm); font-size: 0.9rem; }
+.chat-line:nth-child(odd) { background: var(--glass-soft); }
+.chat-line.flame { background: var(--dire-soft); box-shadow: inset 2px 0 0 var(--dire); }
+.cl-time { font: 600 0.76rem var(--font-mono); color: var(--text-tertiary); }
+.cl-scope { font: 800 0.62rem var(--font-ui); letter-spacing: 0.06em; padding: 2px 6px; border-radius: 5px; background: var(--hair); color: var(--text-tertiary); }
+.cl-name { font-weight: 700; white-space: nowrap; }
+.chat-line.r .cl-name { color: var(--radiant); } .chat-line.d .cl-name { color: var(--dire); }
+.cl-text { min-width: 0; word-break: break-word; }
+.cl-flame { font-style: normal; }
+
+.ev-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ev-chip { padding: 6px 12px; border-radius: 999px; background: var(--glass-soft); border: 1px solid var(--hair); font-size: 0.82rem; color: var(--text-secondary); }
+.ev-chip b { color: var(--text-primary); font-weight: 800; }
+.ev-chip.glyph b { color: var(--aegis); } .ev-chip.pause b { color: var(--accent); } .ev-chip.firstblood b { color: var(--dire); } .ev-chip.disconnect b { color: var(--text-secondary); }
+.ev-list { display: flex; flex-direction: column; gap: 6px; }
+.ev-row { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--r-md); background: var(--glass-soft); border: 1px solid var(--hair); border-left: 3px solid var(--hair); }
+.ev-row.r { border-left-color: var(--radiant); } .ev-row.d { border-left-color: var(--dire); }
+.ev-time { font: 600 0.8rem var(--font-mono); color: var(--text-tertiary); }
+.ev-ic { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--hair); }
+.ev-ic svg { width: 17px; height: 17px; fill: none; stroke: var(--text-secondary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ev-row.glyph .ev-ic { background: var(--aegis-soft); } .ev-row.glyph .ev-ic svg { stroke: var(--aegis); fill: var(--aegis-soft); }
+.ev-row.firstblood .ev-ic { background: var(--dire-soft); } .ev-row.firstblood .ev-ic svg { stroke: var(--dire); fill: var(--dire); }
+.ev-row.pause .ev-ic svg, .ev-row.unpause .ev-ic svg { stroke: var(--accent); }
+.ev-text { font-size: 0.9rem; }
+@media (max-width: 620px) {
+    .chat-line { grid-template-columns: auto auto 1fr; }
+    .chat-line .cl-name { grid-column: 2; } .chat-line .cl-text { grid-column: 1 / -1; }
+}

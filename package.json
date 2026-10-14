@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.4.4",
-  "engineRev": "2",
-  "releaseNotes": "Fixed the active tab pill being clipped right after switching tabs.",
-  "releaseNotesRu": "Исправлено: пилюля активной вкладки больше не обрезается сразу после переключения.",
+  "version": "2.5.0",
+  "engineRev": "3",
+  "releaseNotes": "Chat & moments for each match: full in-game chat (toxic lines flagged), plus glyph, pauses, first blood and disconnects. Needs the updated engine (downloads on start).",
+  "releaseNotesRu": "Чат и моменты в каждом матче: весь внутриигровой чат (токсик подсвечен), плюс глиф, паузы, первая кровь и отключения. Нужен обновлённый движок (скачается при запуске).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

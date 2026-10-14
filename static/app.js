@@ -1215,7 +1215,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 unconfirmedEnemyReports: 0,
                 reports: result.Reports || [],
                 scoreboardActivities: result.scoreboardActivities || [],
-                players: result.Players || []
+                players: result.Players || [],
+                events: result.Events || [],
+                chat: result.Chat || []
             });
             
             if (result.Reports) {
@@ -2161,7 +2163,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     unconfirmedEnemyReports: unconfirmedEnemyReports,
                     reports: result.Reports || [],
                     scoreboardActivities: result.scoreboardActivities || [],
-                    players: result.Players || []
+                    players: result.Players || [],
+                    events: result.Events || [],
+                    chat: result.Chat || []
                 });
 
                 if (result.Reports) {

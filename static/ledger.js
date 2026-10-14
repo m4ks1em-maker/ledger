@@ -842,3 +842,98 @@
         sync();
     })();
 })();
+
+/* ---------- Chat & moments for the selected match ---------- */
+(function moments() {
+    const sec = document.getElementById('moments-section');
+    const sw = document.getElementById('moments-switch');
+    const chatPane = document.getElementById('moments-chat');
+    const evPane = document.getElementById('moments-events');
+    const sel = document.getElementById('match-selector');
+    if (!sec || !chatPane || !evPane) return;
+    const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    const FLAME = /\b(рак|дно|днищ|ливер|слил|слей|нуб|нубас|даун|дебил|идиот|тупо?й|тупая|кал|говн|сос[иьё]|изи|изич|носок|бот|repor|report|репорт|trash|noob|ez|easy|idiot|kys|report)\b/i;
+    const teamClass = (t) => (t === 2 ? 'r' : t === 3 ? 'd' : '');
+
+    function who(x) { return x.Name || x.Hero || (x.Slot >= 0 ? T('Slot') + ' ' + x.Slot : '?'); }
+
+    function renderChat(m) {
+        const chat = (m && m.chat) || [];
+        chatPane.textContent = '';
+        if (!chat.length) { chatPane.innerHTML = '<p class="moments-empty">' + T('No chat in this replay.') + '</p>'; return; }
+        chat.forEach((c) => {
+            const row = document.createElement('div');
+            const flame = FLAME.test(c.Text || '');
+            row.className = 'chat-line ' + teamClass(c.Team) + (flame ? ' flame' : '');
+            const t = document.createElement('span'); t.className = 'cl-time'; t.textContent = c.Time;
+            const n = document.createElement('b'); n.className = 'cl-name'; n.textContent = who(c);
+            const scope = document.createElement('span'); scope.className = 'cl-scope'; scope.textContent = c.AllChat ? T('ALL') : T('TEAM');
+            const tx = document.createElement('span'); tx.className = 'cl-text'; tx.textContent = c.Text;
+            row.append(t, scope, n, tx);
+            if (flame) { const f = document.createElement('i'); f.className = 'cl-flame'; f.title = T('Toxic'); f.textContent = '🔥'; row.appendChild(f); }
+            chatPane.appendChild(row);
+        });
+    }
+
+    const EV = {
+        glyph: ['shield', (e) => who(e) + ' ' + T('used the glyph')],
+        pause: ['pause', (e) => who(e) + ' ' + T('paused the game')],
+        unpause: ['play', (e) => who(e) + ' ' + T('unpaused')],
+        firstblood: ['blood', (e) => T('First blood') + ': ' + who(e) + (e.TargetName || e.TargetHero ? ' → ' + (e.TargetName || e.TargetHero) : '')],
+        disconnect: ['plug', (e) => who(e) + ' ' + T('disconnected')]
+    };
+    const ICON = {
+        shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/>',
+        pause: '<path d="M8 5v14M16 5v14"/>',
+        play: '<path d="M7 5l12 7-12 7z"/>',
+        blood: '<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+        plug: '<path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5"/>'
+    };
+    function renderEvents(m) {
+        const evs = ((m && m.events) || []).filter((e) => EV[e.Type]);
+        evPane.textContent = '';
+        if (!evs.length) { evPane.innerHTML = '<p class="moments-empty">' + T('No notable moments in this replay.') + '</p>'; return; }
+        // small summary
+        const count = (t) => evs.filter((e) => e.Type === t).length;
+        const sum = document.createElement('div'); sum.className = 'ev-summary';
+        [['glyph', T('glyphs')], ['pause', T('pauses')], ['firstblood', T('first blood')], ['disconnect', T('disconnects')]].forEach(([t, label]) => {
+            const n = count(t); if (!n && t !== 'firstblood') return;
+            const chip = document.createElement('span'); chip.className = 'ev-chip ' + t;
+            chip.innerHTML = '<b>' + n + '</b> ' + esc(label);
+            sum.appendChild(chip);
+        });
+        evPane.appendChild(sum);
+        const list = document.createElement('div'); list.className = 'ev-list';
+        evs.forEach((e) => {
+            const [icon, text] = [EV[e.Type][0], EV[e.Type][1](e)];
+            const row = document.createElement('div'); row.className = 'ev-row ' + e.Type + ' ' + teamClass(e.Team);
+            row.innerHTML = '<span class="ev-time">' + esc(e.Time) + '</span><span class="ev-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[icon] + '</svg></span><span class="ev-text">' + esc(text) + '</span>';
+            list.appendChild(row);
+        });
+        evPane.appendChild(list);
+    }
+
+    function current() {
+        const list = window.ledgerMatches || [];
+        if (!list.length) return null;
+        const idx = sel && sel.value !== '' ? Number(sel.value) : 0;
+        return list[idx] || list[0];
+    }
+    function paint() {
+        const m = current();
+        const has = m && ((m.chat && m.chat.length) || (m.events && m.events.length));
+        sec.classList.toggle('hidden', !has);
+        if (!has) return;
+        renderChat(m); renderEvents(m);
+    }
+    if (sw) sw.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+        const m = b.dataset.m;
+        chatPane.classList.toggle('hidden', m !== 'chat');
+        evPane.classList.toggle('hidden', m !== 'events');
+    }));
+    document.addEventListener('ledger:matches', paint);
+    if (sel) { sel.addEventListener('change', paint); new MutationObserver(paint).observe(sel, { childList: true }); }
+    document.addEventListener('ledger:lang', paint);
+})();

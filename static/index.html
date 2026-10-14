@@ -7,10 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <title>DotaTraker — Dota 2 report timeline</title>
     <link rel="icon" href="/img/logo-64.png" type="image/png">
-    <link rel="stylesheet" href="fonts.css?v=28">
-    <link rel="stylesheet" href="style.css?v=28">
-    <script src="i18n.js?v=28"></script>
-    <script src="ui.js?v=28"></script>
+    <link rel="stylesheet" href="fonts.css?v=29">
+    <link rel="stylesheet" href="style.css?v=29">
+    <script src="i18n.js?v=29"></script>
+    <script src="ui.js?v=29"></script>
 </head>
 
 <body>
@@ -675,15 +675,29 @@
                         </div>
                     </div>
                 </section>
+
+                <section id="moments-section" class="card main-card hidden">
+                    <div class="card-header">
+                        <h2>Chat &amp; moments</h2>
+                        <div class="seg small moments-switch" id="moments-switch" role="tablist">
+                            <button type="button" class="on" data-m="chat" role="tab">Chat</button>
+                            <button type="button" data-m="events" role="tab">Events</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="moments-chat" class="moments-pane"></div>
+                        <div id="moments-events" class="moments-pane hidden"></div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
 
     <script src="vendor/chart.umd.min.js?v=4.4.0"></script>
-    <script src="app.js?v=28"></script>
-    <script src="history.js?v=28"></script>
-    <script src="ledger.js?v=28"></script>
-    <script src="tools.js?v=28"></script>
+    <script src="app.js?v=29"></script>
+    <script src="history.js?v=29"></script>
+    <script src="ledger.js?v=29"></script>
+    <script src="tools.js?v=29"></script>
 </body>
 
 </html>
