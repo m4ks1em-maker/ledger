@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "engineRev": "2",
-  "releaseNotes": "Tools tab (draft helper, personal coach, smurf check) and a tidier top menu that always fits.",
-  "releaseNotesRu": "Вкладка «Инструменты» (драфт, тренер, проверка смурфов) и аккуратное меню, которое всегда помещается.",
+  "releaseNotes": "Fixed the active tab being clipped on the right in the top menu.",
+  "releaseNotesRu": "Исправлено: активная вкладка больше не обрезается справа в меню.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

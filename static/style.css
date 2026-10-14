@@ -189,8 +189,7 @@ html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(
 .brand-name { font-family: var(--font-display); font-weight: 600; font-size: 1.12rem; letter-spacing: -0.01em; }
 
 .header-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
-.main-header .workflow-tabs { justify-self: center; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-.main-header .workflow-tabs::-webkit-scrollbar { display: none; }
+.main-header .workflow-tabs { justify-self: center; max-width: 100%; }
 /* 7 tabs: go icon-only on laptops so nothing overlaps the brand */
 /* 7 tabs: show the label only on the active tab so the bar always fits; the rest are icons with tooltips */
 @media (min-width: 1121px) {
