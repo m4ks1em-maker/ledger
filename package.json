@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "engineRev": "5",
-  "releaseNotes": "Ward map is live: observers and sentries from the replay plotted on the Dota map, with stats. Engine updated to read ward positions.",
-  "releaseNotesRu": "Карта вардов заработала: обсы и сентри из реплея на карте Доты со статистикой. Движок обновлён — читает позиции вардов.",
+  "releaseNotes": "Premium segmented switcher for Chat / Events / Wards in the match view.",
+  "releaseNotesRu": "Премиальный переключатель Чат / События / Варды в обзоре матча.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

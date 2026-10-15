@@ -1248,7 +1248,13 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 }
 
 /* ======================= Chat & moments ======================= */
-.moments-switch { margin-left: auto; }
+.moments-switch { display: inline-flex; gap: 3px; margin-left: auto; padding: 4px; border-radius: 999px; background: var(--field); border: 1px solid var(--hair); box-shadow: inset 0 2px 6px -3px rgba(0, 0, 0, 0.55); }
+.moments-switch button { position: relative; appearance: none; -webkit-appearance: none; border: 0; cursor: pointer; height: 34px; padding: 0 17px; border-radius: 999px; background: transparent; color: var(--text-secondary); font: 800 0.72rem var(--font-ui); letter-spacing: 0.07em; text-transform: uppercase; transition: color 0.22s var(--ease), background 0.28s var(--ease), box-shadow 0.28s var(--ease); -webkit-tap-highlight-color: transparent; }
+.moments-switch button:hover { color: var(--text-primary); }
+.moments-switch button.on { color: var(--accent-ink); background: linear-gradient(140deg, var(--copper-hi), var(--copper)); box-shadow: 0 1px 0 rgba(255, 228, 200, 0.35) inset, 0 8px 20px -9px var(--copper-glow); }
+.moments-switch button.hidden { display: none; }
+#moments-section .card-header { flex-wrap: wrap; gap: 12px; row-gap: 12px; }
+@media (max-width: 640px) { .moments-switch { width: 100%; margin-left: 0; } .moments-switch button { flex: 1; padding: 0 8px; } }
 .moments-pane { animation: swap 0.35s var(--ease) both; }
 .moments-empty { padding: 24px; text-align: center; color: var(--text-tertiary); }
 
