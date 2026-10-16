@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.12.0",
+  "version": "2.12.1",
   "engineRev": "5",
-  "releaseNotes": "Global chat: talk with every DotaTraker player, full history, Steam name + avatar, subscription badges (1 mo → forever) and an Admin badge.",
-  "releaseNotesRu": "Общий чат: общение со всеми игроками, история сообщений, Steam-ник и аватар, значки по подписке (1 мес → вечная) и статус Админ.",
+  "releaseNotes": "Chat: unread badge on the Chat tab and a count in the window title when new messages arrive.",
+  "releaseNotesRu": "Чат: значок непрочитанных на вкладке «Чат» и счётчик в заголовке окна, когда приходят новые сообщения.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

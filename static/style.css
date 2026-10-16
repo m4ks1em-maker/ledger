@@ -1429,3 +1429,9 @@ body::after {
 .chat-tip .tip-mod button[data-mod="ban"] { color: var(--dire); border-color: var(--dire-soft); }
 .chat-tip .tip-mod button:hover { background: var(--accent-soft); }
 @media (max-width: 640px) { .chat-card { max-height: calc(100vh - 130px); } .chat-msg { grid-template-columns: 38px 1fr auto; gap: 10px; } .chat-av { width: 38px; height: 38px; } }
+
+/* chat unread badge on the nav tab */
+.workflow-tab .tab-icon { position: relative; }
+.tab-badge { position: absolute; top: -6px; right: -8px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9px; background: var(--dire); color: #fff; font: 800 10px/16px var(--font-ui); text-align: center; box-shadow: 0 0 0 2px var(--bg), 0 0 8px rgba(255, 90, 110, .6); pointer-events: none; }
+.tab-badge.hidden { display: none; }
+.tab-chat.active .tab-badge { display: none; }

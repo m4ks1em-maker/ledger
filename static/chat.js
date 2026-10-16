@@ -16,8 +16,24 @@
     const ORDER = ['admin', 'forever', 'year', 'half', 'quarter', 'month'];
 
     const $ = (id) => document.getElementById(id);
-    let msgsEl, bodyEl, inputEl, sendBtn, emptyEl, onlineEl, tipEl, gateEl, inbarEl, legendEl, nickBtn;
-    let me = null, lastId = 0, timer = null, started = false, seen = {}, atBottom = true;
+    let msgsEl, bodyEl, inputEl, sendBtn, emptyEl, onlineEl, tipEl, gateEl, inbarEl, legendEl, nickBtn, badgeEl, chatTabBtn;
+    let me = null, lastId = 0, timer = null, started = false, seen = {}, atBottom = true, unread = 0, primed = false;
+    const baseTitle = document.title;
+
+    const chatActive = () => { const t = document.getElementById('chat-tab'); return t && t.classList.contains('active'); };
+
+    function updateBadge() {
+        if (!badgeEl) return;
+        if (unread > 0 && !chatActive()) {
+            badgeEl.textContent = unread > 99 ? '99+' : String(unread);
+            badgeEl.classList.remove('hidden');
+            document.title = '(' + (unread > 99 ? '99+' : unread) + ') ' + baseTitle;
+        } else {
+            badgeEl.classList.add('hidden');
+            document.title = baseTitle;
+        }
+    }
+    function clearUnread() { unread = 0; updateBadge(); }
 
     function api(sub, payload) {
         return fetch('/_ledger/chat/' + sub, {
@@ -67,11 +83,19 @@
 
     function render(messages, append) {
         if (!messages.length && !append && lastId === 0) return;
-        const html = messages.filter((m) => !seen[m.id]).map((m) => { seen[m.id] = 1; if (m.id > lastId) lastId = m.id; return msgHtml(m); }).join('');
+        const mySteam = (me && me.steamId) || '';
+        let fresh = 0;
+        const html = messages.filter((m) => !seen[m.id]).map((m) => {
+            seen[m.id] = 1; if (m.id > lastId) lastId = m.id;
+            if (primed && m.steamId !== mySteam && !chatActive()) fresh++;
+            return msgHtml(m);
+        }).join('');
         if (!html) return;
         if (emptyEl) emptyEl.style.display = 'none';
         msgsEl.insertAdjacentHTML('beforeend', html);
         if (atBottom) bodyEl.scrollTop = bodyEl.scrollHeight;
+        if (fresh > 0) { unread += fresh; updateBadge(); }
+        primed = true;
     }
 
     function setGate(text) {
@@ -183,17 +207,26 @@
     }
 
     function startPolling() {
-        if (!timer) { poll(); timer = setInterval(() => { if (document.getElementById('chat-tab').classList.contains('active')) poll(); }, 3000); }
+        if (timer) return;
+        poll();
+        let tick = 0;
+        timer = setInterval(() => {
+            tick++;
+            // every 3s when the chat is open, every ~9s in the background
+            if (chatActive() || tick % 3 === 0) poll();
+        }, 3000);
     }
 
     function init() {
         msgsEl = $('chat-msgs'); bodyEl = $('chat-body'); inputEl = $('chat-input'); sendBtn = $('chat-send');
         emptyEl = $('chat-empty'); onlineEl = $('chat-online'); tipEl = $('chat-tip'); gateEl = $('chat-gate');
-        inbarEl = $('chat-inbar'); legendEl = $('chat-legend'); nickBtn = $('chat-nick-btn');
+        inbarEl = $('chat-inbar'); legendEl = $('chat-legend'); nickBtn = $('chat-nick-btn'); badgeEl = $('chat-badge');
         if (!msgsEl) return;
         wire();
-        const chatTabBtn = document.querySelector('.workflow-tab[data-tab="chat"]');
-        if (chatTabBtn) chatTabBtn.addEventListener('click', () => { if (!started) { started = true; startPolling(); } else poll(); });
+        chatTabBtn = document.querySelector('.workflow-tab[data-tab="chat"]');
+        if (chatTabBtn) chatTabBtn.addEventListener('click', () => { clearUnread(); setTimeout(() => { bodyEl.scrollTop = bodyEl.scrollHeight; poll(); }, 60); });
+        // poll in the background from startup so the unread badge works without opening the tab
+        startPolling();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
