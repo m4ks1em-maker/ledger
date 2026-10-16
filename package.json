@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "engineRev": "5",
-  "releaseNotes": "Fix: the app page is no longer cached, so new versions always show up after an update.",
-  "releaseNotesRu": "Фикс: страница приложения больше не кэшируется — новые версии всегда видны сразу после обновления.",
+  "releaseNotes": "Match screen: the match ID is now a big hero number with an eyebrow, prototype-style.",
+  "releaseNotesRu": "Экран матча: ID матча теперь крупным героем с эйрбоу — как в прототипе.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

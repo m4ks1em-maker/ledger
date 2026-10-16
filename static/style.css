@@ -1319,3 +1319,16 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 @media (prefers-reduced-motion: reduce) { body::after { opacity: 0.02; } }
+
+/* ---------- Match screen: ID as a hero number (prototype look) ---------- */
+#results-section > .card-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 30px 26px 12px; }
+#results-section > .card-header h2 { order: -2; font: 800 0.76rem/1 var(--font-ui); letter-spacing: 0.24em; text-transform: uppercase; color: var(--copper); }
+#results-section > .card-header h2::before { content: ""; display: inline-block; width: 20px; height: 1px; background: var(--copper); vertical-align: middle; margin-right: 10px; }
+#results-section .match-meta { order: -1; justify-content: flex-start; width: 100%; gap: 16px; flex-wrap: wrap; }
+#results-section .match-meta-id { background: transparent; border: 0; height: auto; padding: 0; gap: 14px; align-items: baseline; }
+#results-section .match-meta-id:hover { background: transparent; }
+#results-section .match-meta-id small { display: none; }
+#results-section .match-meta-id b { font: 700 clamp(2.4rem, 6vw, 3.4rem)/0.95 var(--font-num); letter-spacing: -0.02em; color: var(--text-primary); }
+#results-section .match-meta-id .mm-copy { align-self: center; height: 26px; }
+#results-section .match-meta a { align-self: center; font-size: 0.9rem; }
+#results-section .header-controls { align-self: flex-start; }
