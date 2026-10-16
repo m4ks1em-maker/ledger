@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.11.0",
+  "version": "2.11.1",
   "engineRev": "5",
-  "releaseNotes": "Timeline chart redesigned: soft team lanes, glowing hero markers, subtle grid, obsidian palette.",
-  "releaseNotesRu": "Переделан график-таймлайн: мягкие полосы команд, светящиеся маркеры героев, тонкая сетка, обсидиановая палитра.",
+  "releaseNotes": "Timeline chart: aurora markers with light beams and glow halos over team lanes.",
+  "releaseNotesRu": "График-таймлайн: аврора-маркеры с лучами и свечением поверх полос команд.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

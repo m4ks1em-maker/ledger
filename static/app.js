@@ -2,6 +2,26 @@
 const dbg = (...a) => { if (window.LEDGER_DEBUG) console.log(...a); };
 const tr = (s) => (window.LedgerI18n ? window.LedgerI18n.t(s) : s);
 
+// Aurora marker: a soft light beam from the lane edge up to the node, plus a radial bloom halo.
+function auroraGlow(ctx, cx, cy, r, color, laneEdge) {
+    const hx = (/^#[0-9a-fA-F]{6}$/.test(color)) ? color : '#e0965a';
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const vg = ctx.createLinearGradient(cx, laneEdge, cx, cy);
+    vg.addColorStop(0, hx + '00');
+    vg.addColorStop(1, hx + '3a');
+    ctx.fillStyle = vg;
+    ctx.fillRect(cx - r * 0.6, Math.min(laneEdge, cy), r * 1.2, Math.abs(laneEdge - cy));
+    const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 1.8);
+    rg.addColorStop(0, hx + 'bb');
+    rg.addColorStop(1, hx + '00');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 const DOTA_HEROES = [
     { id: 'antimage', name: 'Anti-Mage', localized_name: 'Anti-Mage' },
     { id: 'axe', name: 'Axe', localized_name: 'Axe' },
@@ -3237,7 +3257,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const heroName = report.TargetHero || report.Hero;
                 const iconUrl = getHeroIconUrl(heroName);
                 const img = iconUrl ? imageCache.get(iconUrl) : null;
-                
+                auroraGlow(ctx, x, y + iconSize / 2, iconSize / 2, team === 'FRIENDLY' ? T.good : T.bad, team === 'FRIENDLY' ? _topL : _botL);
+
                 if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
                     ctx.save();
                     ctx.beginPath();
@@ -3246,21 +3267,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.drawImage(img, x - iconSize / 2, y, iconSize, iconSize);
                     ctx.restore();
                 } else {
-                    ctx.fillStyle = T.grid;
+                    ctx.fillStyle = '#1b1510';
                     ctx.beginPath();
                     ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = T.text;
-                    ctx.font = '10px Manrope, system-ui, sans-serif';
+                    ctx.font = '700 10px ' + _f + ', system-ui, sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText(heroName ? heroName.substring(0, 3).toUpperCase() : '?', x, y + iconSize / 2 + 3);
                 }
-                
+
+                ctx.save();
+                ctx.shadowColor = team === 'FRIENDLY' ? T.good : T.bad;
+                ctx.shadowBlur = 12;
                 ctx.strokeStyle = team === 'FRIENDLY' ? T.good : T.bad;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                 ctx.stroke();
+                ctx.restore();
             });
         }
 
@@ -3913,7 +3938,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const candidates = report.Candidates && report.Candidates.length > 0 ? report.Candidates : null;
                 const reportKey = `${report.Time}_${report.Slot}_${report.SteamID}`;
                 const tintColor = reportColors.get(reportKey) || T.muted;
-                
+                auroraGlow(ctx, x, y + iconSize / 2, iconSize / 2, team === 'FRIENDLY' ? T.good : T.bad, team === 'FRIENDLY' ? _topL : _botL);
+
                 if (candidates) {
                     const maxScore = Math.max(...candidates.map(c => c.Score));
                     const isCertain = candidates.length === 1;
@@ -4023,11 +4049,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.fillText(heroName ? heroName.substring(0, 3).toUpperCase() : '?', x, y + iconSize / 2 + 3);
                     }
                     
+                    ctx.save();
+                    ctx.shadowColor = team === 'FRIENDLY' ? T.good : T.bad;
+                    ctx.shadowBlur = 12;
                     ctx.strokeStyle = team === 'FRIENDLY' ? T.good : T.bad;
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 2.5;
                     ctx.beginPath();
                     ctx.arc(x, y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
                     ctx.stroke();
+                    ctx.restore();
                 }
             });
         }
