@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "engineRev": "5",
-  "releaseNotes": "New look: obsidian theme, Bricolage numerals, Inter Tight UI and a subtle film grain across the app.",
-  "releaseNotesRu": "Новый вид: обсидиановая тема, крупные цифры Bricolage, интерфейс на Inter Tight и лёгкое зерно по всему приложению.",
+  "releaseNotes": "Flatter obsidian layout: hairline panels instead of glass boxes, bigger headings, calmer background.",
+  "releaseNotesRu": "Более плоский обсидиановый вид: тонкие панели вместо стеклянных коробок, крупнее заголовки, спокойнее фон.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

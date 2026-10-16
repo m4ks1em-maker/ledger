@@ -140,9 +140,9 @@ button { font-family: inherit; }
     position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0;
     animation: aurora-in 1.6s var(--ease) 0.1s forwards, drift 38s ease-in-out infinite alternate;
 }
-.aurora .a1 { width: 54vmax; height: 46vmax; left: -16vmax; top: -18vmax; background: radial-gradient(circle at 40% 40%, rgba(214, 132, 72, 0.32), transparent 62%); }
-.aurora .a2 { width: 50vmax; height: 50vmax; right: -18vmax; bottom: -22vmax; background: radial-gradient(circle at 60% 60%, rgba(160, 60, 40, 0.28), transparent 62%); animation-delay: 0.2s, -12s; }
-.aurora .a3 { width: 40vmax; height: 36vmax; left: 34vw; top: 18vh; background: radial-gradient(circle, rgba(242, 196, 109, 0.2), transparent 64%); animation-delay: 0.35s, -24s; }
+.aurora .a1 { width: 54vmax; height: 46vmax; left: -10vmax; top: -22vmax; background: radial-gradient(circle at 60% 50%, rgba(224, 150, 90, 0.16), transparent 60%); }
+.aurora .a2 { width: 46vmax; height: 46vmax; right: -20vmax; bottom: -26vmax; background: radial-gradient(circle at 60% 60%, rgba(224, 150, 90, 0.06), transparent 62%); animation-delay: 0.2s, -12s; }
+.aurora .a3 { width: 34vmax; height: 30vmax; left: 44vw; top: 10vh; background: radial-gradient(circle, rgba(242, 196, 109, 0.05), transparent 64%); animation-delay: 0.35s, -24s; }
 html[data-theme="light"] .aurora .a1 { background: radial-gradient(circle at 40% 40%, rgba(14, 159, 122, 0.2), transparent 62%); }
 html[data-theme="light"] .aurora .a2 { background: radial-gradient(circle at 60% 60%, rgba(224, 58, 82, 0.15), transparent 62%); }
 html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(74, 99, 224, 0.14), transparent 64%); }
@@ -313,12 +313,10 @@ html:not(.js) .workflow-tab.active, html:not(.js) .graph-view-tab.active { backg
 /* ---------- Glass surfaces ---------- */
 .card, .tile, .setup-panel, .conduct-scorecard-banner {
     position: relative;
-    background: var(--glass);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--r-xl);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    background: linear-gradient(180deg, rgba(255, 228, 196, 0.05), rgba(255, 228, 196, 0.02));
+    border: 1px solid rgba(255, 228, 196, 0.11);
+    border-radius: var(--r-lg);
+    box-shadow: 0 14px 40px -28px rgba(0, 0, 0, 0.9);
 }
 /* soft light that follows the pointer across a glass card */
 .card::before, .tile::before {
@@ -329,8 +327,8 @@ html:not(.js) .workflow-tab.active, html:not(.js) .graph-view-tab.active { backg
 .card:hover::before, .tile:hover::before { opacity: 1; }
 html[data-theme="light"] .card::before, html[data-theme="light"] .tile::before { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(74, 99, 224, 0.07), transparent 45%); }
 
-.card-header { position: relative; padding: 20px 24px 14px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
-.card-header h2 { margin: 0; font: 600 1.2rem/1.2 var(--font-display); letter-spacing: -0.01em; }
+.card-header { position: relative; padding: 24px 26px 16px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.card-header h2 { margin: 0; font: 700 1.6rem/1.05 var(--font-display); letter-spacing: -0.02em; }
 .header-controls { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .card-body { position: relative; padding: 6px 24px 24px; }
 .main-card { min-height: 0; }
@@ -1070,7 +1068,7 @@ button.match-meta-id { cursor: pointer; color: var(--text-primary); padding: 0 5
 button.match-meta-id:hover { border-color: var(--accent-line); background: var(--accent-soft); }
 button.match-meta-id:active { transform: scale(0.97); }
 .match-meta-id small { font: 800 0.62rem var(--font-ui); letter-spacing: 0.1em; color: var(--text-tertiary); }
-.match-meta-id b { font: 600 0.86rem var(--font-mono); letter-spacing: 0.02em; }
+.match-meta-id b { font: 700 1.05rem var(--font-num); letter-spacing: 0.01em; }
 .match-meta-id .mm-copy { height: 24px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 999px; background: var(--hover); color: var(--text-secondary); font: 700 0.72rem var(--font-ui); transition: background 0.2s, color 0.2s; }
 button.match-meta-id:hover .mm-copy { background: var(--accent); color: var(--accent-ink); }
 button.match-meta-id.copied { border-color: var(--radiant); }
