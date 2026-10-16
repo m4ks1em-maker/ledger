@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.7.3",
+  "version": "2.8.0",
   "engineRev": "5",
-  "releaseNotes": "Match screen: the match ID is now a big hero number with an eyebrow, prototype-style.",
-  "releaseNotesRu": "Экран матча: ID матча теперь крупным героем с эйрбоу — как в прототипе.",
+  "releaseNotes": "Home redesigned: full-width hero search, rearranged tiles and buttons in the new obsidian layout.",
+  "releaseNotesRu": "Главная переделана: широкий герой-поиск сверху, плитки и кнопки расставлены заново в новом обсидиановом стиле.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
