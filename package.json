@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.6.2",
+  "version": "2.7.0",
   "engineRev": "5",
-  "releaseNotes": "Premium segmented switcher for Chat / Events / Wards in the match view.",
-  "releaseNotesRu": "Премиальный переключатель Чат / События / Варды в обзоре матча.",
+  "releaseNotes": "New look: obsidian theme, Bricolage numerals, Inter Tight UI and a subtle film grain across the app.",
+  "releaseNotesRu": "Новый вид: обсидиановая тема, крупные цифры Bricolage, интерфейс на Inter Tight и лёгкое зерно по всему приложению.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
