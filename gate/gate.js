@@ -274,7 +274,10 @@ function sendJson(res, status, obj, extra) {
 function sendFile(req, res, file, { page = false } = {}) {
     fs.readFile(file, (err, buf) => {
         if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); return res.end('Not found'); }
-        const headers = { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': buf.length, 'Cache-Control': 'no-cache' };
+        const ext = path.extname(file).toLowerCase();
+        // HTML must never be cached, or a stale page keeps pointing at old ?v= assets after an update.
+        const cache = (page || ext === '.html') ? 'no-store, must-revalidate' : 'no-cache';
+        const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': buf.length, 'Cache-Control': cache };
         if (page) headers['Content-Security-Policy'] = PAGE_CSP;
         res.writeHead(200, headers);
         res.end(req.method === 'HEAD' ? undefined : buf);

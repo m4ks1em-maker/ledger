@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "engineRev": "5",
-  "releaseNotes": "Flatter obsidian layout: hairline panels instead of glass boxes, bigger headings, calmer background.",
-  "releaseNotesRu": "Более плоский обсидиановый вид: тонкие панели вместо стеклянных коробок, крупнее заголовки, спокойнее фон.",
+  "releaseNotes": "Fix: the app page is no longer cached, so new versions always show up after an update.",
+  "releaseNotesRu": "Фикс: страница приложения больше не кэшируется — новые версии всегда видны сразу после обновления.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
