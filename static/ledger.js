@@ -988,3 +988,40 @@
     if (sel) { sel.addEventListener('change', paint); new MutationObserver(paint).observe(sel, { childList: true }); }
     document.addEventListener('ledger:lang', paint);
 })();
+
+/* ---------- Match verdict + report gauge ---------- */
+(function matchVerdict() {
+    const box = document.getElementById('match-verdict');
+    const total = document.getElementById('total-combined-reports');
+    const fr = document.getElementById('total-friendly-reports');
+    const en = document.getElementById('total-enemy-reports');
+    const summary = document.getElementById('report-summary');
+    if (!box || !total) return;
+    const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
+    const arc = document.getElementById('mv-arc');
+    const numEl = document.getElementById('mv-count');
+    const titleEl = document.getElementById('mv-title');
+    const subEl = document.getElementById('mv-sub');
+    const labelEl = document.getElementById('mv-count-label');
+    const C = 440;
+    const verdict = (n) => n === 0 ? T('Clean match') : n <= 2 ? T('Calm match') : n <= 5 ? T('Heated match') : T('Toxic match');
+    function render() {
+        const visible = summary && summary.style.display !== 'none';
+        if (!visible) { box.classList.add('hidden'); return; }
+        const n = parseInt(total.textContent, 10) || 0;
+        const f = parseInt(fr ? fr.textContent : '0', 10) || 0;
+        const e = parseInt(en ? en.textContent : '0', 10) || 0;
+        box.classList.remove('hidden');
+        if (numEl) numEl.textContent = n;
+        if (labelEl) labelEl.textContent = T('reports');
+        if (titleEl) titleEl.textContent = verdict(n);
+        if (subEl) subEl.textContent = f + ' ' + T('from teammates') + ' · ' + e + ' ' + T('from enemies');
+        if (arc) { const frac = Math.min(n / 8, 1); arc.style.transition = 'stroke-dashoffset .9s cubic-bezier(.22,.8,.24,1)'; arc.style.strokeDashoffset = String(C * (1 - frac)); }
+        box.classList.toggle('mv-toxic', n >= 6);
+        box.classList.toggle('mv-calm', n > 0 && n <= 2);
+    }
+    new MutationObserver(render).observe(total, { childList: true, characterData: true, subtree: true });
+    if (summary) new MutationObserver(render).observe(summary, { attributes: true, attributeFilter: ['style'] });
+    document.addEventListener('ledger:lang', render);
+    render();
+})();

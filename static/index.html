@@ -7,10 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <title>DotaTraker — Dota 2 report timeline</title>
     <link rel="icon" href="/img/logo-64.png" type="image/png">
-    <link rel="stylesheet" href="fonts.css?v=37">
-    <link rel="stylesheet" href="style.css?v=37">
-    <script src="i18n.js?v=37"></script>
-    <script src="ui.js?v=37"></script>
+    <link rel="stylesheet" href="fonts.css?v=38">
+    <link rel="stylesheet" href="style.css?v=38">
+    <script src="i18n.js?v=38"></script>
+    <script src="ui.js?v=38"></script>
 </head>
 
 <body>
@@ -555,6 +555,21 @@
                         <div id="match-meta" class="match-meta hidden"></div>
                     </div>
                     <div class="card-body">
+                        <div id="match-verdict" class="match-verdict hidden">
+                            <div class="mv-text">
+                                <div class="mv-eyebrow">Verdict</div>
+                                <div class="mv-title" id="mv-title">—</div>
+                                <div class="mv-sub" id="mv-sub"></div>
+                            </div>
+                            <div class="mv-gauge">
+                                <svg viewBox="0 0 160 160" aria-hidden="true">
+                                    <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,228,196,.08)" stroke-width="7"/>
+                                    <circle id="mv-arc" cx="80" cy="80" r="70" fill="none" stroke="url(#mvg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="440" transform="rotate(-90 80 80)"/>
+                                    <defs><linearGradient id="mvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6a8"/><stop offset="1" stop-color="#e0965a"/></linearGradient></defs>
+                                </svg>
+                                <div class="mv-num"><b id="mv-count">0</b><span id="mv-count-label">reports</span></div>
+                            </div>
+                        </div>
                         <div class="selector-row">
                             <div id="match-selector-container" class="match-selector-container hidden">
                                 <label for="match-selector">Match</label>
@@ -669,10 +684,10 @@
     </div>
 
     <script src="vendor/chart.umd.min.js?v=4.4.0"></script>
-    <script src="app.js?v=37"></script>
-    <script src="history.js?v=37"></script>
-    <script src="ledger.js?v=37"></script>
-    <script src="tools.js?v=37"></script>
+    <script src="app.js?v=38"></script>
+    <script src="history.js?v=38"></script>
+    <script src="ledger.js?v=38"></script>
+    <script src="tools.js?v=38"></script>
 </body>
 
 </html>

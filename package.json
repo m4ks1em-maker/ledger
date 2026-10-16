@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "engineRev": "5",
-  "releaseNotes": "Full redesign across every screen: obsidian layout, flat hairline panels, big Bricolage numbers, larger titles.",
-  "releaseNotesRu": "Полный редизайн всех экранов: обсидиановая раскладка, плоские панели тонкими линиями, крупные цифры Bricolage, большие заголовки.",
+  "releaseNotes": "Match screen: verdict + circular report gauge (Calm / Heated / Toxic) from the real report counts.",
+  "releaseNotesRu": "Экран матча: вердикт + круговой счётчик репортов (Спокойный / Напряжённый / Токсичный) по реальным данным.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

@@ -1357,3 +1357,19 @@ body::after {
 /* inputs: a touch taller and rounder to match the hero search */
 .pl-form input { height: 52px; border-radius: 15px; font-size: 1rem; padding: 0 18px; }
 .pl-form .btn { height: 52px; border-radius: 15px; padding: 0 24px; }
+
+/* ---------- Match verdict + report gauge ---------- */
+.match-verdict { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; margin: 4px 0 26px; padding: 30px 32px; border-radius: 20px; position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(255, 228, 196, 0.05), rgba(255, 228, 196, 0.015)); border: 1px solid var(--hair); }
+.match-verdict::before { content: ""; position: absolute; right: -70px; top: -90px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, var(--copper-glow), transparent 62%); opacity: 0.38; filter: blur(8px); }
+.mv-text { position: relative; z-index: 1; min-width: 0; }
+.mv-eyebrow { color: var(--text-secondary); font: 800 0.72rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; }
+.mv-title { font: 700 clamp(1.7rem, 3.4vw, 2.5rem)/1.02 var(--font-display); letter-spacing: -0.02em; margin-top: 8px; }
+.mv-sub { margin-top: 12px; color: var(--text-secondary); font-size: 0.95rem; }
+.mv-gauge { position: relative; width: 150px; height: 150px; z-index: 1; flex: 0 0 auto; }
+.mv-gauge svg { width: 100%; height: 100%; }
+.mv-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.mv-num b { font: 800 2.9rem/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.mv-num span { color: var(--text-secondary); font: 800 0.62rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 3px; }
+.match-verdict.mv-toxic .mv-title { color: var(--dire); }
+.match-verdict.mv-calm .mv-title { color: var(--copper-hi); }
+@media (max-width: 640px) { .match-verdict { grid-template-columns: 1fr; gap: 22px; } .mv-gauge { order: -1; } }
