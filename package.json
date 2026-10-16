@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "engineRev": "5",
-  "releaseNotes": "Home redesigned: full-width hero search, rearranged tiles and buttons in the new obsidian layout.",
-  "releaseNotesRu": "Главная переделана: широкий герой-поиск сверху, плитки и кнопки расставлены заново в новом обсидиановом стиле.",
+  "releaseNotes": "Full redesign across every screen: obsidian layout, flat hairline panels, big Bricolage numbers, larger titles.",
+  "releaseNotesRu": "Полный редизайн всех экранов: обсидиановая раскладка, плоские панели тонкими линиями, крупные цифры Bricolage, большие заголовки.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

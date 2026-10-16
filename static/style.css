@@ -1337,3 +1337,23 @@ body::after {
 #results-section .match-meta-id .mm-copy { align-self: center; height: 26px; }
 #results-section .match-meta a { align-self: center; font-size: 0.9rem; }
 #results-section .header-controls { align-self: flex-start; }
+
+/* ---------- Redesign pass: unified premium across all screens ---------- */
+/* bigger page titles on main screens */
+.main-card > .card-header h2 { font-size: clamp(1.8rem, 3.2vw, 2.3rem); }
+
+/* big Bricolage stat numbers everywhere */
+.pl-stat b { font-family: var(--font-num); font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; }
+.pl-stat span { font-size: 0.78rem; letter-spacing: 0.02em; }
+
+/* flat premium panels for stat / player / tool boxes (match the new home tiles) */
+.st-box, .pl-stat, .pl-group {
+  background: linear-gradient(180deg, rgba(255, 228, 196, 0.045), rgba(255, 228, 196, 0.015));
+  border-color: rgba(255, 228, 196, 0.10);
+}
+.st-box { padding: 22px 24px; border-radius: var(--r-lg); }
+.st-box h3, .pl-col h3 { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 16px; }
+
+/* inputs: a touch taller and rounder to match the hero search */
+.pl-form input { height: 52px; border-radius: 15px; font-size: 1rem; padding: 0 18px; }
+.pl-form .btn { height: 52px; border-radius: 15px; padding: 0 24px; }
