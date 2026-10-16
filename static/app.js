@@ -3174,29 +3174,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalImages = imagesToLoad.size;
 
         function drawIcons() {
+            const _rX = containerWidth - padding.right;
+            const _topL = padding.top, _midY = padding.top + teamRegionHeight, _botL = padding.top + teamRegionHeight * 2;
+            const _f = (T.font || 'Inter Tight');
             ctx.clearRect(0, 0, containerWidth, totalHeight);
             ctx.fillStyle = T.bg;
             ctx.fillRect(0, 0, containerWidth, totalHeight);
 
-            ctx.strokeStyle = T.line;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(padding.left, padding.top);
-            ctx.lineTo(padding.left, totalHeight - padding.bottom);
-            ctx.moveTo(padding.left, padding.top + teamRegionHeight);
-            ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight);
-            ctx.moveTo(padding.left, padding.top + teamRegionHeight * 2);
-            ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight * 2);
-            ctx.stroke();
+            // soft team lanes (radiant on top, dire below)
+            ctx.save();
+            ctx.globalAlpha = 0.06;
+            ctx.fillStyle = T.good; ctx.fillRect(padding.left, _topL, _rX - padding.left, teamRegionHeight);
+            ctx.fillStyle = T.bad; ctx.fillRect(padding.left, _midY, _rX - padding.left, teamRegionHeight);
+            ctx.restore();
 
-            ctx.fillStyle = T.muted;
-            ctx.font = '600 12px Manrope, system-ui, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = T.good;
-            ctx.fillText(tr('Teammates'), padding.left + 8, padding.top - 20);
-            ctx.fillStyle = T.bad;
-            ctx.fillText(tr('Enemies'), padding.left + 8, padding.top + teamRegionHeight + 20);
-
+            // minute grid + labels
             const numLabels = Math.min(20, Math.ceil(timeRange / 2));
             for (let i = 0; i <= numLabels; i++) {
                 const time = (i * timeRange) / numLabels;
@@ -3204,19 +3196,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 const minutes = Math.floor(time);
                 const seconds = Math.floor((time - minutes) * 60);
                 const timeLabel = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                
-                ctx.strokeStyle = T.grid;
-                ctx.lineWidth = 0.5;
+                ctx.save();
+                ctx.strokeStyle = T.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
                 ctx.beginPath();
-                ctx.moveTo(x, padding.top);
-                ctx.lineTo(x, totalHeight - padding.bottom);
+                ctx.moveTo(x, _topL);
+                ctx.lineTo(x, _botL);
                 ctx.stroke();
-                
-                ctx.fillStyle = T.muted;
-                ctx.font = '11px Manrope, system-ui, sans-serif';
+                ctx.restore();
+                ctx.fillStyle = T.faint;
+                ctx.font = '600 11px ' + _f + ', system-ui, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(timeLabel, x, totalHeight - padding.bottom + 18);
+                ctx.fillText(timeLabel, x, _botL + 20);
             }
+
+            // frame hairlines
+            ctx.strokeStyle = T.line; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, _topL); ctx.lineTo(padding.left, _botL);
+            ctx.moveTo(padding.left, _midY); ctx.lineTo(_rX, _midY);
+            ctx.stroke();
+
+            // lane label pills
+            [[tr('Teammates'), _topL + 18, T.good], [tr('Enemies'), _midY + 18, T.bad]].forEach(function (L) {
+                const label = String(L[0]).toUpperCase(), cy = L[1], color = L[2];
+                ctx.font = '800 11px ' + _f + ', system-ui, sans-serif';
+                ctx.textAlign = 'left';
+                const w = ctx.measureText(label).width;
+                const px = padding.left + 10, py = cy - 11;
+                ctx.save();
+                ctx.globalAlpha = 0.15; ctx.fillStyle = color;
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(px, py, w + 22, 22, 11); else ctx.rect(px, py, w + 22, 22);
+                ctx.fill();
+                ctx.restore();
+                ctx.fillStyle = color;
+                ctx.fillText(label, px + 11, cy + 4);
+            });
 
             iconPositions.forEach(({ report, x, y, team }) => {
                 const heroName = report.TargetHero || report.Hero;
@@ -3835,29 +3850,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalImages = imagesToLoad.size;
 
         function drawIcons() {
+            const _rX = containerWidth - padding.right;
+            const _topL = padding.top, _midY = padding.top + teamRegionHeight, _botL = padding.top + teamRegionHeight * 2;
+            const _f = (T.font || 'Inter Tight');
             ctx.clearRect(0, 0, containerWidth, totalHeight);
             ctx.fillStyle = T.bg;
             ctx.fillRect(0, 0, containerWidth, totalHeight);
 
-            ctx.strokeStyle = T.line;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(padding.left, padding.top);
-            ctx.lineTo(padding.left, totalHeight - padding.bottom);
-            ctx.moveTo(padding.left, padding.top + teamRegionHeight);
-            ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight);
-            ctx.moveTo(padding.left, padding.top + teamRegionHeight * 2);
-            ctx.lineTo(containerWidth - padding.right, padding.top + teamRegionHeight * 2);
-            ctx.stroke();
+            // soft team lanes (radiant on top, dire below)
+            ctx.save();
+            ctx.globalAlpha = 0.06;
+            ctx.fillStyle = T.good; ctx.fillRect(padding.left, _topL, _rX - padding.left, teamRegionHeight);
+            ctx.fillStyle = T.bad; ctx.fillRect(padding.left, _midY, _rX - padding.left, teamRegionHeight);
+            ctx.restore();
 
-            ctx.fillStyle = T.muted;
-            ctx.font = '600 12px Manrope, system-ui, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = T.good;
-            ctx.fillText(tr('Teammates'), padding.left + 8, padding.top - 20);
-            ctx.fillStyle = T.bad;
-            ctx.fillText(tr('Enemies'), padding.left + 8, padding.top + teamRegionHeight + 20);
-
+            // minute grid + labels
             const numLabels = Math.min(20, Math.ceil(timeRange / 2));
             for (let i = 0; i <= numLabels; i++) {
                 const time = (i * timeRange) / numLabels;
@@ -3865,19 +3872,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 const minutes = Math.floor(time);
                 const seconds = Math.floor((time - minutes) * 60);
                 const timeLabel = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                
-                ctx.strokeStyle = T.grid;
-                ctx.lineWidth = 0.5;
+                ctx.save();
+                ctx.strokeStyle = T.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
                 ctx.beginPath();
-                ctx.moveTo(x, padding.top);
-                ctx.lineTo(x, totalHeight - padding.bottom);
+                ctx.moveTo(x, _topL);
+                ctx.lineTo(x, _botL);
                 ctx.stroke();
-                
-                ctx.fillStyle = T.muted;
-                ctx.font = '11px Manrope, system-ui, sans-serif';
+                ctx.restore();
+                ctx.fillStyle = T.faint;
+                ctx.font = '600 11px ' + _f + ', system-ui, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(timeLabel, x, totalHeight - padding.bottom + 18);
+                ctx.fillText(timeLabel, x, _botL + 20);
             }
+
+            // frame hairlines
+            ctx.strokeStyle = T.line; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, _topL); ctx.lineTo(padding.left, _botL);
+            ctx.moveTo(padding.left, _midY); ctx.lineTo(_rX, _midY);
+            ctx.stroke();
+
+            // lane label pills
+            [[tr('Teammates'), _topL + 18, T.good], [tr('Enemies'), _midY + 18, T.bad]].forEach(function (L) {
+                const label = String(L[0]).toUpperCase(), cy = L[1], color = L[2];
+                ctx.font = '800 11px ' + _f + ', system-ui, sans-serif';
+                ctx.textAlign = 'left';
+                const w = ctx.measureText(label).width;
+                const px = padding.left + 10, py = cy - 11;
+                ctx.save();
+                ctx.globalAlpha = 0.15; ctx.fillStyle = color;
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(px, py, w + 22, 22, 11); else ctx.rect(px, py, w + 22, 22);
+                ctx.fill();
+                ctx.restore();
+                ctx.fillStyle = color;
+                ctx.fillText(label, px + 11, cy + 4);
+            });
 
             iconPositions.forEach(({ report, x, y, team }) => {
                 const candidates = report.Candidates && report.Candidates.length > 0 ? report.Candidates : null;

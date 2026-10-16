@@ -37,12 +37,12 @@
     --aegis-soft: rgba(242, 196, 109, 0.15);
 
     /* canvases (timeline graphs) */
-    --cv-bg: #150e09;
-    --cv-row: #1e150e;
-    --cv-line: #3d2d20;
-    --cv-grid: #30241a;
-    --cv-chip: #44321f;
-    --cv-halo: #110b07;
+    --cv-bg: #0e0b08;
+    --cv-row: #15110c;
+    --cv-line: #2c2219;
+    --cv-grid: #1c1510;
+    --cv-chip: #2a2018;
+    --cv-halo: #0b0806;
 
     --shadow: 0 1px 0 var(--glass-edge) inset, 0 24px 60px -30px rgba(0, 0, 0, 0.9);
     --shadow-pop: 0 1px 0 var(--glass-edge) inset, 0 30px 80px -24px rgba(0, 0, 0, 0.9);
