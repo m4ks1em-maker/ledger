@@ -141,6 +141,14 @@ const DENY_TEXT = {
     setup: 'The key server address is not set in ledger.config.json.'
 };
 
+// Steam identity fields sent to the key server with activate/check, so chat
+// can show the player's Steam nick + avatar and bind them to the key.
+function steamFields() {
+    const s = settings.steam;
+    if (!s || !s.id) return {};
+    return { steam: s.id, steamName: s.name || undefined, steamAvatar: s.avatar || undefined };
+}
+
 async function keyServer(pathname, payload, timeoutMs = 15000) {
     const r = await fetch(LICENSE_SERVER + pathname, {
         method: payload ? 'POST' : 'GET',
@@ -168,7 +176,7 @@ function checkLicense() {
     checking = (async () => {
         lic.lastCheck = now();
         try {
-            const { status, body } = await keyServer('/v1/check', { token: lic.token, device: DEVICE_ID, app: VERSION, steam: (settings.steam && settings.steam.id) || undefined });
+            const { status, body } = await keyServer('/v1/check', Object.assign({ token: lic.token, device: DEVICE_ID, app: VERSION }, steamFields()));
             if (status === 200 && body.ok) {
                 lic.license = body.license; lic.lastOk = now(); lic.offline = false; lic.denied = null;
                 saveLicense();
@@ -259,7 +267,7 @@ const MIME = {
     '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
     '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2', '.webp': 'image/webp'
 };
-const PAGE_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+const PAGE_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://*.steamstatic.com https://*.akamaihd.net; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 function baseHeaders(res) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -1120,7 +1128,7 @@ async function steamReturn(req, res, url) {
 
     const id = m[1];
     const prof = await steamProfile(id).catch(() => ({ name: '', avatar: '' }));
-    settings.steam = { id, name: prof.name || id, at: now() };
+    settings.steam = { id, name: prof.name || id, avatar: prof.avatar || '', at: now() };
     if (!settings.sync.steamId) settings.sync.steamId = id;
     saveSettings();
     try {
@@ -1170,7 +1178,7 @@ async function login(req, res) {
 
     let r;
     try {
-        r = await keyServer('/v1/activate', { key: raw, device: DEVICE_ID, name: DEVICE_NAME, app: VERSION, steam: (settings.steam && settings.steam.id) || undefined });
+        r = await keyServer('/v1/activate', Object.assign({ key: raw, device: DEVICE_ID, name: DEVICE_NAME, app: VERSION }, steamFields()));
     } catch (_) {
         return sendJson(res, 502, { error: DENY_TEXT.offline, code: 'offline' });
     }
@@ -1221,6 +1229,21 @@ async function handle(req, res) {
         return sendJson(res, 202, { ok: true, update: updateView() });
     }
     if (pathname === '/_ledger/update' && method === 'GET') return sendJson(res, 200, { update: updateView(), version: VERSION });
+    if (pathname.startsWith('/_ledger/chat/') && method === 'POST') {
+        const sub = pathname.slice('/_ledger/chat/'.length);
+        if (!['history', 'send', 'nick', 'moderate'].includes(sub)) { res.writeHead(404); return res.end(); }
+        if (!SERVER_CONFIGURED) return sendJson(res, 503, { error: DENY_TEXT.setup, code: 'setup' });
+        if (!lic.token) return sendJson(res, 401, { error: 'Enter your key first.', code: 'unknown' });
+        let b = {};
+        try { b = await readBody(req); } catch (_) { return sendJson(res, 400, { error: 'Bad request' }); }
+        try {
+            const payload = Object.assign({}, b, { token: lic.token, device: DEVICE_ID });
+            const { status, body } = await keyServer('/v1/chat/' + sub, payload, 12000);
+            return sendJson(res, status, body);
+        } catch (_) {
+            return sendJson(res, 502, { error: 'Cannot reach the chat server.', code: 'offline' });
+        }
+    }
     if (pathname === '/_ledger/steam/start' && method === 'GET') return steamStart(req, res, url);
     if (pathname === '/_ledger/steam/return' && method === 'GET') return steamReturn(req, res, url);
     if (pathname === '/_ledger/steam/avatar' && (method === 'GET' || method === 'HEAD')) {

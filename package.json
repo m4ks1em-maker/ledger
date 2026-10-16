@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.11.1",
+  "version": "2.12.0",
   "engineRev": "5",
-  "releaseNotes": "Timeline chart: aurora markers with light beams and glow halos over team lanes.",
-  "releaseNotesRu": "График-таймлайн: аврора-маркеры с лучами и свечением поверх полос команд.",
+  "releaseNotes": "Global chat: talk with every DotaTraker player, full history, Steam name + avatar, subscription badges (1 mo → forever) and an Admin badge.",
+  "releaseNotesRu": "Общий чат: общение со всеми игроками, история сообщений, Steam-ник и аватар, значки по подписке (1 мес → вечная) и статус Админ.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
