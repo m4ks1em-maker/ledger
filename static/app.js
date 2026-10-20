@@ -5045,26 +5045,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateTotalsForPlayer(matchData, playerFilter) {
-        if (!playerFilter) {
-            return {
-                totalTeamReports: allTotalTeamReports,
-                totalEnemyReports: allTotalEnemyReports,
-                totalConfirmedTeamReports: allTotalConfirmedTeamReports,
-                totalConfirmedEnemyReports: allTotalConfirmedEnemyReports,
-                totalUnconfirmedTeamReports: allTotalUnconfirmedTeamReports,
-                totalUnconfirmedEnemyReports: allTotalUnconfirmedEnemyReports
-            };
-        }
-        
-        const filteredMatchData = filterDataByPlayer(matchData, playerFilter);
+        // Always total the reports of the matches actually being shown (the selected match,
+        // or all of them), not the global accumulator — otherwise a 0-report match would
+        // display the total from other loaded matches.
+        const data = playerFilter ? filterDataByPlayer(matchData, playerFilter) : (matchData || []);
         let totalTeamReports = 0;
         let totalEnemyReports = 0;
-        
-        filteredMatchData.forEach(match => {
+
+        data.forEach(match => {
             totalTeamReports += match.teamReports || 0;
             totalEnemyReports += match.enemyReports || 0;
         });
-        
+
         return {
             totalTeamReports: totalTeamReports,
             totalEnemyReports: totalEnemyReports,

@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.13.0",
+  "version": "2.13.1",
   "engineRev": "5",
-  "releaseNotes": "Chat: live \"online now\" counter, load older messages on scroll, day dividers, @mentions with highlight, and real Steam avatars. New: share your match as a premium image.",
-  "releaseNotesRu": "Чат: счётчик «онлайн сейчас», подгрузка старых сообщений при прокрутке, разделители по дням, @упоминания с подсветкой и настоящие аватары из Steam. Новое: делись матчем красивой картинкой.",
+  "releaseNotes": "Fix: match verdict/gauge now counts reports of the shown match only (a 0-report match no longer shows totals from other loaded matches).",
+  "releaseNotesRu": "Фикс: вердикт и счётчик считают репорты только показанного матча (матч без репортов больше не показывает числа из других загруженных матчей).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
