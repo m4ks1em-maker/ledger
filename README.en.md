@@ -1,22 +1,16 @@
 <p align="center"><a href="README.md">Русский</a> &nbsp;·&nbsp; <b>English</b></p>
 
 <p align="center">
-  <img src="docs/banner.en.png" alt="DotaTraker: who reported you, and at what minute" width="100%">
-</p>
-
-<h1 align="center">DotaTraker</h1>
-
-<p align="center">
-  <b>Reads your Dota 2 replays and puts every report on a timeline.</b><br>
-  From teammates and from enemies. Paste a Steam ID — the replays download on their own.
+  <img src="docs/hero.png" alt="DotaTraker: who reported you, and at what minute" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.5.2-d08a52?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.13.1-d08a52?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/platform-Windows-2d2d2d?style=flat-square&logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/engine-Go%20·%20manta%201.5.1-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go engine">
-  <img src="https://img.shields.io/badge/server-Node.js%2018%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/chat-global%20·%20Steam-46d6a6?style=flat-square" alt="Global chat">
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT">
+  <a href="https://github.com/m4ks1em-maker/ledger---Dota-Report-FInder/stargazers"><img src="https://img.shields.io/github/stars/m4ks1em-maker/ledger---Dota-Report-FInder?style=flat-square&color=d08a52&label=stars" alt="Stars"></a>
 </p>
 
 <p align="center">
@@ -28,6 +22,39 @@
 <p align="center"><i>Star the repo if it helped — it makes the project easier to find.</i></p>
 
 ---
+
+<h3 align="center">Your personal report detective for Dota 2</h3>
+<p align="center"><sub>Load a replay and see <b>who</b>, <b>when</b> and <b>at what minute</b> reported you. Everything is parsed on your PC — no console, no risk to your account.</sub></p>
+
+<table align="center">
+<tr>
+<td align="center" width="25%">🎯<br><b>Report timeline</b><br><sub>who reported whom, by minute</sub></td>
+<td align="center" width="25%">💬<br><b>Global chat</b><br><sub>every player + badges</sub></td>
+<td align="center" width="25%">📊<br><b>Stats</b><br><sub>across all matches</sub></td>
+<td align="center" width="25%">📤<br><b>Match sharing</b><br><sub>a clean report image</sub></td>
+</tr>
+</table>
+
+---
+
+## ✨ New in 2.13
+
+- 💬 **Global chat** — talk with every DotaTraker player, full history, @mentions, day dividers, live online counter.
+- 🏅 **Subscription badges** — 1 month → forever ∞, an **Admin** status, real Steam avatars.
+- 🛡️ **Moderation** — mute and ban right from the chat (admins).
+- 📤 **Match share card** — one button → a premium "who reported whom" image.
+
+## 💬 Global chat
+
+<p align="center">
+  <img src="docs/chat.png" alt="DotaTraker global chat — badges, mentions, online" width="92%">
+</p>
+
+## 📤 Share a match
+
+<p align="center">
+  <img src="docs/share.png" alt="DotaTraker match share card" width="78%">
+</p>
 
 ## Getting started
 
