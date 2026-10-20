@@ -1435,3 +1435,17 @@ body::after {
 .tab-badge { position: absolute; top: -6px; right: -8px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9px; background: var(--dire); color: #fff; font: 800 10px/16px var(--font-ui); text-align: center; box-shadow: 0 0 0 2px var(--bg), 0 0 8px rgba(255, 90, 110, .6); pointer-events: none; }
 .tab-badge.hidden { display: none; }
 .tab-chat.active .tab-badge { display: none; }
+
+/* chat: date dividers, mentions */
+.chat-day { display: flex; align-items: center; gap: 12px; margin: 10px 14px 4px; color: var(--text-tertiary); }
+.chat-day::before, .chat-day::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
+.chat-day span { font: 700 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+.chat-at { color: var(--accent-strong); font-weight: 700; }
+.chat-at-me { background: var(--accent-soft); color: var(--accent-strong); border-radius: 5px; padding: 0 4px; }
+.chat-msg.mention { background: linear-gradient(90deg, var(--accent-soft), transparent 70%); box-shadow: inset 2px 0 0 var(--accent); }
+.tab-badge.is-mention { background: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 10px var(--accent-strong); }
+
+/* match share button */
+.mv-share { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass-soft); color: var(--text-secondary); font: 700 13.5px var(--font-ui); cursor: pointer; transition: background .15s, border-color .15s; }
+.mv-share:hover { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-strong); }
+.mv-share:disabled { opacity: .6; cursor: default; }

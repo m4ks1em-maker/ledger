@@ -1107,6 +1107,15 @@ async function steamProfile(id) {
     const tag = (t) => { const m = new RegExp(`<${t}>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))\\s*</${t}>`).exec(xml); return m ? (m[1] != null ? m[1] : m[2] || '').trim() : ''; };
     return { name: tag('steamID').slice(0, 64), avatar: tag('avatarFull') || tag('avatarMedium') };
 }
+// Older sign-ins stored no public avatar URL. Fetch it once so chat can show the Steam picture
+// without the player having to sign in with Steam again.
+async function refreshSteamAvatar() {
+    try {
+        if (!settings.steam || !settings.steam.id || settings.steam.avatar) return;
+        const prof = await steamProfile(settings.steam.id);
+        if (prof && prof.avatar) { settings.steam.avatar = prof.avatar; if (prof.name && !settings.steam.name) settings.steam.name = prof.name; saveSettings(); }
+    } catch (_) {}
+}
 async function steamReturn(req, res, url) {
     const p = url.searchParams;
     const st = steamStates.get(p.get('state') || '');
@@ -1328,6 +1337,7 @@ server.listen(settings.port, settings.host, () => {
     console.log(line + '\n');
     refreshInfo();
     setTimeout(() => checkLicense(), 1500).unref();
+    setTimeout(() => { refreshSteamAvatar().then(() => checkLicense()); }, 2500).unref();
     setTimeout(() => checkUpdate(), 4000).unref();
     startEngine().then(() => {
         if (process.platform === 'win32' && process.env.LEDGER_OPEN !== '0') {

@@ -17,7 +17,8 @@
 
     const $ = (id) => document.getElementById(id);
     let msgsEl, bodyEl, inputEl, sendBtn, emptyEl, onlineEl, tipEl, gateEl, inbarEl, legendEl, nickBtn, badgeEl, chatTabBtn;
-    let me = null, lastId = 0, timer = null, started = false, seen = {}, atBottom = true, unread = 0, primed = false;
+    let me = null, lastId = 0, firstId = 0, timer = null, seen = {}, atBottom = true, unread = 0, primed = false;
+    let hasOlder = true, loadingOlder = false;
     const baseTitle = document.title;
 
     const chatActive = () => { const t = document.getElementById('chat-tab'); return t && t.classList.contains('active'); };
@@ -55,48 +56,101 @@
         const T = TIERS[m.tier] || TIERS.month;
         const ring = T.ring ? ' ' + T.ring : '';
         if (m.avatar) return '<div class="chat-av' + ring + '"><img src="' + esc(m.avatar) + '" alt="" loading="lazy" referrerpolicy="no-referrer"></div>';
-        // deterministic gradient fallback from steamId
         const n = (m.steamId || m.nick || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
         const h = n % 360;
         return '<div class="chat-av' + ring + '" style="background:linear-gradient(135deg,hsl(' + h + ' 45% 55%),hsl(' + ((h + 40) % 360) + ' 40% 30%))"></div>';
     }
 
-    function fmtTime(t) {
-        const d = new Date(t);
-        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const pad = (n) => String(n).padStart(2, '0');
+    function fmtTime(t) { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+    function fmtFull(t) { try { return new Date(t).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); } catch (_) { return fmtTime(t); } }
+    const dayKey = (t) => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+    function dayLabel(t) {
+        const d = new Date(t), today = new Date(), y = new Date(); y.setDate(today.getDate() - 1);
+        if (dayKey(t) === dayKey(today.getTime())) return 'Сегодня';
+        if (dayKey(t) === dayKey(y.getTime())) return 'Вчера';
+        try { return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }); } catch (_) { return pad(d.getDate()) + '.' + pad(d.getMonth() + 1); }
     }
 
     function nickClass(m) { return m.role === 'admin' ? 'admin' : (m.tier === 'forever' ? 'prem' : ''); }
 
+    // turn @mentions into highlighted spans; the current user's nick gets a stronger style
+    function renderBody(text) {
+        const myNick = (me && me.nick || '').toLowerCase();
+        let mentionsMe = false;
+        const html = esc(text).replace(/@([^\s@.,!?;:()]{2,32})/g, (full, name) => {
+            const self = myNick && name.toLowerCase() === myNick;
+            if (self) mentionsMe = true;
+            return '<span class="chat-at' + (self ? ' chat-at-me' : '') + '">@' + name + '</span>';
+        });
+        return { html, mentionsMe };
+    }
+
     function msgHtml(m) {
         const canMod = me && me.isAdmin;
         const modBtn = canMod ? '<button class="chat-del" data-del="' + m.id + '" title="Удалить">✕</button>' : '';
-        return '<div class="chat-msg" data-id="' + m.id + '" data-steam="' + esc(m.steamId) + '" data-nick="' + esc(m.nick) + '" data-tier="' + esc(m.tier) + '">' +
+        const rb = renderBody(m.body);
+        return '<div class="chat-msg' + (rb.mentionsMe ? ' mention' : '') + '" data-id="' + m.id + '" data-day="' + dayKey(m.t) + '" data-steam="' + esc(m.steamId) + '" data-nick="' + esc(m.nick) + '" data-tier="' + esc(m.tier) + '">' +
             '<div class="chat-av-wrap" data-who="' + esc(m.steamId) + '">' + avatarHtml(m) + '</div>' +
             '<div class="chat-main">' +
                 '<div class="chat-row1"><span class="chat-nick ' + nickClass(m) + '" data-who="' + esc(m.steamId) + '">' + esc(m.nick) + '</span>' + badge(m.tier) + '</div>' +
-                '<div class="chat-text">' + esc(m.body) + '</div>' +
+                '<div class="chat-text">' + rb.html + '</div>' +
             '</div>' +
-            '<div class="chat-meta"><span class="chat-time">' + fmtTime(m.t) + '</span>' + modBtn + '</div>' +
+            '<div class="chat-meta"><span class="chat-time" title="' + esc(fmtFull(m.t)) + '">' + fmtTime(m.t) + '</span>' + modBtn + '</div>' +
         '</div>';
     }
 
-    function render(messages, append) {
-        if (!messages.length && !append && lastId === 0) return;
+    // re-insert day dividers by scanning messages in order (handles both append & prepend)
+    function relayoutDividers() {
+        msgsEl.querySelectorAll('.chat-day').forEach((e) => e.remove());
+        let prev = null;
+        msgsEl.querySelectorAll('.chat-msg').forEach((el) => {
+            const d = el.getAttribute('data-day');
+            if (d !== prev) {
+                const t = Number(el.getAttribute('data-id'));
+                const div = document.createElement('div');
+                div.className = 'chat-day';
+                div.innerHTML = '<span>' + esc(dayLabel(messageTime(el))) + '</span>';
+                msgsEl.insertBefore(div, el);
+                prev = d;
+            }
+        });
+    }
+    const timeCache = {};
+    function messageTime(el) { return timeCache[el.getAttribute('data-id')] || Date.now(); }
+
+    function appendMessages(list) {
         const mySteam = (me && me.steamId) || '';
-        let fresh = 0;
-        const html = messages.filter((m) => !seen[m.id]).map((m) => {
-            seen[m.id] = 1; if (m.id > lastId) lastId = m.id;
-            if (primed && m.steamId !== mySteam && !chatActive()) fresh++;
-            return msgHtml(m);
-        }).join('');
+        let fresh = 0, mentionFresh = false, html = '';
+        list.forEach((m) => {
+            if (seen[m.id]) return;
+            seen[m.id] = 1; timeCache[m.id] = m.t;
+            if (m.id > lastId) lastId = m.id;
+            if (!firstId || m.id < firstId) firstId = m.id;
+            if (primed && m.steamId !== mySteam && !chatActive()) { fresh++; if ((me && me.nick) && (m.body || '').toLowerCase().indexOf('@' + me.nick.toLowerCase()) >= 0) mentionFresh = true; }
+            html += msgHtml(m);
+        });
         if (!html) return;
         if (emptyEl) emptyEl.style.display = 'none';
         msgsEl.insertAdjacentHTML('beforeend', html);
+        relayoutDividers();
         if (atBottom) bodyEl.scrollTop = bodyEl.scrollHeight;
-        if (fresh > 0) { unread += fresh; updateBadge(); }
+        if (fresh > 0) { unread += fresh; updateBadge(); if (mentionFresh) pingMention(); }
         primed = true;
     }
+
+    function prependMessages(list) {
+        let html = '';
+        const fresh = list.filter((m) => !seen[m.id]);
+        if (!fresh.length) return;
+        fresh.forEach((m) => { seen[m.id] = 1; timeCache[m.id] = m.t; if (!firstId || m.id < firstId) firstId = m.id; if (m.id > lastId) lastId = m.id; html += msgHtml(m); });
+        const prevH = bodyEl.scrollHeight, prevT = bodyEl.scrollTop;
+        msgsEl.insertAdjacentHTML('afterbegin', html);
+        relayoutDividers();
+        bodyEl.scrollTop = prevT + (bodyEl.scrollHeight - prevH); // keep view anchored
+    }
+
+    function pingMention() { if (badgeEl) badgeEl.classList.add('is-mention'); }
 
     function setGate(text) {
         if (!gateEl) return;
@@ -105,17 +159,36 @@
         if (inbarEl) inbarEl.classList.add('hidden');
     }
 
+    function setOnline(n) {
+        if (!onlineEl || n == null) return;
+        const span = onlineEl.querySelector('span');
+        if (span) span.textContent = n + (n === 1 ? ' онлайн' : ' онлайн');
+    }
+
     async function poll() {
         const r = await api('history', { after: lastId });
         if (r.status === 401 && r.body.code === 'unknown') { setGate('Введите ключ на главной, чтобы открыть чат.'); return; }
         if (r.status === 403 && r.body.code === 'steam') { setGate('Войдите через Steam, чтобы писать в чат. <a href="/_ledger/steam/start">Войти через Steam</a>'); if (emptyEl) emptyEl.textContent = 'Войдите через Steam, чтобы читать чат.'; return; }
         if (r.status !== 200 || !r.body.ok) return;
         me = r.body.me || me;
+        if (typeof r.body.online === 'number') setOnline(r.body.online);
+        if (lastId === 0 && typeof r.body.older === 'boolean') hasOlder = r.body.older;
         if (me && me.banned) { setGate('Вы заблокированы в чате.'); }
         else if (me && me.mutedUntil && me.mutedUntil > Date.now()) { setGate('Вы в муте до ' + new Date(me.mutedUntil).toLocaleTimeString()); }
         else setGate('');
-        render(r.body.messages || [], lastId > 0);
+        appendMessages(r.body.messages || []);
         buildLegend();
+    }
+
+    async function loadOlder() {
+        if (loadingOlder || !hasOlder || !firstId) return;
+        loadingOlder = true;
+        const r = await api('history', { before: firstId });
+        if (r.status === 200 && r.body.ok) {
+            prependMessages(r.body.messages || []);
+            hasOlder = !!r.body.older;
+        }
+        loadingOlder = false;
     }
 
     function buildLegend() {
@@ -128,7 +201,7 @@
         if (!text) return;
         inputEl.value = '';
         const r = await api('send', { body: text });
-        if (r.status === 200 && r.body.ok) { render([r.body.message], true); }
+        if (r.status === 200 && r.body.ok) { atBottom = true; appendMessages([r.body.message]); }
         else if (r.body && r.body.code === 'cooldown') { toast('Слишком часто, подожди секунду'); inputEl.value = text; }
         else if (r.body && r.body.code === 'muted') { toast('Вы в муте'); }
         else if (r.body && r.body.code === 'banned') { setGate('Вы заблокированы в чате.'); }
@@ -149,9 +222,10 @@
                 '<button data-mod="unban" data-t="' + esc(steamId) + '">Разбан</button>' +
             '</div>';
         }
+        const reply = '<div class="tip-mod"><button data-reply="' + esc(nick) + '">Ответить @' + esc(nick) + '</button></div>';
         tipEl.innerHTML = '<div class="tip-head"><div class="tip-name">' + esc(nick) + '</div>' + badge(tier) + '</div>' +
             '<div class="tip-rows"><div><span>Статус</span><b>' + esc(T.label) + (T.suffix ? ' ' + T.suffix : '') + '</b></div>' +
-            '<div><span>Steam ID</span><b>' + esc(String(steamId).slice(0, 10)) + '…</b></div></div>' + mod;
+            '<div><span>Steam ID</span><b>' + esc(String(steamId).slice(0, 10)) + '…</b></div></div>' + reply + mod;
         const r = anchor.getBoundingClientRect();
         tipEl.classList.remove('hidden');
         const tw = tipEl.offsetWidth, th = tipEl.offsetHeight;
@@ -167,8 +241,8 @@
         const r = await api('moderate', Object.assign({ action: action }, payload));
         if (r.status === 200 && r.body.ok) {
             toast('Готово');
-            if (action === 'delete' && payload.id) { const el = msgsEl.querySelector('.chat-msg[data-id="' + payload.id + '"]'); if (el) el.remove(); }
-            if ((action === 'ban') && payload.target) { msgsEl.querySelectorAll('.chat-msg[data-steam="' + payload.target + '"]').forEach((e) => e.remove()); }
+            if (action === 'delete' && payload.id) { const el = msgsEl.querySelector('.chat-msg[data-id="' + payload.id + '"]'); if (el) el.remove(); relayoutDividers(); }
+            if ((action === 'ban') && payload.target) { msgsEl.querySelectorAll('.chat-msg[data-steam="' + payload.target + '"]').forEach((e) => e.remove()); relayoutDividers(); }
             hideTip();
         } else { toast((r.body && r.body.error) || 'Ошибка'); }
     }
@@ -176,9 +250,11 @@
     function wire() {
         sendBtn.addEventListener('click', send);
         inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
-        bodyEl.addEventListener('scroll', () => { atBottom = bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight < 60; });
+        bodyEl.addEventListener('scroll', () => {
+            atBottom = bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight < 60;
+            if (bodyEl.scrollTop < 80) loadOlder();
+        });
 
-        // delete + tooltip clicks (delegated)
         msgsEl.addEventListener('click', (e) => {
             const del = e.target.closest('[data-del]');
             if (del) { moderate('delete', { id: Number(del.getAttribute('data-del')) }); return; }
@@ -189,6 +265,8 @@
             }
         });
         if (tipEl) tipEl.addEventListener('click', (e) => {
+            const rep = e.target.closest('[data-reply]');
+            if (rep) { inputEl.value = (inputEl.value ? inputEl.value.trim() + ' ' : '') + '@' + rep.getAttribute('data-reply') + ' '; inputEl.focus(); hideTip(); return; }
             const b = e.target.closest('[data-mod]');
             if (!b) return;
             const action = b.getAttribute('data-mod'), target = b.getAttribute('data-t');
@@ -212,7 +290,6 @@
         let tick = 0;
         timer = setInterval(() => {
             tick++;
-            // every 3s when the chat is open, every ~9s in the background
             if (chatActive() || tick % 3 === 0) poll();
         }, 3000);
     }
@@ -224,8 +301,7 @@
         if (!msgsEl) return;
         wire();
         chatTabBtn = document.querySelector('.workflow-tab[data-tab="chat"]');
-        if (chatTabBtn) chatTabBtn.addEventListener('click', () => { clearUnread(); setTimeout(() => { bodyEl.scrollTop = bodyEl.scrollHeight; poll(); }, 60); });
-        // poll in the background from startup so the unread badge works without opening the tab
+        if (chatTabBtn) chatTabBtn.addEventListener('click', () => { clearUnread(); if (badgeEl) badgeEl.classList.remove('is-mention'); setTimeout(() => { bodyEl.scrollTop = bodyEl.scrollHeight; poll(); }, 60); });
         startPolling();
     }
 

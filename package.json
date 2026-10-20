@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.12.1",
+  "version": "2.13.0",
   "engineRev": "5",
-  "releaseNotes": "Chat: unread badge on the Chat tab and a count in the window title when new messages arrive.",
-  "releaseNotesRu": "Чат: значок непрочитанных на вкладке «Чат» и счётчик в заголовке окна, когда приходят новые сообщения.",
+  "releaseNotes": "Chat: live \"online now\" counter, load older messages on scroll, day dividers, @mentions with highlight, and real Steam avatars. New: share your match as a premium image.",
+  "releaseNotesRu": "Чат: счётчик «онлайн сейчас», подгрузка старых сообщений при прокрутке, разделители по дням, @упоминания с подсветкой и настоящие аватары из Steam. Новое: делись матчем красивой картинкой.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
