@@ -37,6 +37,12 @@
 
 ---
 
+## 🎬 Demo
+
+<p align="center">
+  <img src="docs/demo.gif" alt="DotaTraker demo — from lookup to the global chat" width="92%">
+</p>
+
 ## ✨ New in 2.13
 
 - 💬 **Global chat** — talk with every DotaTraker player, full history, @mentions, day dividers, live online counter.
