@@ -1478,3 +1478,65 @@ html[data-theme="light"] body::before { opacity: 0.4; }
 /* neon rim-light on the match verdict gauge + big accents */
 .mv-gauge svg circle#mv-arc { filter: drop-shadow(0 0 6px rgba(255, 93, 108, 0.5)); }
 .status-badge.connected { box-shadow: 0 0 16px -2px var(--neon-soft); }
+
+/* ===================== HUD structural skin — match the B+ mockup ===================== */
+/* flat top bar instead of the floating pill */
+.main-header {
+    position: sticky; top: 0; z-index: 40;
+    margin: -18px -28px 24px; padding: 12px 28px; border-radius: 0;
+    background: linear-gradient(180deg, rgba(30, 42, 52, 0.94), rgba(16, 23, 29, 0.94));
+    border: 0; border-bottom: 1px solid #2e3b45;
+    box-shadow: 0 1px 0 rgba(216, 180, 90, 0.3), 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.brand-name { letter-spacing: 0.01em; text-shadow: 0 0 14px rgba(216, 180, 90, 0.3); }
+/* nav: flat angular tabs with a gold underline on the active one (glider hidden) */
+.workflow-tabs { background: transparent; border: 0; padding: 0; gap: 0; border-radius: 0; }
+.glider { display: none !important; }
+.workflow-tab {
+    height: 44px; padding: 0 18px; border-radius: 0;
+    clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; font-size: 0.78rem;
+}
+.workflow-tab.active {
+    background: linear-gradient(180deg, #2c3c48, #1d2832);
+    color: var(--accent-strong);
+    box-shadow: inset 0 0 18px rgba(216, 180, 90, 0.18);
+    border-bottom: 2px solid var(--accent);
+}
+.workflow-tab.active .tab-icon svg { stroke: var(--accent); }
+.workflow-tab:hover:not(.active) { color: var(--text-primary); }
+/* graph view: rectangular bordered segments */
+.graph-view-selector { background: transparent; border: 0; padding: 0; gap: 0; border-radius: 0; }
+.graph-view-tab {
+    height: 38px; padding: 0 16px; border-radius: 0;
+    border: 1px solid #2a3540; border-right: 0;
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; font-size: 0.74rem;
+    background: rgba(23, 32, 40, 0.5);
+}
+.graph-view-selector .graph-view-tab:last-child { border-right: 1px solid #2a3540; }
+.graph-view-tab.active {
+    background: linear-gradient(180deg, #2c3c48, #1d2832); color: var(--accent-strong);
+    box-shadow: inset 0 0 14px rgba(216, 180, 90, 0.15);
+}
+/* angular gold / slate buttons */
+.primary-btn { clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); text-transform: uppercase; letter-spacing: 0.05em; background: linear-gradient(180deg, #e9c868, #b48f36); box-shadow: 0 0 20px -4px rgba(216, 180, 90, 0.5); }
+.secondary-btn, .small-btn { clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); text-transform: uppercase; letter-spacing: 0.04em; }
+/* uppercase section titles, HUD style */
+.card-header h2 { text-transform: uppercase; letter-spacing: 0.04em; font-size: 1.32rem; }
+/* glowing corner brackets on the verdict/gauge block and the timeline, like the mockup */
+.match-verdict { position: relative; }
+.match-verdict::after, #timeline-graph-container::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background:
+        linear-gradient(var(--accent), var(--accent)) 0 0 / 20px 2px no-repeat,
+        linear-gradient(var(--accent), var(--accent)) 0 0 / 2px 20px no-repeat,
+        linear-gradient(var(--accent), var(--accent)) 100% 0 / 20px 2px no-repeat,
+        linear-gradient(var(--accent), var(--accent)) 100% 0 / 2px 20px no-repeat;
+    opacity: 0.7; filter: drop-shadow(0 0 3px rgba(216, 180, 90, 0.5));
+}
+#timeline-graph-container { position: relative; }
+.main-card::after { opacity: 0.8; }
+/* teal accent on the steam/account chip */
+.status-badge { border-color: rgba(64, 210, 200, 0.3); }
+.status-badge.connected { box-shadow: 0 0 16px -2px rgba(64, 210, 200, 0.3); }
