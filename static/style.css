@@ -1544,3 +1544,46 @@ html[data-theme="light"] body::before { opacity: 0.4; }
 /* teal accent on the steam/account chip */
 .status-badge { border-color: rgba(64, 210, 200, 0.3); }
 .status-badge.connected { box-shadow: 0 0 16px -2px rgba(64, 210, 200, 0.3); }
+
+/* ===================== HUD skin — light theme overrides ===================== */
+html[data-theme="light"] .card,
+html[data-theme="light"] .tile,
+html[data-theme="light"] .setup-panel,
+html[data-theme="light"] .conduct-scorecard-banner {
+    background: linear-gradient(180deg, #ffffff, #f3f6fc);
+    border: 1px solid #e2e7f2;
+    border-top: 1px solid var(--accent-line);
+    box-shadow: 0 1px 0 rgba(74, 99, 224, 0.12) inset, 0 14px 36px -26px rgba(30, 45, 100, 0.35);
+}
+html[data-theme="light"] .main-header {
+    background: linear-gradient(180deg, #ffffff, #eef2f9);
+    border-bottom: 1px solid #dde3ee;
+    box-shadow: 0 1px 0 rgba(74, 99, 224, 0.22), 0 10px 26px -14px rgba(30, 45, 100, 0.25);
+}
+html[data-theme="light"] .brand-name { text-shadow: none; }
+html[data-theme="light"] .workflow-tab.active {
+    background: #eef2f9;
+    color: var(--accent-strong);
+    box-shadow: inset 0 0 14px rgba(74, 99, 224, 0.1);
+    border-bottom: 2px solid var(--accent);
+}
+html[data-theme="light"] .graph-view-tab {
+    border-color: #dde3ee;
+    background: #f3f6fc;
+}
+html[data-theme="light"] .graph-view-selector .graph-view-tab:last-child { border-color: #dde3ee; }
+html[data-theme="light"] .graph-view-tab.active {
+    background: #eef2f9; color: var(--accent-strong);
+    box-shadow: inset 0 0 12px rgba(74, 99, 224, 0.1);
+}
+html[data-theme="light"] .primary-btn {
+    background: linear-gradient(180deg, #5a72ec, #3a52c8);
+    color: #fff;
+    box-shadow: 0 0 20px -6px rgba(74, 99, 224, 0.6);
+}
+html[data-theme="light"] .status-badge { border-color: rgba(42, 160, 150, 0.35); }
+html[data-theme="light"] .status-badge.connected { box-shadow: 0 0 16px -2px rgba(42, 160, 150, 0.25); }
+/* corner brackets a touch softer on white */
+html[data-theme="light"] .main-card::after,
+html[data-theme="light"] .match-verdict::after,
+html[data-theme="light"] #timeline-graph-container::after { opacity: 0.55; }
