@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.13.1",
+  "version": "2.14.0",
   "engineRev": "5",
-  "releaseNotes": "Fix: match verdict/gauge now counts reports of the shown match only (a 0-report match no longer shows totals from other loaded matches).",
-  "releaseNotesRu": "Фикс: вердикт и счётчик считают репорты только показанного матча (матч без репортов больше не показывает числа из других загруженных матчей).",
+  "releaseNotes": "New look: Dota HUD theme — gold + neon accents, glowing corner brackets, slate panels. Same features, fresh design.",
+  "releaseNotesRu": "Новый вид: тема Dota HUD — золото и неон, светящиеся уголки-скобки, сланцевые панели. Функции те же, дизайн свежий.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
