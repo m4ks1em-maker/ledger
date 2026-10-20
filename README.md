@@ -1,7 +1,7 @@
 <p align="center"><b>Русский</b> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
 
 <p align="center">
-  <img src="docs/hero.png" alt="DotaTraker — кто и на какой минуте тебя зарепортил" width="100%">
+  <img src="docs/hero.png?v=2" alt="DotaTraker — кто и на какой минуте тебя зарепортил" width="100%">
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@
 ## 🎬 Демо
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Демо DotaTraker — от поиска до общего чата" width="92%">
+  <img src="docs/demo.gif?v=2" alt="Демо DotaTraker — от поиска до общего чата" width="92%">
 </p>
 
 ## ✨ Что нового в 2.13
@@ -55,7 +55,7 @@
 ## 💬 Общий чат
 
 <p align="center">
-  <img src="docs/chat.png" alt="Общий чат DotaTraker — бейджи, упоминания, онлайн" width="92%">
+  <img src="docs/chat.png?v=2" alt="Общий чат DotaTraker — бейджи, упоминания, онлайн" width="92%">
 </p>
 
 <p align="center"><sub>Вход по Steam → твой ник и аватар. Значок рядом с ником зависит от срока подписки. Админ может банить и мутить.</sub></p>
@@ -63,7 +63,7 @@
 ## 📤 Поделись матчем
 
 <p align="center">
-  <img src="docs/share.png" alt="Шеринг-карточка матча DotaTraker" width="78%">
+  <img src="docs/share.png?v=2" alt="Шеринг-карточка матча DotaTraker" width="78%">
 </p>
 
 <p align="center"><sub>Кнопка «Поделиться» на экране матча собирает вот такую картинку — закинь в чат пати или в Telegram.</sub></p>
@@ -123,9 +123,9 @@
 
 | Вход | Главная |
 |---|---|
-| <img src="docs/login.png" alt="Вход"> | <img src="docs/home.png" alt="Главная"> |
+| <img src="docs/login.png?v=2" alt="Вход"> | <img src="docs/home.png?v=2" alt="Главная"> |
 | **Общий чат** | **Таймлайн матча** |
-| <img src="docs/chat.png" alt="Общий чат"> | <img src="docs/matches.png" alt="Таймлайн матча"> |
+| <img src="docs/chat.png?v=2" alt="Общий чат"> | <img src="docs/matches.png?v=2" alt="Таймлайн матча"> |
 
 ## 🔄 Обновления
 

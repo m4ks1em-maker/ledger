@@ -1,7 +1,7 @@
 <p align="center"><a href="README.md">Русский</a> &nbsp;·&nbsp; <b>English</b></p>
 
 <p align="center">
-  <img src="docs/hero.png" alt="DotaTraker: who reported you, and at what minute" width="100%">
+  <img src="docs/hero.png?v=2" alt="DotaTraker: who reported you, and at what minute" width="100%">
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 ## 🎬 Demo
 
 <p align="center">
-  <img src="docs/demo.gif" alt="DotaTraker demo — from lookup to the global chat" width="92%">
+  <img src="docs/demo.gif?v=2" alt="DotaTraker demo — from lookup to the global chat" width="92%">
 </p>
 
 ## ✨ New in 2.13
@@ -53,13 +53,13 @@
 ## 💬 Global chat
 
 <p align="center">
-  <img src="docs/chat.png" alt="DotaTraker global chat — badges, mentions, online" width="92%">
+  <img src="docs/chat.png?v=2" alt="DotaTraker global chat — badges, mentions, online" width="92%">
 </p>
 
 ## 📤 Share a match
 
 <p align="center">
-  <img src="docs/share.png" alt="DotaTraker match share card" width="78%">
+  <img src="docs/share.png?v=2" alt="DotaTraker match share card" width="78%">
 </p>
 
 ## Getting started
@@ -95,9 +95,9 @@ When a new version is out, the app shows a "DotaTraker … is out" bar. The "Upd
 
 | Sign in | Home |
 |---|---|
-| <img src="docs/login.png" alt="Sign in"> | <img src="docs/home.png" alt="Home"> |
-| **Match timeline** | **Stats** |
-| <img src="docs/matches.png" alt="Match"> | <img src="docs/stats.png" alt="Stats"> |
+| <img src="docs/login.png?v=2" alt="Sign in"> | <img src="docs/home.png?v=2" alt="Home"> |
+| **Global chat** | **Match timeline** |
+| <img src="docs/chat.png?v=2" alt="Global chat"> | <img src="docs/matches.png?v=2" alt="Match timeline"> |
 
 - Look a player up by Steam ID: recent matches, replays download from Valve's servers by themselves.
 - Drop a `.dem` on the page if a replay is already gone from the servers.
