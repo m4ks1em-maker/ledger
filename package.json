@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.14.1",
+  "version": "2.14.2",
   "engineRev": "5",
-  "releaseNotes": "HUD look applied fully: flat top bar, angular gold tabs with underline, angular buttons, uppercase section titles, glowing corner brackets.",
-  "releaseNotesRu": "HUD-вид применён полностью: плоский верхний бар, угловатые золотые вкладки с подчёркиванием, угловатые кнопки, заглавные заголовки, светящиеся уголки-скобки.",
+  "releaseNotes": "Top bar now spans the full width (edge-to-edge gold line). HUD polish.",
+  "releaseNotesRu": "Верхний бар теперь во всю ширину экрана (золотая грань до краёв). Полировка HUD.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

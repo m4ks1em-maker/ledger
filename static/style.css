@@ -1483,7 +1483,11 @@ html[data-theme="light"] body::before { opacity: 0.4; }
 /* flat top bar instead of the floating pill */
 .main-header {
     position: sticky; top: 0; z-index: 40;
-    margin: -18px -28px 24px; padding: 12px 28px; border-radius: 0;
+    margin: -18px 0 24px;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding: 12px max(28px, calc(50vw - 612px));
+    border-radius: 0;
     background: linear-gradient(180deg, rgba(30, 42, 52, 0.94), rgba(16, 23, 29, 0.94));
     border: 0; border-bottom: 1px solid #2e3b45;
     box-shadow: 0 1px 0 rgba(216, 180, 90, 0.3), 0 10px 30px -12px rgba(0, 0, 0, 0.6);
