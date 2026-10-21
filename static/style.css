@@ -6,46 +6,43 @@
    ========================================================================== */
 
 :root {
-    --bg: #0a0e13;
-    --bg-2: #121820;
-    --glass: rgba(42, 56, 66, 0.5);
-    --glass-strong: rgba(44, 60, 72, 0.85);
-    --glass-pop: rgba(16, 23, 29, 0.97);
-    --glass-soft: rgba(216, 180, 90, 0.05);
-    --glass-border: rgba(130, 165, 185, 0.14);
-    --glass-edge: rgba(216, 180, 90, 0.22);
-    --hair: rgba(130, 165, 185, 0.1);
-    --field: rgba(12, 18, 23, 0.6);
-    --field-border: rgba(130, 165, 185, 0.18);
-    --hover: rgba(130, 165, 185, 0.08);
+    --bg: #0c0a09;
+    --bg-2: #141110;
+    --glass: rgba(40, 27, 18, 0.58);
+    --glass-strong: rgba(46, 31, 21, 0.86);
+    --glass-pop: rgba(30, 20, 13, 0.97);
+    --glass-soft: rgba(240, 190, 140, 0.045);
+    --glass-border: rgba(240, 190, 140, 0.14);
+    --glass-edge: rgba(255, 228, 200, 0.08);
+    --hair: rgba(240, 190, 140, 0.09);
+    --field: rgba(14, 9, 6, 0.5);
+    --field-border: rgba(240, 190, 140, 0.15);
+    --hover: rgba(240, 190, 140, 0.07);
 
-    --text-primary: #e8f0f4;
-    --text-secondary: #9fb2bd;
-    --text-tertiary: #6b7d88;
+    --text-primary: #f6ece2;
+    --text-secondary: #c6af9b;
+    --text-tertiary: #8b7664;
 
-    --accent: #d8b45a;
-    --accent-strong: #ecc96c;
-    --accent-ink: #1a1205;
-    --accent-soft: rgba(216, 180, 90, 0.15);
-    --accent-line: rgba(216, 180, 90, 0.55);
+    --accent: #e3a46f;
+    --accent-strong: #f6c99c;
+    --accent-ink: #2a1405;
+    --accent-soft: rgba(227, 164, 111, 0.15);
+    --accent-line: rgba(227, 164, 111, 0.55);
 
-    --neon: #40d2c8;
-    --neon-soft: rgba(64, 210, 200, 0.14);
-
-    --radiant: #40d2a0;
-    --dire: #ff5d6c;
-    --aegis: #e9c868;
-    --radiant-soft: rgba(64, 210, 160, 0.14);
-    --dire-soft: rgba(255, 93, 108, 0.14);
-    --aegis-soft: rgba(233, 200, 104, 0.15);
+    --radiant: #3ddbb0;
+    --dire: #ff5a6e;
+    --aegis: #f2c46d;
+    --radiant-soft: rgba(61, 219, 176, 0.14);
+    --dire-soft: rgba(255, 90, 110, 0.14);
+    --aegis-soft: rgba(242, 196, 109, 0.15);
 
     /* canvases (timeline graphs) */
-    --cv-bg: #0e141a;
-    --cv-row: #141c22;
-    --cv-line: #2a3a44;
-    --cv-grid: #1a252c;
-    --cv-chip: #223039;
-    --cv-halo: #0a1016;
+    --cv-bg: #0e0b08;
+    --cv-row: #15110c;
+    --cv-line: #2c2219;
+    --cv-grid: #1c1510;
+    --cv-chip: #2a2018;
+    --cv-halo: #0b0806;
 
     --shadow: 0 1px 0 var(--glass-edge) inset, 0 24px 60px -30px rgba(0, 0, 0, 0.9);
     --shadow-pop: 0 1px 0 var(--glass-edge) inset, 0 30px 80px -24px rgba(0, 0, 0, 0.9);
@@ -143,9 +140,9 @@ button { font-family: inherit; }
     position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0;
     animation: aurora-in 1.6s var(--ease) 0.1s forwards, drift 38s ease-in-out infinite alternate;
 }
-.aurora .a1 { width: 54vmax; height: 46vmax; left: -10vmax; top: -22vmax; background: radial-gradient(circle at 60% 50%, rgba(216, 180, 90, 0.16), transparent 60%); }
-.aurora .a2 { width: 46vmax; height: 46vmax; right: -20vmax; bottom: -26vmax; background: radial-gradient(circle at 60% 60%, rgba(64, 210, 200, 0.09), transparent 62%); animation-delay: 0.2s, -12s; }
-.aurora .a3 { width: 34vmax; height: 30vmax; left: 44vw; top: 10vh; background: radial-gradient(circle, rgba(216, 180, 90, 0.06), transparent 64%); animation-delay: 0.35s, -24s; }
+.aurora .a1 { width: 54vmax; height: 46vmax; left: -10vmax; top: -22vmax; background: radial-gradient(circle at 60% 50%, rgba(224, 150, 90, 0.16), transparent 60%); }
+.aurora .a2 { width: 46vmax; height: 46vmax; right: -20vmax; bottom: -26vmax; background: radial-gradient(circle at 60% 60%, rgba(224, 150, 90, 0.06), transparent 62%); animation-delay: 0.2s, -12s; }
+.aurora .a3 { width: 34vmax; height: 30vmax; left: 44vw; top: 10vh; background: radial-gradient(circle, rgba(242, 196, 109, 0.05), transparent 64%); animation-delay: 0.35s, -24s; }
 html[data-theme="light"] .aurora .a1 { background: radial-gradient(circle at 40% 40%, rgba(14, 159, 122, 0.2), transparent 62%); }
 html[data-theme="light"] .aurora .a2 { background: radial-gradient(circle at 60% 60%, rgba(224, 58, 82, 0.15), transparent 62%); }
 html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(74, 99, 224, 0.14), transparent 64%); }
@@ -215,9 +212,9 @@ html[data-theme="light"] .aurora .a3 { background: radial-gradient(circle, rgba(
 .glider {
     position: absolute; left: 0; top: 0; z-index: 0;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(44, 60, 72, 0.95), rgba(29, 40, 50, 0.95));
-    border: 1px solid var(--accent-line);
-    box-shadow: 0 1px 0 rgba(216, 180, 90, 0.25) inset, 0 0 18px -2px rgba(216, 180, 90, 0.35), 0 6px 18px -8px rgba(0, 0, 0, 0.7);
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 1px 0 var(--glass-edge) inset, 0 6px 18px -8px rgba(0, 0, 0, 0.6);
     transition: opacity 0.3s;
     pointer-events: none;
 }
@@ -316,11 +313,10 @@ html:not(.js) .workflow-tab.active, html:not(.js) .graph-view-tab.active { backg
 /* ---------- Glass surfaces ---------- */
 .card, .tile, .setup-panel, .conduct-scorecard-banner {
     position: relative;
-    background: linear-gradient(180deg, rgba(64, 86, 102, 0.14), rgba(16, 23, 29, 0.28));
-    border: 1px solid var(--glass-border);
-    border-top: 1px solid var(--accent-line);
+    background: linear-gradient(180deg, rgba(255, 228, 196, 0.05), rgba(255, 228, 196, 0.02));
+    border: 1px solid rgba(255, 228, 196, 0.11);
     border-radius: var(--r-lg);
-    box-shadow: 0 1px 0 rgba(216, 180, 90, 0.12) inset, 0 16px 44px -28px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(216, 180, 90, 0.03);
+    box-shadow: 0 14px 40px -28px rgba(0, 0, 0, 0.9);
 }
 /* soft light that follows the pointer across a glass card */
 .card::before, .tile::before {
@@ -1453,137 +1449,3 @@ body::after {
 .mv-share { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass-soft); color: var(--text-secondary); font: 700 13.5px var(--font-ui); cursor: pointer; transition: background .15s, border-color .15s; }
 .mv-share:hover { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-strong); }
 .mv-share:disabled { opacity: .6; cursor: default; }
-
-/* ===================== HUD / neon layer (B+ redesign) ===================== */
-/* faint scanlines over the whole app, behind the content */
-body::before {
-    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 3px);
-    mix-blend-mode: overlay;
-}
-html[data-theme="light"] body::before { opacity: 0.4; }
-/* glowing gold corner brackets on the big section cards */
-.main-card::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    background:
-        linear-gradient(var(--accent), var(--accent)) 0 0 / 20px 2px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 0 0 / 2px 20px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 100% 0 / 20px 2px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 100% 0 / 2px 20px no-repeat;
-    opacity: 0.65;
-    filter: drop-shadow(0 0 3px rgba(216, 180, 90, 0.5));
-}
-/* active nav tab glows */
-.workflow-tab.active, .graph-view-tab.active { text-shadow: 0 0 10px rgba(216, 180, 90, 0.3); }
-/* neon rim-light on the match verdict gauge + big accents */
-.mv-gauge svg circle#mv-arc { filter: drop-shadow(0 0 6px rgba(255, 93, 108, 0.5)); }
-.status-badge.connected { box-shadow: 0 0 16px -2px var(--neon-soft); }
-
-/* ===================== HUD structural skin — match the B+ mockup ===================== */
-/* flat top bar instead of the floating pill */
-.main-header {
-    position: sticky; top: 0; z-index: 40;
-    margin: -18px 0 24px;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-    padding: 12px max(28px, calc(50vw - 612px));
-    border-radius: 0;
-    background: linear-gradient(180deg, rgba(30, 42, 52, 0.94), rgba(16, 23, 29, 0.94));
-    border: 0; border-bottom: 1px solid #2e3b45;
-    box-shadow: 0 1px 0 rgba(216, 180, 90, 0.3), 0 10px 30px -12px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-}
-.brand-name { letter-spacing: 0.01em; text-shadow: 0 0 14px rgba(216, 180, 90, 0.3); }
-/* nav: flat angular tabs with a gold underline on the active one (glider hidden) */
-.workflow-tabs { background: transparent; border: 0; padding: 0; gap: 0; border-radius: 0; }
-.glider { display: none !important; }
-.workflow-tab {
-    height: 44px; padding: 0 18px; border-radius: 0;
-    clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
-    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; font-size: 0.78rem;
-}
-.workflow-tab.active {
-    background: linear-gradient(180deg, #2c3c48, #1d2832);
-    color: var(--accent-strong);
-    box-shadow: inset 0 0 18px rgba(216, 180, 90, 0.18);
-    border-bottom: 2px solid var(--accent);
-}
-.workflow-tab.active .tab-icon svg { stroke: var(--accent); }
-.workflow-tab:hover:not(.active) { color: var(--text-primary); }
-/* graph view: rectangular bordered segments */
-.graph-view-selector { background: transparent; border: 0; padding: 0; gap: 0; border-radius: 0; }
-.graph-view-tab {
-    height: 38px; padding: 0 16px; border-radius: 0;
-    border: 1px solid #2a3540; border-right: 0;
-    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; font-size: 0.74rem;
-    background: rgba(23, 32, 40, 0.5);
-}
-.graph-view-selector .graph-view-tab:last-child { border-right: 1px solid #2a3540; }
-.graph-view-tab.active {
-    background: linear-gradient(180deg, #2c3c48, #1d2832); color: var(--accent-strong);
-    box-shadow: inset 0 0 14px rgba(216, 180, 90, 0.15);
-}
-/* angular gold / slate buttons */
-.primary-btn { clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); text-transform: uppercase; letter-spacing: 0.05em; background: linear-gradient(180deg, #e9c868, #b48f36); box-shadow: 0 0 20px -4px rgba(216, 180, 90, 0.5); }
-.secondary-btn, .small-btn { clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); text-transform: uppercase; letter-spacing: 0.04em; }
-/* uppercase section titles, HUD style */
-.card-header h2 { text-transform: uppercase; letter-spacing: 0.04em; font-size: 1.32rem; }
-/* glowing corner brackets on the verdict/gauge block and the timeline, like the mockup */
-.match-verdict { position: relative; }
-.match-verdict::after, #timeline-graph-container::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    background:
-        linear-gradient(var(--accent), var(--accent)) 0 0 / 20px 2px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 0 0 / 2px 20px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 100% 0 / 20px 2px no-repeat,
-        linear-gradient(var(--accent), var(--accent)) 100% 0 / 2px 20px no-repeat;
-    opacity: 0.7; filter: drop-shadow(0 0 3px rgba(216, 180, 90, 0.5));
-}
-#timeline-graph-container { position: relative; }
-.main-card::after { opacity: 0.8; }
-/* teal accent on the steam/account chip */
-.status-badge { border-color: rgba(64, 210, 200, 0.3); }
-.status-badge.connected { box-shadow: 0 0 16px -2px rgba(64, 210, 200, 0.3); }
-
-/* ===================== HUD skin — light theme overrides ===================== */
-html[data-theme="light"] .card,
-html[data-theme="light"] .tile,
-html[data-theme="light"] .setup-panel,
-html[data-theme="light"] .conduct-scorecard-banner {
-    background: linear-gradient(180deg, #ffffff, #f3f6fc);
-    border: 1px solid #e2e7f2;
-    border-top: 1px solid var(--accent-line);
-    box-shadow: 0 1px 0 rgba(74, 99, 224, 0.12) inset, 0 14px 36px -26px rgba(30, 45, 100, 0.35);
-}
-html[data-theme="light"] .main-header {
-    background: linear-gradient(180deg, #ffffff, #eef2f9);
-    border-bottom: 1px solid #dde3ee;
-    box-shadow: 0 1px 0 rgba(74, 99, 224, 0.22), 0 10px 26px -14px rgba(30, 45, 100, 0.25);
-}
-html[data-theme="light"] .brand-name { text-shadow: none; }
-html[data-theme="light"] .workflow-tab.active {
-    background: #eef2f9;
-    color: var(--accent-strong);
-    box-shadow: inset 0 0 14px rgba(74, 99, 224, 0.1);
-    border-bottom: 2px solid var(--accent);
-}
-html[data-theme="light"] .graph-view-tab {
-    border-color: #dde3ee;
-    background: #f3f6fc;
-}
-html[data-theme="light"] .graph-view-selector .graph-view-tab:last-child { border-color: #dde3ee; }
-html[data-theme="light"] .graph-view-tab.active {
-    background: #eef2f9; color: var(--accent-strong);
-    box-shadow: inset 0 0 12px rgba(74, 99, 224, 0.1);
-}
-html[data-theme="light"] .primary-btn {
-    background: linear-gradient(180deg, #5a72ec, #3a52c8);
-    color: #fff;
-    box-shadow: 0 0 20px -6px rgba(74, 99, 224, 0.6);
-}
-html[data-theme="light"] .status-badge { border-color: rgba(42, 160, 150, 0.35); }
-html[data-theme="light"] .status-badge.connected { box-shadow: 0 0 16px -2px rgba(42, 160, 150, 0.25); }
-/* corner brackets a touch softer on white */
-html[data-theme="light"] .main-card::after,
-html[data-theme="light"] .match-verdict::after,
-html[data-theme="light"] #timeline-graph-container::after { opacity: 0.55; }
