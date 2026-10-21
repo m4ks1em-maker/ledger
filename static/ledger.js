@@ -847,6 +847,7 @@
 (function moments() {
     const sec = document.getElementById('moments-section');
     const sw = document.getElementById('moments-switch');
+    const repPane = document.getElementById('moments-reports');
     const chatPane = document.getElementById('moments-chat');
     const evPane = document.getElementById('moments-events');
     const sel = document.getElementById('match-selector');
@@ -857,6 +858,30 @@
     const teamClass = (t) => (t === 2 ? 'r' : t === 3 ? 'd' : '');
 
     function who(x) { return x.Name || x.Hero || (x.Slot >= 0 ? T('Slot') + ' ' + x.Slot : '?'); }
+
+    function renderReports(m) {
+        if (!repPane) return;
+        const reports = (m && m.reports) || [];
+        repPane.textContent = '';
+        if (!reports.length) { repPane.innerHTML = '<p class="moments-empty">' + T('No reports in this replay.') + '</p>'; return; }
+        const list = document.createElement('div'); list.className = 'rep-list';
+        reports.forEach((r) => {
+            const ally = r.Team === 'FRIENDLY';
+            const reporter = who(r);
+            const hero = (r.Hero && String(r.Hero).toLowerCase() !== 'unknown') ? r.Hero : '';
+            const target = r.TargetName || r.TargetHero || '';
+            const row = document.createElement('div'); row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');
+            const av = esc((reporter || '?').trim().charAt(0).toUpperCase());
+            row.innerHTML =
+                '<span class="rep-time">' + esc(r.Time || '') + '</span>' +
+                '<span class="rep-av">' + av + '</span>' +
+                '<span class="rep-who"><b>' + esc(reporter) + '</b>' + (hero ? '<small>' + esc(hero) + '</small>' : '') + '</span>' +
+                (target ? '<span class="rep-target">→ ' + esc(target) + '</span>' : '<span class="rep-target"></span>') +
+                '<span class="rep-tag ' + (ally ? 'ally' : 'enemy') + '">' + esc(ally ? T('Report from teammate') : T('Report from enemy')) + '</span>';
+            list.appendChild(row);
+        });
+        repPane.appendChild(list);
+    }
 
     function renderChat(m) {
         const chat = (m && m.chat) || [];
@@ -971,15 +996,19 @@
     }
     function paint() {
         const m = current();
-        const has = m && ((m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
+        const has = m && ((m.reports && m.reports.length) || (m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
         sec.classList.toggle('hidden', !has);
         if (!has) return;
-        renderChat(m); renderEvents(m); renderWards(m);
-        if (sw) { const wb = sw.querySelector('[data-m="wards"]'); if (wb) wb.classList.toggle('hidden', !(m.wards && m.wards.length)); }
+        renderReports(m); renderChat(m); renderEvents(m); renderWards(m);
+        if (sw) {
+            const wb = sw.querySelector('[data-m="wards"]'); if (wb) wb.classList.toggle('hidden', !(m.wards && m.wards.length));
+            const rb = sw.querySelector('[data-m="reports"]'); if (rb) rb.classList.toggle('hidden', !(m.reports && m.reports.length));
+        }
     }
     if (sw) sw.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
         sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
         const m = b.dataset.m;
+        if (repPane) repPane.classList.toggle('hidden', m !== 'reports');
         chatPane.classList.toggle('hidden', m !== 'chat');
         evPane.classList.toggle('hidden', m !== 'events');
         if (wardPane) wardPane.classList.toggle('hidden', m !== 'wards');

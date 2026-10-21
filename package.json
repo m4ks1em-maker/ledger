@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.1",
+  "version": "2.15.2",
   "engineRev": "5",
-  "releaseNotes": "Match screen: duration, winner, date and score tiles (duration from the replay, the rest from OpenDota). Clean obsidian look kept.",
-  "releaseNotesRu": "Экран матча: плитки длительность, победитель, дата и счёт (длительность из реплея, остальное из OpenDota). Чистый обсидиан сохранён.",
+  "releaseNotes": "Gold HUD design restored. Added a Reports list in Chat & moments (time, hero, ally/enemy tag) and match stat tiles (duration/winner/date/score).",
+  "releaseNotesRu": "Возвращён золотой HUD-дизайн. Добавлен список репортов в «Чат и моменты» (время, герой, тег союзник/враг) и плитки матча (длительность/победитель/дата/счёт).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
