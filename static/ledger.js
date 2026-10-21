@@ -1025,3 +1025,64 @@
     document.addEventListener('ledger:lang', render);
     render();
 })();
+
+/* ---------- Match stat tiles: duration (from replay) + winner / score / date (OpenDota) ---------- */
+(function matchStats() {
+    const box = document.getElementById('match-stats');
+    const select = document.getElementById('match-selector');
+    const meta = document.getElementById('match-meta');
+    const results = document.getElementById('results-section');
+    const dEl = document.getElementById('ms-duration');
+    const wEl = document.getElementById('ms-winner');
+    const dateEl = document.getElementById('ms-date');
+    const scoreEl = document.getElementById('ms-score');
+    if (!box || !dEl) return;
+    let lastId = null;
+
+    const matchIdNow = () => {
+        if (select && select.options.length && select.value !== '') {
+            const opt = select.options[select.selectedIndex];
+            if (opt) {
+                if (opt.dataset && /^\d+$/.test(opt.dataset.matchId || '')) return opt.dataset.matchId;
+                const m = /(\d{6,})/.exec(opt.textContent || ''); if (m) return m[1];
+            }
+        }
+        const ms = window.ledgerMatches;
+        if (ms && ms.length === 1 && ms[0].matchID) return String(ms[0].matchID);
+        return null;
+    };
+    const fmt = (sec) => { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec / 60), s = sec % 60; return m + ':' + String(s).padStart(2, '0'); };
+    const parseT = (t) => { if (!t) return 0; const p = String(t).split(':'); return p.length === 2 ? (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0) : 0; };
+    const findMatch = (id) => { const ms = window.ledgerMatches || []; return ms.find((m) => String(m.matchID) === String(id)) || (ms.length === 1 ? ms[0] : null); };
+    const durFromReplay = (match) => { if (!match) return 0; let mx = 0; ['events', 'chat', 'reports', 'wards'].forEach((k) => { (match[k] || []).forEach((e) => { const t = parseT(e && e.Time); if (t > mx) mx = t; }); }); return mx; };
+    const reset = () => { wEl.textContent = '—'; dateEl.textContent = '—'; scoreEl.textContent = '—'; wEl.parentElement.classList.remove('win', 'lose'); };
+
+    function render() {
+        const id = matchIdNow();
+        const hidden = !id || (results && results.classList.contains('hidden'));
+        if (hidden) { box.classList.add('hidden'); lastId = null; return; }
+        if (id === lastId) return;
+        lastId = id; reset();
+        const dur = durFromReplay(findMatch(id));
+        dEl.textContent = dur > 0 ? fmt(dur) : '—';
+        box.classList.remove('hidden');
+        fetch('/_ledger/od/match?id=' + encodeURIComponent(id), { cache: 'no-store' })
+            .then((r) => r.ok ? r.json() : null)
+            .then((j) => {
+                if (!j || matchIdNow() !== id) return;
+                if (j.duration) dEl.textContent = fmt(j.duration);
+                if (typeof j.radiantWin === 'boolean') {
+                    wEl.textContent = j.radiantWin ? 'Radiant' : 'Dire';
+                    wEl.parentElement.classList.toggle('win', j.radiantWin);
+                    wEl.parentElement.classList.toggle('lose', !j.radiantWin);
+                }
+                if (j.radiantScore != null && j.direScore != null) scoreEl.textContent = j.radiantScore + ' — ' + j.direScore;
+                if (j.startTime) { try { dateEl.textContent = new Date(j.startTime * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch (_) {} }
+            }).catch(() => {});
+    }
+
+    if (select) select.addEventListener('change', render);
+    if (meta) new MutationObserver(render).observe(meta, { childList: true });
+    if (results) new MutationObserver(render).observe(results, { attributes: true, attributeFilter: ['class'] });
+    render();
+})();

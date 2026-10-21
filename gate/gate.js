@@ -845,6 +845,21 @@ async function odApi(req, res, url, pathname) {
         try { return sendJson(res, 200, await playerProfile(acc)); }
         catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
     }
+    if (pathname === '/_ledger/od/match' && req.method === 'GET') {
+        const id = String(url.searchParams.get('id') || '');
+        if (!/^\d{6,12}$/.test(id)) return sendJson(res, 400, { error: 'Bad match ID.' });
+        try {
+            const m = await odJson('/matches/' + id, 15000);
+            return sendJson(res, 200, {
+                matchId: id,
+                duration: m && m.duration != null ? m.duration : null,
+                radiantWin: m && typeof m.radiant_win === 'boolean' ? m.radiant_win : null,
+                radiantScore: m && m.radiant_score != null ? m.radiant_score : null,
+                direScore: m && m.dire_score != null ? m.dire_score : null,
+                startTime: m && m.start_time != null ? m.start_time : null
+            }, { 'Cache-Control': 'private, max-age=86400' });
+        } catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
+    }
     if (pathname === '/_ledger/od/heroimg' && (req.method === 'GET' || req.method === 'HEAD')) {
         const h = String(url.searchParams.get('h') || '').toLowerCase();
         if (!/^[a-z0-9_]{1,40}$/.test(h)) { res.writeHead(400); return res.end(); }

@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.0",
+  "version": "2.15.1",
   "engineRev": "5",
-  "releaseNotes": "Design: back to the clean obsidian look — removed the heavy HUD skin (angular tabs, gold brackets). Lighter, simpler, more spacious across every screen.",
-  "releaseNotesRu": "Дизайн: возврат к чистому обсидиану — убран тяжёлый HUD (угловатые вкладки, золотые скобки). Легче, проще и воздушнее на всех экранах.",
+  "releaseNotes": "Match screen: duration, winner, date and score tiles (duration from the replay, the rest from OpenDota). Clean obsidian look kept.",
+  "releaseNotesRu": "Экран матча: плитки длительность, победитель, дата и счёт (длительность из реплея, остальное из OpenDota). Чистый обсидиан сохранён.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

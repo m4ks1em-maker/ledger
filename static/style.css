@@ -1449,3 +1449,18 @@ body::after {
 .mv-share { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass-soft); color: var(--text-secondary); font: 700 13.5px var(--font-ui); cursor: pointer; transition: background .15s, border-color .15s; }
 .mv-share:hover { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-strong); }
 .mv-share:disabled { opacity: .6; cursor: default; }
+
+/* ===================== Match stat tiles (duration / winner / date / score) ===================== */
+.match-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; margin: 18px 0 4px;
+    background: var(--glass-border); border: 1px solid var(--glass-border);
+    border-radius: var(--r-md); overflow: hidden;
+}
+.ms-tile { background: var(--bg-2); padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ms-label { display: inline-flex; align-items: center; gap: 8px; font: 700 11px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); }
+.ms-label svg { width: 15px; height: 15px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ms-tile b { font: 800 1.9rem/1 var(--font-num); letter-spacing: -0.02em; color: var(--text-primary); }
+.ms-tile.win b { color: var(--radiant); }
+.ms-tile.lose b { color: var(--dire); }
+@media (max-width: 720px) { .match-stats { grid-template-columns: repeat(2, 1fr); } }
