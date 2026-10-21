@@ -914,6 +914,29 @@
         const all = chat.concat(wheels).sort((a, b) => clSecs(a.Time) - clSecs(b.Time));
         chatPane.textContent = '';
         if (!all.length) { chatPane.innerHTML = '<p class="moments-empty">' + T('No chat in this replay.') + '</p>'; return; }
+
+        // Toxicity meter: who talked most / who flamed most (text chat only)
+        const talk = {};
+        chat.forEach((c) => {
+            const n = who(c); if (!n) return;
+            if (!talk[n]) talk[n] = { n, msgs: 0, flames: 0, team: c.Team };
+            talk[n].msgs++; if (FLAME.test(c.Text || '')) talk[n].flames++;
+        });
+        const people = Object.values(talk);
+        if (people.length) {
+            const totalFlames = people.reduce((a, p) => a + p.flames, 0);
+            const topTalk = people.slice().sort((a, b) => b.msgs - a.msgs)[0];
+            const topTox = people.slice().sort((a, b) => b.flames - a.flames)[0];
+            const stats = document.createElement('div'); stats.className = 'chat-stats';
+            const chip = (cls, label, val) => '<span class="cs-chip ' + cls + '"><small>' + esc(label) + '</small><b>' + esc(val) + '</b></span>';
+            let html = chip('', T('Messages'), String(chat.length));
+            if (topTalk && topTalk.msgs) html += chip('talk', T('Most talkative'), topTalk.n + ' · ' + topTalk.msgs);
+            if (topTox && topTox.flames) html += chip('tox', '🔥 ' + T('Most toxic'), topTox.n + ' · ' + topTox.flames);
+            else html += chip('calm', T('Toxic messages'), String(totalFlames));
+            stats.innerHTML = html;
+            chatPane.appendChild(stats);
+        }
+
         all.forEach((c) => {
             if (c._k === 'wheel') {
                 const w = wheelPhrase(c);
@@ -942,28 +965,35 @@
         });
     }
 
+    const teamName = (t) => (t === 2 ? T('Radiant') : t === 3 ? T('Dire') : '');
+    // Keyed by the engine's event Type, lower-cased (engine emits firstBlood / Disconnect / roshan / courier / chat_wheel).
     const EV = {
+        firstblood: ['blood', (e) => T('First blood') + ': ' + who(e) + (e.TargetName || e.TargetHero ? ' → ' + (e.TargetName || e.TargetHero) : '')],
+        roshan: ['rosh', (e) => { const tn = teamName(e.Team); return tn ? tn + ' ' + T('killed Roshan') : T('Roshan killed'); }],
+        courier: ['courier', (e) => { const tn = teamName(e.Team); return (tn ? tn + ': ' : '') + T('courier killed') + (e.TargetName || e.TargetHero ? ' (' + (e.TargetName || e.TargetHero) + ')' : ''); }],
+        disconnect: ['plug', (e) => who(e) + ' ' + T('disconnected')],
         glyph: ['shield', (e) => who(e) + ' ' + T('used the glyph')],
         pause: ['pause', (e) => who(e) + ' ' + T('paused the game')],
-        unpause: ['play', (e) => who(e) + ' ' + T('unpaused')],
-        firstblood: ['blood', (e) => T('First blood') + ': ' + who(e) + (e.TargetName || e.TargetHero ? ' → ' + (e.TargetName || e.TargetHero) : '')],
-        disconnect: ['plug', (e) => who(e) + ' ' + T('disconnected')]
+        unpause: ['play', (e) => who(e) + ' ' + T('unpaused')]
     };
     const ICON = {
         shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/>',
         pause: '<path d="M8 5v14M16 5v14"/>',
         play: '<path d="M7 5l12 7-12 7z"/>',
         blood: '<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
-        plug: '<path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5"/>'
+        plug: '<path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5"/>',
+        rosh: '<path d="M12 3a7 7 0 0 0-7 7v3l2 2v3h3v-2h4v2h3v-3l2-2v-3a7 7 0 0 0-7-7zM9.5 10.5h.01M14.5 10.5h.01"/>',
+        courier: '<path d="M3 13l2-6h7v10H4a1 1 0 0 1-1-1zM12 9h4l3 3v3h-7zM7 18a1.6 1.6 0 1 0 0-.01M16 18a1.6 1.6 0 1 0 0-.01"/>'
     };
+    const evKey = (e) => String(e.Type || '').toLowerCase();
     function renderEvents(m) {
-        const evs = ((m && m.events) || []).filter((e) => EV[e.Type]);
+        const evs = ((m && m.events) || []).filter((e) => EV[evKey(e)]);
         evPane.textContent = '';
         if (!evs.length) { evPane.innerHTML = '<p class="moments-empty">' + T('No notable moments in this replay.') + '</p>'; return; }
         // small summary
-        const count = (t) => evs.filter((e) => e.Type === t).length;
+        const count = (t) => evs.filter((e) => evKey(e) === t).length;
         const sum = document.createElement('div'); sum.className = 'ev-summary';
-        [['glyph', T('glyphs')], ['pause', T('pauses')], ['firstblood', T('first blood')], ['disconnect', T('disconnects')]].forEach(([t, label]) => {
+        [['firstblood', T('first blood')], ['roshan', T('Roshan')], ['courier', T('couriers')], ['disconnect', T('disconnects')], ['glyph', T('glyphs')], ['pause', T('pauses')]].forEach(([t, label]) => {
             const n = count(t); if (!n && t !== 'firstblood') return;
             const chip = document.createElement('span'); chip.className = 'ev-chip ' + t;
             chip.innerHTML = '<b>' + n + '</b> ' + esc(label);
@@ -972,8 +1002,9 @@
         evPane.appendChild(sum);
         const list = document.createElement('div'); list.className = 'ev-list';
         evs.forEach((e) => {
-            const [icon, text] = [EV[e.Type][0], EV[e.Type][1](e)];
-            const row = document.createElement('div'); row.className = 'ev-row ' + e.Type + ' ' + teamClass(e.Team);
+            const kk = evKey(e);
+            const [icon, text] = [EV[kk][0], EV[kk][1](e)];
+            const row = document.createElement('div'); row.className = 'ev-row ' + kk + ' ' + teamClass(e.Team);
             row.innerHTML = '<span class="ev-time">' + esc(e.Time) + '</span><span class="ev-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[icon] + '</svg></span><span class="ev-text">' + esc(text) + '</span>';
             list.appendChild(row);
         });

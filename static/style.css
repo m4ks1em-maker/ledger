@@ -1285,11 +1285,19 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .chat-line.wheel { box-shadow: inset 2px 0 0 var(--accent); }
 .chat-line.wheel .cl-text { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); }
 .cl-wheel { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: var(--accent); stroke-width: 1.6; opacity: 0.9; }
+.chat-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.cs-chip { display: inline-flex; flex-direction: column; gap: 1px; padding: 7px 13px; border-radius: var(--r-sm); background: var(--glass-soft); border: 1px solid var(--hair); }
+.cs-chip small { font: 700 0.62rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+.cs-chip b { font: 800 0.9rem var(--font-ui); color: var(--text-primary); }
+.cs-chip.talk { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+.cs-chip.tox { background: var(--dire-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dire) 35%, transparent); }
+.cs-chip.tox b { color: var(--dire); }
 
 .ev-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .ev-chip { padding: 6px 12px; border-radius: 999px; background: var(--glass-soft); border: 1px solid var(--hair); font-size: 0.82rem; color: var(--text-secondary); }
 .ev-chip b { color: var(--text-primary); font-weight: 800; }
 .ev-chip.glyph b { color: var(--aegis); } .ev-chip.pause b { color: var(--accent); } .ev-chip.firstblood b { color: var(--dire); } .ev-chip.disconnect b { color: var(--text-secondary); }
+.ev-chip.roshan b { color: var(--aegis); } .ev-chip.courier b { color: var(--accent); }
 .ev-list { display: flex; flex-direction: column; gap: 6px; }
 .ev-row { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--r-md); background: var(--glass-soft); border: 1px solid var(--hair); border-left: 3px solid var(--hair); }
 .ev-row.r { border-left-color: var(--radiant); } .ev-row.d { border-left-color: var(--dire); }
@@ -1299,6 +1307,8 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .ev-row.glyph .ev-ic { background: var(--aegis-soft); } .ev-row.glyph .ev-ic svg { stroke: var(--aegis); fill: var(--aegis-soft); }
 .ev-row.firstblood .ev-ic { background: var(--dire-soft); } .ev-row.firstblood .ev-ic svg { stroke: var(--dire); fill: var(--dire); }
 .ev-row.pause .ev-ic svg, .ev-row.unpause .ev-ic svg { stroke: var(--accent); }
+.ev-row.roshan .ev-ic { background: var(--aegis-soft); } .ev-row.roshan .ev-ic svg { stroke: var(--aegis); }
+.ev-row.courier .ev-ic { background: var(--accent-soft); } .ev-row.courier .ev-ic svg { stroke: var(--accent); }
 .ev-text { font-size: 0.9rem; }
 @media (max-width: 620px) {
     .chat-line { grid-template-columns: auto auto 1fr; }

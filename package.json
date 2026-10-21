@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.6",
+  "version": "2.16.0",
   "engineRev": "5",
-  "releaseNotes": "Chat wheel messages now appear in the Chat tab (merged by time, with ALL/TEAM scope and a wheel icon).",
-  "releaseNotesRu": "Сообщения с колеса чата теперь показываются во вкладке «Чат» (вперемешку по времени, с бейджем ВСЕ/КОМАНДА и иконкой колеса).",
+  "releaseNotes": "Events tab fixed and expanded: first blood, Roshan kills, courier kills and disconnects now show up. New chat toxicity meter (most talkative / most toxic).",
+  "releaseNotesRu": "Таб «События» починен и расширен: первая кровь, убийства Рошана, курьеры и дисконнекты теперь показываются. Новый токсик-метр в чате (кто больше писал / самый токсик).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
