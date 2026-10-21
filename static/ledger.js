@@ -871,7 +871,10 @@
             const hero = (r.Hero && String(r.Hero).toLowerCase() !== 'unknown') ? r.Hero : '';
             const target = r.TargetName || r.TargetHero || '';
             const row = document.createElement('div'); row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');
-            const av = esc((reporter || '?').trim().charAt(0).toUpperCase());
+            const iconUrl = (typeof getHeroIconUrl === 'function') ? getHeroIconUrl(hero || r.TargetHero || r.Hero) : null;
+            const av = iconUrl
+                ? '<img src="' + esc(iconUrl) + '" alt="" loading="lazy">'
+                : esc((reporter || '?').trim().charAt(0).toUpperCase());
             row.innerHTML =
                 '<span class="rep-time">' + esc(r.Time || '') + '</span>' +
                 '<span class="rep-av">' + av + '</span>' +

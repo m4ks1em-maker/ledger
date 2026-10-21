@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.4",
+  "version": "2.15.5",
   "engineRev": "5",
-  "releaseNotes": "Reports timeline is now a clean list (time, hero, who, ally/enemy) instead of the minute-by-minute chart.",
-  "releaseNotesRu": "Таймлайн репортов теперь аккуратный список (время, герой, кто, союзник/враг) вместо графика по минутам.",
+  "releaseNotes": "Report lists now show the actual hero portraits as avatars (moments tab + reports timeline).",
+  "releaseNotesRu": "В списках репортов теперь аватарки — настоящие иконки героев (вкладка моментов и таймлайн репортов).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
