@@ -1184,6 +1184,7 @@
     const scoreEl = document.getElementById('ms-score');
     if (!box || !dEl) return;
     let lastId = null;
+    const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
 
     const matchIdNow = () => {
         if (select && select.options.length && select.value !== '') {
@@ -1222,14 +1223,18 @@
         return { data: arr.slice(), off: 0 };
     }
     function drawMatchflow() {
+      try {
         if (!mfBox || !mfCanvas || !mfData) return;
         const full = mfMetric === 'gold' ? mfData.goldAdv : mfData.xpAdv;
         if (!full || !full.length) {
+            mfBox.classList.add('mf-empty');
             mfCanvas.style.display = 'none'; if (mfTip) mfTip.classList.add('hidden');
             mfNote.classList.remove('hidden');
-            mfNote.textContent = T('This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.');
+            mfNote.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>'
+                + '<span>' + T('This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.') + '</span>';
             return;
         }
+        mfBox.classList.remove('mf-empty');
         mfNote.classList.add('hidden'); mfCanvas.style.display = 'block';
         const sl = mfSlice(full), arr = sl.data, off = sl.off, n = arr.length;
         const wrap = mfCanvas.parentElement, W = Math.max(320, wrap.clientWidth), H = 260, dpr = window.devicePixelRatio || 1;
@@ -1273,6 +1278,7 @@
         const step = n > 35 ? 10 : n > 15 ? 5 : 2;
         for (let i = 0; i < n; i += step) x.fillText((off + i) + ':00', X(i), H - 8);
         if (n > 1 && ((n - 1) % step) !== 0) x.fillText((off + n - 1) + ':00', X(n - 1), H - 8);
+      } catch (err) { if (window.LEDGER_DEBUG) console.error('[matchflow]', err); }
     }
     function mfShow(j) {
         mfData = { goldAdv: j && j.goldAdv, xpAdv: j && j.xpAdv };

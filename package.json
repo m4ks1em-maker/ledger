@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.18.0",
+  "version": "2.18.1",
   "engineRev": "5",
-  "releaseNotes": "New \"Match flow\" graph: Radiant vs Dire gold/XP advantage over time (Gold/XP toggle, Whole/Lane/Mid/Late ranges), gold-HUD style, from OpenDota.",
-  "releaseNotesRu": "Новый график «Ход матча»: преимущество Radiant/Dire по золоту и опыту во времени (тумблер Золото/Опыт, пресеты Весь/Линия/Мидгейм/Финал), в золотом HUD, данные OpenDota.",
+  "releaseNotes": "Fix: match-flow graph showed an empty block. The explanation for unparsed matches now renders; cleaner empty state.",
+  "releaseNotesRu": "Фикс: график «Ход матча» показывал пустой блок. Теперь для нераспарсенных матчей выводится понятная плашка, пустое состояние аккуратное.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

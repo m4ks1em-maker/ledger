@@ -1290,7 +1290,11 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .mf-foot { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 2px; }
 .mf-leg { font: 700 0.68rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .mf-leg.r { color: var(--radiant); } .mf-leg.d { color: var(--dire); }
-.mf-note { margin: 18px 0 6px; text-align: center; color: var(--text-tertiary); font-size: 0.86rem; font-weight: 600; }
+.mf-note { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 12px 0 6px; text-align: center; color: var(--text-tertiary); font-size: 0.9rem; font-weight: 600; }
+.mf-note svg { width: 34px; height: 34px; fill: none; stroke: var(--text-tertiary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+.mf-note span { max-width: 460px; line-height: 1.45; }
+.matchflow.mf-empty .mf-controls, .matchflow.mf-empty .mf-foot, .matchflow.mf-empty .mf-canvas-wrap { display: none; }
+.matchflow.mf-empty .mf-head { margin-bottom: 0; }
 @media (max-width: 640px) { .mf-head { align-items: flex-start; } .mf-seg button { padding: 0 9px; font-size: 0.66rem; } }
 
 /* match highlights strip */
