@@ -1,11 +1,11 @@
 <p align="center"><b>Русский</b> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
 
 <p align="center">
-  <img src="docs/hero.png?v=2" alt="DotaTraker — кто и на какой минуте тебя зарепортил" width="100%">
+  <img src="docs/hero.png?v=3" alt="DotaTraker — кто и на какой минуте тебя зарепортил" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/версия-2.13.1-d08a52?style=flat-square" alt="Версия">
+  <img src="https://img.shields.io/badge/версия-2.19.1-d08a52?style=flat-square" alt="Версия">
   <img src="https://img.shields.io/badge/платформа-Windows-2d2d2d?style=flat-square&logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/движок-Go%20·%20manta%201.5.1-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go engine">
   <img src="https://img.shields.io/badge/чат-общий%20·%20Steam-46d6a6?style=flat-square" alt="Общий чат">
@@ -42,7 +42,7 @@
 ## 🎬 Демо
 
 <p align="center">
-  <img src="docs/demo.gif?v=2" alt="Демо DotaTraker — от поиска до общего чата" width="92%">
+  <img src="docs/demo.gif?v=3" alt="Демо DotaTraker — от поиска до общего чата" width="92%">
 </p>
 
 ## ✨ Что нового в 2.13
@@ -55,7 +55,7 @@
 ## 💬 Общий чат
 
 <p align="center">
-  <img src="docs/chat.png?v=2" alt="Общий чат DotaTraker — бейджи, упоминания, онлайн" width="92%">
+  <img src="docs/chat.png?v=3" alt="Общий чат DotaTraker — бейджи, упоминания, онлайн" width="92%">
 </p>
 
 <p align="center"><sub>Вход по Steam → твой ник и аватар. Значок рядом с ником зависит от срока подписки. Админ может банить и мутить.</sub></p>
@@ -63,7 +63,7 @@
 ## 📤 Поделись матчем
 
 <p align="center">
-  <img src="docs/share.png?v=2" alt="Шеринг-карточка матча DotaTraker" width="78%">
+  <img src="docs/share.png?v=3" alt="Шеринг-карточка матча DotaTraker" width="78%">
 </p>
 
 <p align="center"><sub>Кнопка «Поделиться» на экране матча собирает вот такую картинку — закинь в чат пати или в Telegram.</sub></p>
@@ -121,11 +121,15 @@
 
 ## 📸 Как это выглядит
 
-| Вход | Главная |
+| Разбор матча · ход матча | Чат, колесо и хайлайты |
 |---|---|
-| <img src="docs/login.png?v=2" alt="Вход"> | <img src="docs/home.png?v=2" alt="Главная"> |
-| **Общий чат** | **Таймлайн матча** |
-| <img src="docs/chat.png?v=2" alt="Общий чат"> | <img src="docs/matches.png?v=2" alt="Таймлайн матча"> |
+| <img src="docs/matches.png?v=3" alt="Разбор матча — вердикт, плитки, график золота/опыта"> | <img src="docs/moments.png?v=3" alt="Чат с колесом, хайлайты и токсик-метр"> |
+| **Карта вардов и статистика** | **События матча** |
+| <img src="docs/wards.png?v=3" alt="Карта вардов и статистика"> | <img src="docs/events.png?v=3" alt="События: первая кровь, Рошан, курьеры"> |
+| **Вход** | **Главная** |
+| <img src="docs/login.png?v=3" alt="Вход"> | <img src="docs/home.png?v=3" alt="Главная"> |
+| **Общий чат** | |
+| <img src="docs/chat.png?v=3" alt="Общий чат"> | |
 
 ## 🔄 Обновления
 

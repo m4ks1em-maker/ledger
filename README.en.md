@@ -1,11 +1,11 @@
 <p align="center"><a href="README.md">Русский</a> &nbsp;·&nbsp; <b>English</b></p>
 
 <p align="center">
-  <img src="docs/hero.png?v=2" alt="DotaTraker: who reported you, and at what minute" width="100%">
+  <img src="docs/hero.png?v=3" alt="DotaTraker: who reported you, and at what minute" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.13.1-d08a52?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.19.1-d08a52?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/platform-Windows-2d2d2d?style=flat-square&logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/engine-Go%20·%20manta%201.5.1-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go engine">
   <img src="https://img.shields.io/badge/chat-global%20·%20Steam-46d6a6?style=flat-square" alt="Global chat">
@@ -40,7 +40,7 @@
 ## 🎬 Demo
 
 <p align="center">
-  <img src="docs/demo.gif?v=2" alt="DotaTraker demo — from lookup to the global chat" width="92%">
+  <img src="docs/demo.gif?v=3" alt="DotaTraker demo — from lookup to the global chat" width="92%">
 </p>
 
 ## ✨ New in 2.13
@@ -53,13 +53,13 @@
 ## 💬 Global chat
 
 <p align="center">
-  <img src="docs/chat.png?v=2" alt="DotaTraker global chat — badges, mentions, online" width="92%">
+  <img src="docs/chat.png?v=3" alt="DotaTraker global chat — badges, mentions, online" width="92%">
 </p>
 
 ## 📤 Share a match
 
 <p align="center">
-  <img src="docs/share.png?v=2" alt="DotaTraker match share card" width="78%">
+  <img src="docs/share.png?v=3" alt="DotaTraker match share card" width="78%">
 </p>
 
 ## Getting started
@@ -93,11 +93,15 @@ When a new version is out, the app shows a "DotaTraker … is out" bar. The "Upd
 
 ## What it looks like
 
-| Sign in | Home |
+| Match breakdown · match flow | Chat, chat wheel & highlights |
 |---|---|
-| <img src="docs/login.png?v=2" alt="Sign in"> | <img src="docs/home.png?v=2" alt="Home"> |
-| **Global chat** | **Match timeline** |
-| <img src="docs/chat.png?v=2" alt="Global chat"> | <img src="docs/matches.png?v=2" alt="Match timeline"> |
+| <img src="docs/matches.en.png?v=3" alt="Match breakdown — verdict, stat tiles, gold/XP graph"> | <img src="docs/moments.en.png?v=3" alt="Chat with chat wheel, highlights and toxicity meter"> |
+| **Ward map & stats** | **Match events** |
+| <img src="docs/wards.en.png?v=3" alt="Ward map and stats"> | <img src="docs/events.en.png?v=3" alt="Events: first blood, Roshan, couriers"> |
+| **Sign in** | **Home** |
+| <img src="docs/login.png?v=3" alt="Sign in"> | <img src="docs/home.png?v=3" alt="Home"> |
+| **Global chat** | |
+| <img src="docs/chat.png?v=3" alt="Global chat"> | |
 
 - Look a player up by Steam ID: recent matches, replays download from Valve's servers by themselves.
 - Drop a `.dem` on the page if a replay is already gone from the servers.

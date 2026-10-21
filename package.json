@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.19.0",
+  "version": "2.19.1",
   "engineRev": "5",
-  "releaseNotes": "Match flow: added a \"Parse this match\" button that requests an OpenDota parse and auto-loads the graph when ready.",
-  "releaseNotesRu": "Ход матча: добавлена кнопка «Распарсить матч» — запрашивает парсинг на OpenDota и сам подгружает график, когда готово.",
+  "releaseNotes": "English mode: match stat tiles, Match flow and Share/Global chat labels are now translated (were stuck in Russian). README screenshots refreshed.",
+  "releaseNotesRu": "Английский режим: плитки матча, «Ход матча», «Поделиться» и «Общий чат» теперь переводятся (были только на русском). Обновлены скрины в README.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
