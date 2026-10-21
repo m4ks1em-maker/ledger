@@ -2892,9 +2892,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 pl = iconPlayer(r, r); // reporter
             }
             const iconUrl = getHeroIconUrl(hero || r.TargetHero || r.Hero);
-            const avInner = iconUrl
-                ? '<img src="' + escTL(iconUrl) + '" alt="" loading="lazy">'
-                : escTL((primary || '?').trim().charAt(0).toUpperCase());
+            const avInner = escTL((primary || '?').trim().charAt(0).toUpperCase())
+                + (iconUrl ? '<img src="' + escTL(iconUrl) + '" alt="" loading="lazy" onerror="this.remove()">' : '');
 
             const row = document.createElement('div');
             row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');

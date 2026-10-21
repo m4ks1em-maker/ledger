@@ -872,9 +872,8 @@
             const target = r.TargetName || r.TargetHero || '';
             const row = document.createElement('div'); row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');
             const iconUrl = (typeof getHeroIconUrl === 'function') ? getHeroIconUrl(hero || r.TargetHero || r.Hero) : null;
-            const av = iconUrl
-                ? '<img src="' + esc(iconUrl) + '" alt="" loading="lazy">'
-                : esc((reporter || '?').trim().charAt(0).toUpperCase());
+            const av = esc((reporter || '?').trim().charAt(0).toUpperCase())
+                + (iconUrl ? '<img src="' + esc(iconUrl) + '" alt="" loading="lazy" onerror="this.remove()">' : '');
             row.innerHTML =
                 '<span class="rep-time">' + esc(r.Time || '') + '</span>' +
                 '<span class="rep-av">' + av + '</span>' +
@@ -1105,6 +1104,35 @@
         hlPane.appendChild(strip);
     }
 
+    const ptEl = document.getElementById('players-table');
+    function avatarHTML(cls, hero, name) {
+        const letter = esc((String(name || '?').trim().charAt(0) || '?').toUpperCase());
+        const iconUrl = (typeof getHeroIconUrl === 'function') ? getHeroIconUrl(hero) : null;
+        return '<span class="' + cls + '">' + letter + (iconUrl ? '<img src="' + esc(iconUrl) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '</span>';
+    }
+    function renderPlayersTable(m) {
+        if (!ptEl) return;
+        const players = (m && (m.players || m.Players)) || [];
+        if (!players.length) { ptEl.classList.add('hidden'); ptEl.innerHTML = ''; return; }
+        const reports = (m && m.reports) || [], chat = (m && m.chat) || [], wards = (m && m.wards) || [];
+        const st = {}; players.forEach((p) => { st[p.Slot] = { recv: 0, made: 0, msgs: 0, tox: 0, wards: 0 }; });
+        reports.forEach((r) => { if (st[r.TargetSlot]) st[r.TargetSlot].recv++; if (st[r.Slot]) st[r.Slot].made++; });
+        chat.forEach((c) => { const s = st[c.Slot]; if (s) { s.msgs++; if (FLAME.test(c.Text || '')) s.tox++; } });
+        wards.forEach((w) => { if (st[w.Slot]) st[w.Slot].wards++; });
+        const num = (v, cls) => (v ? '<b class="' + (cls || '') + '">' + v + '</b>' : '<span class="pt-mu">·</span>');
+        const rows = (lo, hi) => players.filter((p) => p.Slot >= lo && p.Slot <= hi).sort((a, b) => a.Slot - b.Slot).map((p) => {
+            const s = st[p.Slot] || {}, hero = (p.Hero && String(p.Hero).toLowerCase() !== 'unknown') ? p.Hero : '';
+            return '<tr><td class="pt-pl">' + avatarHTML('pt-av', hero, who(p))
+                + '<span class="pt-who"><b>' + esc(who(p)) + '</b>' + (hero ? '<small>' + esc(hero) + '</small>' : '') + '</span></td>'
+                + '<td>' + num(s.recv, 'rd') + '</td><td>' + num(s.made, 'gr') + '</td><td>' + num(s.msgs, '') + '</td><td>' + num(s.tox, 'rd') + '</td><td>' + num(s.wards, 'bl') + '</td></tr>';
+        }).join('');
+        ptEl.classList.remove('hidden');
+        ptEl.innerHTML = '<div class="pt-head">' + esc(T('Players')) + '</div>'
+            + '<table class="pt-table"><thead><tr><th>' + esc(T('Player')) + '</th><th>' + esc(T('Got')) + '</th><th>' + esc(T('Sent')) + '</th><th>' + esc(T('Msgs')) + '</th><th>🔥</th><th>' + esc(T('Wards')) + '</th></tr></thead><tbody>'
+            + '<tr class="pt-side r"><td colspan="6">' + esc(T('Radiant')) + '</td></tr>' + rows(0, 4)
+            + '<tr class="pt-side d"><td colspan="6">' + esc(T('Dire')) + '</td></tr>' + rows(5, 9)
+            + '</tbody></table>';
+    }
     function current() {
         const list = window.ledgerMatches || [];
         if (!list.length) return null;
@@ -1115,6 +1143,7 @@
         const m = current();
         const has = m && ((m.reports && m.reports.length) || (m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
         sec.classList.toggle('hidden', !has);
+        try { renderPlayersTable(m); } catch (e) {}
         if (!has) return;
         renderHighlights(m); renderReports(m); renderChat(m); renderEvents(m); renderWards(m);
         if (sw) {
@@ -1238,34 +1267,39 @@
         mfBox.classList.remove('mf-empty');
         mfNote.classList.add('hidden'); mfCanvas.style.display = 'block';
         const sl = mfSlice(full), arr = sl.data, off = sl.off, n = arr.length;
-        const wrap = mfCanvas.parentElement, W = Math.max(320, wrap.clientWidth), H = 260, dpr = window.devicePixelRatio || 1;
+        const wrap = mfCanvas.parentElement, W = Math.max(320, wrap.clientWidth), H = 184, dpr = window.devicePixelRatio || 1;
         mfCanvas.width = W * dpr; mfCanvas.height = H * dpr; mfCanvas.style.width = W + 'px'; mfCanvas.style.height = H + 'px';
         const x = mfCanvas.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const pad = { l: 54, r: 16, t: 16, b: 26 }, gW = W - pad.l - pad.r, gH = H - pad.t - pad.b, midY = pad.t + gH / 2;
+        const pad = { l: 46, r: 10, t: 12, b: 22 }, gW = W - pad.l - pad.r, gH = H - pad.t - pad.b;
         const teal = cssvar('--radiant', '#40d2a0'), dire = cssvar('--dire', '#ff5d6c'), acc = cssvar('--accent', '#d8b45a');
         const faint = cssvar('--text-tertiary', '#63717c'), grid = cssvar('--cv-grid', '#1a252c');
-        const maxAbs = Math.max(1000, ...arr.map((v) => Math.abs(v || 0)));
+        // auto-scaled axis: use the data's real range (never forced symmetric), keep 0 in view
+        const vmax = Math.max(0, ...arr.map((v) => v || 0)), vmin = Math.min(0, ...arr.map((v) => v || 0));
+        const top = vmax > 0 ? vmax * 1.12 : 500;
+        const bot = vmin < 0 ? vmin * 1.12 : -Math.max(500, vmax * 0.09);
+        const span = (top - bot) || 1;
         const X = (i) => pad.l + (n <= 1 ? gW / 2 : (i / (n - 1)) * gW);
-        const Y = (v) => midY - (v / maxAbs) * (gH / 2);
-        mfGeom = { arr, off, n, X, Y, pad, gW, gH, W, H, midY, maxAbs };
+        const Y = (v) => pad.t + (top - v) / span * gH, zY = Y(0);
+        mfGeom = { arr, off, n, X, Y, pad, gW, gH, W, H, midY: zY };
         x.clearRect(0, 0, W, H);
-        x.font = '600 10px ' + monoFont();
-        [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs].forEach((v) => {
+        x.font = '600 9px ' + monoFont();
+        [top, 0, bot].forEach((v) => {
             const yy = Y(v);
             x.strokeStyle = v === 0 ? 'rgba(216,180,90,.42)' : grid; x.lineWidth = v === 0 ? 1.4 : 1;
             x.beginPath(); x.moveTo(pad.l, yy); x.lineTo(W - pad.r, yy); x.stroke();
             x.fillStyle = v === 0 ? acc : faint; x.textAlign = 'right';
-            const k = Math.round(v / 1000); x.fillText((k > 0 ? '+' : '') + k + 'k', pad.l - 8, yy + 3);
+            const k = Math.round(v / 1000); x.fillText((k > 0 ? '+' : '') + k + 'k', pad.l - 7, yy + 3);
         });
-        // diverging area: single vertical gradient (teal above mid, dire below) clipped to the curve polygon
+        // diverging area clipped to the curve, gradient hinged at the zero line
+        const zFrac = Math.max(0.001, Math.min(0.999, (top - 0) / span));
         x.save();
-        x.beginPath(); x.moveTo(X(0), midY);
+        x.beginPath(); x.moveTo(X(0), zY);
         for (let i = 0; i < n; i++) x.lineTo(X(i), Y(arr[i] || 0));
-        x.lineTo(X(n - 1), midY); x.closePath(); x.clip();
+        x.lineTo(X(n - 1), zY); x.closePath(); x.clip();
         const g = x.createLinearGradient(0, pad.t, 0, pad.t + gH);
-        g.addColorStop(0, teal + '66'); g.addColorStop(0.49, teal + '10');
-        g.addColorStop(0.5, 'rgba(0,0,0,0)');
-        g.addColorStop(0.51, dire + '10'); g.addColorStop(1, dire + '66');
+        g.addColorStop(0, teal + '5e'); g.addColorStop(Math.max(0, zFrac - 0.002), teal + '12');
+        g.addColorStop(zFrac, 'rgba(0,0,0,0)');
+        g.addColorStop(Math.min(1, zFrac + 0.002), dire + '12'); g.addColorStop(1, dire + '5e');
         x.fillStyle = g; x.fillRect(pad.l, pad.t, gW, gH);
         x.restore();
         // line, colored by which side of zero each segment sits
@@ -1275,14 +1309,40 @@
             x.beginPath(); x.moveTo(X(i - 1), Y(arr[i - 1] || 0)); x.lineTo(X(i), Y(arr[i] || 0)); x.stroke();
         }
         // x labels (minutes)
-        x.fillStyle = faint; x.textAlign = 'center'; x.font = '600 10px ' + monoFont();
+        x.fillStyle = faint; x.textAlign = 'center'; x.font = '600 9px ' + monoFont();
         const step = n > 35 ? 10 : n > 15 ? 5 : 2;
-        for (let i = 0; i < n; i += step) x.fillText((off + i) + ':00', X(i), H - 8);
-        if (n > 1 && ((n - 1) % step) !== 0) x.fillText((off + n - 1) + ':00', X(n - 1), H - 8);
+        for (let i = 0; i < n; i += step) x.fillText((off + i) + ':00', X(i), H - 7);
+        if (n > 1 && ((n - 1) % step) !== 0) { x.textAlign = 'right'; x.fillText((off + n - 1) + ':00', W - pad.r, H - 7); x.textAlign = 'center'; }
+        // event markers on the line: first blood, Roshan kills, reports (only when the whole match is shown)
+        if (mfRange === 'all' && mfData.markers && mfData.markers.length) {
+            mfData.markers.forEach((mk) => {
+                if (mk.min < off || mk.min > off + n - 1) return;
+                const i = Math.max(0, Math.min(n - 1, Math.round(mk.min - off)));
+                const px = X(i), py = Y(arr[i] || 0);
+                x.strokeStyle = mk.col + '66'; x.lineWidth = 1; x.setLineDash([2, 3]);
+                x.beginPath(); x.moveTo(px, pad.t); x.lineTo(px, H - pad.b); x.stroke(); x.setLineDash([]);
+                x.fillStyle = cssvar('--cv-bg', '#0e141a'); x.beginPath(); x.arc(px, py, 6.5, 0, 7); x.fill();
+                x.strokeStyle = mk.col; x.lineWidth = 1.5; x.stroke(); x.lineWidth = 2;
+                x.fillStyle = mk.col; x.textAlign = 'center'; x.font = '800 7px ' + (cssvar('--font-ui', 'sans-serif').split(',')[0]);
+                x.fillText(mk.label, px, py + 2.4);
+            });
+        }
       } catch (err) { if (window.LEDGER_DEBUG) console.error('[matchflow]', err); }
     }
+    function mfBuildMarkers() {
+        const m = findMatch(matchIdNow()); if (!m) return [];
+        const acc = cssvar('--accent', '#d8b45a'), dire = cssvar('--dire', '#ff5d6c'), aeg = cssvar('--aegis', '#f2c46d');
+        const out = [];
+        (m.events || []).forEach((e) => {
+            const t = String(e.Type || '').toLowerCase();
+            if (t === 'firstblood') out.push({ min: parseT(e.Time) / 60, label: 'FB', col: dire });
+            else if (t === 'roshan') out.push({ min: parseT(e.Time) / 60, label: 'R', col: aeg });
+        });
+        (m.reports || []).forEach((r) => out.push({ min: parseT(r.Time) / 60, label: '!', col: dire }));
+        return out.sort((a, b) => a.min - b.min).slice(0, 16);
+    }
     function mfShow(j) {
-        mfData = { goldAdv: j && j.goldAdv, xpAdv: j && j.xpAdv };
+        mfData = { goldAdv: j && j.goldAdv, xpAdv: j && j.xpAdv, markers: mfBuildMarkers() };
         if (!mfBox) return;
         const any = (mfData.goldAdv && mfData.goldAdv.length) || (mfData.xpAdv && mfData.xpAdv.length);
         // show the block if parsed; if not parsed, still show with the note so the user knows why
@@ -1315,6 +1375,15 @@
         mfCanvas.addEventListener('mouseleave', () => mfTip.classList.add('hidden'));
     }
     let mfRz; window.addEventListener('resize', () => { clearTimeout(mfRz); mfRz = setTimeout(() => { if (mfData) drawMatchflow(); }, 150); });
+    const mfCollapse = document.getElementById('mf-collapse');
+    if (mfCollapse && mfBox) {
+        try { if (localStorage.getItem('mfCollapsed') === '1') mfBox.classList.add('mf-collapsed'); } catch (e) {}
+        mfCollapse.addEventListener('click', () => {
+            const c = mfBox.classList.toggle('mf-collapsed');
+            try { localStorage.setItem('mfCollapsed', c ? '1' : '0'); } catch (e) {}
+            if (!c && mfData) drawMatchflow();
+        });
+    }
 
     // Request an OpenDota parse for the current match, then poll and refresh the graph.
     let mfParsing = false;

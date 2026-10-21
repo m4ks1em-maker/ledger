@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.19.1",
+  "version": "2.20.0",
   "engineRev": "5",
-  "releaseNotes": "English mode: match stat tiles, Match flow and Share/Global chat labels are now translated (were stuck in Russian). README screenshots refreshed.",
-  "releaseNotesRu": "Английский режим: плитки матча, «Ход матча», «Поделиться» и «Общий чат» теперь переводятся (были только на русском). Обновлены скрины в README.",
+  "releaseNotes": "Compact match screen: slimmer verdict, compact auto-scaled Match flow with event markers (first blood/Roshan/reports) and a collapse toggle, new Players table (reports/chat/toxic/wards per player), broken hero-icon fallback, dropped the duplicate report summary.",
+  "releaseNotesRu": "Компактный матч-экран: уже вердикт, компактный авто-масштабируемый «Ход матча» с маркерами событий (первая кровь/Рошан/репорты) и сворачиванием, новая таблица «Игроки» (репорты/чат/токсик/варды по каждому), фолбэк для битых иконок героев, убрана дублирующая «Сводка репортов».",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
