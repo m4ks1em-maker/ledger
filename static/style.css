@@ -760,6 +760,13 @@ input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
     background: var(--cv-bg); border: 1px solid var(--hair);
 }
 .timeline-graph-container canvas { display: block; transition: opacity 0.4s var(--ease); }
+.timeline-graph-container.as-list { overflow-x: hidden; overflow-y: auto; min-height: auto; max-height: 560px; padding: 6px 16px 10px; }
+.rep-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 6px 11px; border-bottom: 1px solid var(--hair); position: sticky; top: 0; background: var(--cv-bg); z-index: 2; }
+.rep-head-t { font: 800 0.72rem var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); }
+.rep-head-c { font: 800 0.8rem var(--font-num); color: var(--accent); min-width: 26px; height: 24px; padding: 0 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); border-radius: 7px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+.rep-av img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; display: block; }
+.rep-row.rep-clickable { cursor: pointer; transition: background 0.15s; }
+.rep-row.rep-clickable:hover { background: var(--hover); }
 .graph-title { margin: 0 0 12px; font: 600 0.95rem var(--font-display); color: var(--text-primary); transition: opacity 0.4s var(--ease); position: sticky; left: 0; }
 .graph-empty { margin: 0; padding: 60px 20px; text-align: center; color: var(--text-secondary); font-weight: 600; }
 .graph-empty.bad { color: var(--dire); }

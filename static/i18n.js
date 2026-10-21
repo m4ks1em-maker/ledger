@@ -196,6 +196,8 @@
         "No reports in this replay.": "В этом реплее нет репортов.",
         "Report from teammate": "Репорт от союзника",
         "Report from enemy": "Репорт от врага",
+        "Reports on the player": "Репорты на игрока",
+        "Reports the player made": "Репорты от игрока",
         "Verdict": "Вердикт",
         "Clean match": "Чистый матч",
         "Calm match": "Спокойный матч",

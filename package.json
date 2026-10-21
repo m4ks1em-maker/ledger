@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.3",
+  "version": "2.15.4",
   "engineRev": "5",
-  "releaseNotes": "Fix: match selector, reports timeline and stat tiles were hidden by a stray tag — restored. Reports list tab shows correctly.",
-  "releaseNotesRu": "Фикс: выбор матча, таймлайн репортов и плитки пропадали из-за лишнего тега — вернул. Вкладка со списком репортов работает.",
+  "releaseNotes": "Reports timeline is now a clean list (time, hero, who, ally/enemy) instead of the minute-by-minute chart.",
+  "releaseNotesRu": "Таймлайн репортов теперь аккуратный список (время, герой, кто, союзник/враг) вместо графика по минутам.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

@@ -2858,7 +2858,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function escTL(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function tlWho(x) { return (x.Name && String(x.Name).trim()) || x.Hero || (x.Slot >= 0 ? tr('Slot') + ' ' + x.Slot : '?'); }
+
+    // Clean list view of reports (replaces the minute-by-minute canvas chart).
+    function renderReportTimelineList(reports, dir) {
+        const C = timelineGraphContainer;
+        const outgoing = dir === 'outgoing';
+        C.innerHTML = '';
+        C.classList.add('as-list');
+        const rows = [...reports].sort((a, b) => parseTimeToMinutes(a.Time) - parseTimeToMinutes(b.Time));
+
+        const head = document.createElement('div');
+        head.className = 'rep-head';
+        head.innerHTML = '<span class="rep-head-t">' + escTL(tr(outgoing ? 'Reports the player made' : 'Reports on the player')) + '</span>' +
+            '<span class="rep-head-c">' + rows.length + '</span>';
+
+        const list = document.createElement('div');
+        list.className = 'rep-list';
+
+        rows.forEach((r) => {
+            const ally = r.Team === 'FRIENDLY';
+            let primary, hero, target, pl;
+            if (outgoing) {
+                primary = (r.TargetName && String(r.TargetName).trim()) || r.TargetHero || tlWho(r);
+                hero = (r.TargetHero && String(r.TargetHero).toLowerCase() !== 'unknown') ? r.TargetHero : '';
+                target = '';
+                pl = iconPlayer(r); // target player
+            } else {
+                primary = tlWho(r);
+                hero = (r.Hero && String(r.Hero).toLowerCase() !== 'unknown') ? r.Hero : '';
+                target = r.TargetName || r.TargetHero || '';
+                pl = iconPlayer(r, r); // reporter
+            }
+            const iconUrl = getHeroIconUrl(hero || r.TargetHero || r.Hero);
+            const avInner = iconUrl
+                ? '<img src="' + escTL(iconUrl) + '" alt="" loading="lazy">'
+                : escTL((primary || '?').trim().charAt(0).toUpperCase());
+
+            const row = document.createElement('div');
+            row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');
+            if (pl && pl.id) { row.classList.add('rep-clickable'); row.dataset.sid = pl.id; }
+            row.innerHTML =
+                '<span class="rep-time">' + escTL(r.Time || '') + '</span>' +
+                '<span class="rep-av">' + avInner + '</span>' +
+                '<span class="rep-who"><b>' + escTL(primary) + '</b>' + (hero ? '<small>' + escTL(hero) + '</small>' : '') + '</span>' +
+                (target ? '<span class="rep-target">&rarr; ' + escTL(target) + '</span>' : '<span class="rep-target"></span>') +
+                '<span class="rep-tag ' + (ally ? 'ally' : 'enemy') + '">' + escTL(ally ? tr('Report from teammate') : tr('Report from enemy')) + '</span>';
+            list.appendChild(row);
+        });
+
+        list.addEventListener('click', (e) => {
+            const row = e.target.closest('.rep-clickable');
+            if (row && row.dataset.sid) openSteamProfile(row.dataset.sid);
+        });
+
+        C.appendChild(head);
+        C.appendChild(list);
+        hideGraphLoading();
+    }
+
     function renderTimelineGraph(matchData, playerFilter = null) {
+        timelineGraphContainer.classList.remove('as-list');
         if (!matchData || !matchData.reports || matchData.reports.length === 0) {
             const timelineOverlay = timelineGraphContainer.querySelector('#graph-loading-overlay');
             if (timelineOverlay) {
@@ -2947,6 +3008,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        renderReportTimelineList(reports, 'incoming');
+        return;
+
+        /* eslint-disable no-unreachable */
         const title = document.createElement('h3');
         title.className = 'graph-title';
         title.textContent = 'Reports on the player, by minute';
@@ -3403,6 +3468,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function renderPlayerReportsGraph(matchData, playerFilter = null) {
         dbg('[GRAPH DEBUG] renderPlayerReportsGraph() called');
+        timelineGraphContainer.classList.remove('as-list');
         showGraphLoading();
         
         try {
@@ -3495,6 +3561,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return updatedReport;
         });
 
+        renderReportTimelineList(reports, 'outgoing');
+        return;
+
+        /* eslint-disable no-unreachable */
         const title = document.createElement('h3');
         title.className = 'graph-title';
         title.textContent = 'Reports the player made, by minute';
@@ -4217,6 +4287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderScoreboardActivityGraph(matchData, playerFilter = null) {
+        timelineGraphContainer.classList.remove('as-list');
         if (!matchData || !matchData.scoreboardActivities || matchData.scoreboardActivities.length === 0) {
             timelineGraphContainer.innerHTML = '<p class="graph-empty">No scoreboard activity found for this match.</p>';
             hideGraphLoading();
