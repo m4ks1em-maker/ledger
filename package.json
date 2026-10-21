@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.20.0",
+  "version": "2.21.0",
   "engineRev": "5",
-  "releaseNotes": "Compact match screen: slimmer verdict, compact auto-scaled Match flow with event markers (first blood/Roshan/reports) and a collapse toggle, new Players table (reports/chat/toxic/wards per player), broken hero-icon fallback, dropped the duplicate report summary.",
-  "releaseNotesRu": "Компактный матч-экран: уже вердикт, компактный авто-масштабируемый «Ход матча» с маркерами событий (первая кровь/Рошан/репорты) и сворачиванием, новая таблица «Игроки» (репорты/чат/токсик/варды по каждому), фолбэк для битых иконок героев, убрана дублирующая «Сводка репортов».",
+  "releaseNotes": "Consolidated the match screen: removed the players table, moved the player picker + Incoming/Outgoing/Scoreboard report list into the Chat & moments \"Reports\" tab, dropped the duplicate report charts. Everything about a match now lives in one place.",
+  "releaseNotesRu": "Матч-экран собран в одно: убрана таблица игроков, выбор игрока + Входящие/Исходящие/Табло перенесены на вкладку «Репорты» в «Чат и моменты», убраны дублирующие графики репортов. Всё про матч теперь в одном месте.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

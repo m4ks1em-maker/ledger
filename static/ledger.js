@@ -852,6 +852,19 @@
     const evPane = document.getElementById('moments-events');
     const sel = document.getElementById('match-selector');
     if (!sec || !chatPane || !evPane) return;
+    // Consolidate: move the player picker + Incoming/Outgoing/Scoreboard + report list into the "Reports" tab,
+    // so everything about a match lives in one place. The app.js renderers keep writing to these by id.
+    (function consolidateReports() {
+        if (!repPane) return;
+        const psel = document.getElementById('player-selector-container');
+        const hdr = document.querySelector('.timeline-graph-header');
+        const cont = document.getElementById('timeline-graph-container');
+        repPane.textContent = '';
+        if (psel) repPane.appendChild(psel);
+        if (hdr) repPane.appendChild(hdr);
+        if (cont) repPane.appendChild(cont);
+        const gs = document.getElementById('graphs-section'); if (gs) gs.style.display = 'none';
+    })();
     const T = (x) => (window.LedgerI18n ? window.LedgerI18n.t(x) : x);
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     const FLAME = /\b(рак|дно|днищ|ливер|слил|слей|нуб|нубас|даун|дебил|идиот|тупо?й|тупая|кал|говн|сос[иьё]|изи|изич|носок|бот|repor|report|репорт|trash|noob|ez|easy|idiot|kys|report)\b/i;
@@ -1143,9 +1156,8 @@
         const m = current();
         const has = m && ((m.reports && m.reports.length) || (m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
         sec.classList.toggle('hidden', !has);
-        try { renderPlayersTable(m); } catch (e) {}
         if (!has) return;
-        renderHighlights(m); renderReports(m); renderChat(m); renderEvents(m); renderWards(m);
+        renderHighlights(m); renderChat(m); renderEvents(m); renderWards(m);
         if (sw) {
             const wb = sw.querySelector('[data-m="wards"]'); if (wb) wb.classList.toggle('hidden', !(m.wards && m.wards.length));
             const rb = sw.querySelector('[data-m="reports"]'); if (rb) rb.classList.toggle('hidden', !(m.reports && m.reports.length));

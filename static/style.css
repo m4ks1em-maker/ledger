@@ -709,8 +709,11 @@ input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
 .export-btns button { height: 32px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--hair); background: var(--glass-soft); color: var(--text-secondary); font: 700 0.76rem var(--font-ui); cursor: pointer; transition: color 0.2s, background 0.2s, border-color 0.2s; }
 .export-btns button:hover { color: var(--text-primary); background: var(--hover); border-color: var(--glass-border); }
 
-.selector-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 12px; margin-bottom: 14px; }
+.selector-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 14px; }
 .selector-row > .hidden + :not(.hidden), .selector-row > :only-child { grid-column: 1 / -1; }
+.selector-row:has(> #match-selector-container.hidden) { display: none; margin: 0; }
+/* player-report block, now living inside the moments "Reports" tab */
+#moments-reports > .player-selector-container { margin-bottom: 14px; }
 .match-selector-container, .player-selector-container { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .match-selector-container label, .player-selector-container label { margin-bottom: 7px; }
 .custom-select-wrapper { position: relative; min-width: 0; }
