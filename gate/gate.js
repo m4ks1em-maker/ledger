@@ -850,13 +850,27 @@ async function odApi(req, res, url, pathname) {
         if (!/^\d{6,12}$/.test(id)) return sendJson(res, 400, { error: 'Bad match ID.' });
         try {
             const m = await odJson('/matches/' + id, 15000);
+            const goldAdv = m && Array.isArray(m.radiant_gold_adv) ? m.radiant_gold_adv : null;
+            const xpAdv = m && Array.isArray(m.radiant_xp_adv) ? m.radiant_xp_adv : null;
+            // compact objective markers (tower/barracks/roshan/aegis) for the match-flow graph
+            let objectives = null;
+            if (m && Array.isArray(m.objectives)) {
+                objectives = m.objectives
+                    .filter((o) => o && o.time != null && o.type)
+                    .map((o) => ({ time: o.time, type: o.type, team: o.team != null ? o.team : null }))
+                    .slice(0, 200);
+            }
             return sendJson(res, 200, {
                 matchId: id,
                 duration: m && m.duration != null ? m.duration : null,
                 radiantWin: m && typeof m.radiant_win === 'boolean' ? m.radiant_win : null,
                 radiantScore: m && m.radiant_score != null ? m.radiant_score : null,
                 direScore: m && m.dire_score != null ? m.dire_score : null,
-                startTime: m && m.start_time != null ? m.start_time : null
+                startTime: m && m.start_time != null ? m.start_time : null,
+                parsed: !!(goldAdv && goldAdv.length),
+                goldAdv: goldAdv,
+                xpAdv: xpAdv,
+                objectives: objectives
             }, { 'Cache-Control': 'private, max-age=86400' });
         } catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
     }

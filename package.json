@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.17.0",
+  "version": "2.18.0",
   "engineRev": "5",
-  "releaseNotes": "Match highlights strip (first blood, Roshan, couriers, reports, toxic, chat wheel). Ward stats expanded (top warder, dewards). Fixed list overflow/clipping near corner brackets.",
-  "releaseNotesRu": "Хайлайты матча одной строкой (первая кровь, Рошан, курьеры, репорты, токсик, колесо). Статистика вардов: топ-вардер и задеворды. Починены переполнения/обрезка у золотых уголков.",
+  "releaseNotes": "New \"Match flow\" graph: Radiant vs Dire gold/XP advantage over time (Gold/XP toggle, Whole/Lane/Mid/Late ranges), gold-HUD style, from OpenDota.",
+  "releaseNotesRu": "Новый график «Ход матча»: преимущество Radiant/Dire по золоту и опыту во времени (тумблер Золото/Опыт, пресеты Весь/Линия/Мидгейм/Финал), в золотом HUD, данные OpenDota.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

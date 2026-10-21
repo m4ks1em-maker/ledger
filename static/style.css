@@ -1273,6 +1273,26 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 @media (max-width: 640px) { .moments-switch { width: 100%; margin-left: 0; } .moments-switch button { flex: 1; padding: 0 8px; } }
 .moments-pane { animation: swap 0.35s var(--ease) both; }
 .moments-empty { padding: 24px; text-align: center; color: var(--text-tertiary); }
+/* match flow graph (gold/xp advantage over time) */
+.matchflow { margin: 4px 0 18px; padding: 18px; border-radius: var(--r-lg); background: var(--cv-bg); border: 1px solid var(--hair); }
+.mf-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.mf-title { font: 800 0.78rem var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.mf-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.mf-seg { display: inline-flex; border: 1px solid #2a3540; border-radius: 0; }
+.mf-seg button { height: 32px; padding: 0 13px; border: 0; border-right: 1px solid #2a3540; background: rgba(23, 32, 40, 0.5); color: var(--text-secondary); font: 700 0.72rem var(--font-ui); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: color 0.2s, background 0.2s; }
+.mf-seg button:last-child { border-right: 0; }
+.mf-seg button:hover { color: var(--text-primary); }
+.mf-seg button.on { background: linear-gradient(180deg, #2c3c48, #1d2832); color: var(--accent-strong); box-shadow: inset 0 0 12px rgba(216, 180, 90, 0.15); }
+.mf-canvas-wrap { position: relative; }
+.mf-canvas-wrap canvas { display: block; width: 100%; }
+.mf-tip { position: absolute; pointer-events: none; z-index: 3; padding: 5px 9px; border-radius: 7px; background: rgba(10, 14, 19, 0.92); border: 1px solid var(--hair); font: 600 0.74rem var(--font-ui); color: var(--text-secondary); white-space: nowrap; transform: translateX(-50%); }
+.mf-tip b { color: var(--accent); font-family: var(--font-mono); }
+.mf-foot { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 2px; }
+.mf-leg { font: 700 0.68rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.mf-leg.r { color: var(--radiant); } .mf-leg.d { color: var(--dire); }
+.mf-note { margin: 18px 0 6px; text-align: center; color: var(--text-tertiary); font-size: 0.86rem; font-weight: 600; }
+@media (max-width: 640px) { .mf-head { align-items: flex-start; } .mf-seg button { padding: 0 9px; font-size: 0.66rem; } }
+
 /* match highlights strip */
 .match-highlights { margin-bottom: 18px; }
 .hl-strip { display: flex; flex-wrap: wrap; gap: 10px; }

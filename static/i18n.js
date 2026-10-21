@@ -215,6 +215,7 @@
         "chat wheel": "колесо",
         "Most wards": "Больше вардов",
         "Dewarded (est.)": "Задеворжено (≈)",
+        "This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.": "Матч ещё не распарсен на OpenDota — для графика «Ход матча» нужен распарсенный матч.",
         "Verdict": "Вердикт",
         "Clean match": "Чистый матч",
         "Calm match": "Спокойный матч",

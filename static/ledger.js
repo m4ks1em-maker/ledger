@@ -1203,12 +1203,118 @@
     const durFromReplay = (match) => { if (!match) return 0; let mx = 0; ['events', 'chat', 'reports', 'wards'].forEach((k) => { (match[k] || []).forEach((e) => { const t = parseT(e && e.Time); if (t > mx) mx = t; }); }); return mx; };
     const reset = () => { wEl.textContent = '—'; dateEl.textContent = '—'; scoreEl.textContent = '—'; wEl.parentElement.classList.remove('win', 'lose'); };
 
+    // ---- Match flow graph (gold/xp advantage over time), gold-HUD style ----
+    const mfBox = document.getElementById('matchflow');
+    const mfCanvas = document.getElementById('mf-canvas');
+    const mfNote = document.getElementById('mf-note');
+    const mfTip = document.getElementById('mf-tip');
+    const mfRanges = document.getElementById('mf-ranges');
+    const mfMetricBox = document.getElementById('mf-metric');
+    let mfData = null, mfMetric = 'gold', mfRange = 'all', mfGeom = null;
+    const cssvar = (n, d) => { try { return (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || d; } catch (_) { return d; } };
+    const monoFont = () => cssvar('--font-mono', 'monospace').split(',')[0].replace(/['"]/g, '').trim() || 'monospace';
+
+    function mfSlice(arr) {
+        const n = arr.length;
+        if (mfRange === 'lane') return { data: arr.slice(0, Math.min(n, 11)), off: 0 };
+        if (mfRange === 'mid') { const s = Math.min(n, 10); return { data: arr.slice(s, Math.min(n, 26)), off: s }; }
+        if (mfRange === 'late') { const s = Math.max(0, Math.min(n - 1, 25)); return { data: arr.slice(s), off: s }; }
+        return { data: arr.slice(), off: 0 };
+    }
+    function drawMatchflow() {
+        if (!mfBox || !mfCanvas || !mfData) return;
+        const full = mfMetric === 'gold' ? mfData.goldAdv : mfData.xpAdv;
+        if (!full || !full.length) {
+            mfCanvas.style.display = 'none'; if (mfTip) mfTip.classList.add('hidden');
+            mfNote.classList.remove('hidden');
+            mfNote.textContent = T('This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.');
+            return;
+        }
+        mfNote.classList.add('hidden'); mfCanvas.style.display = 'block';
+        const sl = mfSlice(full), arr = sl.data, off = sl.off, n = arr.length;
+        const wrap = mfCanvas.parentElement, W = Math.max(320, wrap.clientWidth), H = 260, dpr = window.devicePixelRatio || 1;
+        mfCanvas.width = W * dpr; mfCanvas.height = H * dpr; mfCanvas.style.width = W + 'px'; mfCanvas.style.height = H + 'px';
+        const x = mfCanvas.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const pad = { l: 54, r: 16, t: 16, b: 26 }, gW = W - pad.l - pad.r, gH = H - pad.t - pad.b, midY = pad.t + gH / 2;
+        const teal = cssvar('--radiant', '#40d2a0'), dire = cssvar('--dire', '#ff5d6c'), acc = cssvar('--accent', '#d8b45a');
+        const faint = cssvar('--text-tertiary', '#63717c'), grid = cssvar('--cv-grid', '#1a252c');
+        const maxAbs = Math.max(1000, ...arr.map((v) => Math.abs(v || 0)));
+        const X = (i) => pad.l + (n <= 1 ? gW / 2 : (i / (n - 1)) * gW);
+        const Y = (v) => midY - (v / maxAbs) * (gH / 2);
+        mfGeom = { arr, off, n, X, Y, pad, gW, gH, W, H, midY, maxAbs };
+        x.clearRect(0, 0, W, H);
+        x.font = '600 10px ' + monoFont();
+        [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs].forEach((v) => {
+            const yy = Y(v);
+            x.strokeStyle = v === 0 ? 'rgba(216,180,90,.42)' : grid; x.lineWidth = v === 0 ? 1.4 : 1;
+            x.beginPath(); x.moveTo(pad.l, yy); x.lineTo(W - pad.r, yy); x.stroke();
+            x.fillStyle = v === 0 ? acc : faint; x.textAlign = 'right';
+            const k = Math.round(v / 1000); x.fillText((k > 0 ? '+' : '') + k + 'k', pad.l - 8, yy + 3);
+        });
+        // diverging area: single vertical gradient (teal above mid, dire below) clipped to the curve polygon
+        x.save();
+        x.beginPath(); x.moveTo(X(0), midY);
+        for (let i = 0; i < n; i++) x.lineTo(X(i), Y(arr[i] || 0));
+        x.lineTo(X(n - 1), midY); x.closePath(); x.clip();
+        const g = x.createLinearGradient(0, pad.t, 0, pad.t + gH);
+        g.addColorStop(0, teal + '66'); g.addColorStop(0.49, teal + '10');
+        g.addColorStop(0.5, 'rgba(0,0,0,0)');
+        g.addColorStop(0.51, dire + '10'); g.addColorStop(1, dire + '66');
+        x.fillStyle = g; x.fillRect(pad.l, pad.t, gW, gH);
+        x.restore();
+        // line, colored by which side of zero each segment sits
+        x.lineWidth = 2; x.lineJoin = 'round';
+        for (let i = 1; i < n; i++) {
+            x.strokeStyle = ((arr[i - 1] || 0) + (arr[i] || 0)) / 2 >= 0 ? teal : dire;
+            x.beginPath(); x.moveTo(X(i - 1), Y(arr[i - 1] || 0)); x.lineTo(X(i), Y(arr[i] || 0)); x.stroke();
+        }
+        // x labels (minutes)
+        x.fillStyle = faint; x.textAlign = 'center'; x.font = '600 10px ' + monoFont();
+        const step = n > 35 ? 10 : n > 15 ? 5 : 2;
+        for (let i = 0; i < n; i += step) x.fillText((off + i) + ':00', X(i), H - 8);
+        if (n > 1 && ((n - 1) % step) !== 0) x.fillText((off + n - 1) + ':00', X(n - 1), H - 8);
+    }
+    function mfShow(j) {
+        mfData = { goldAdv: j && j.goldAdv, xpAdv: j && j.xpAdv };
+        if (!mfBox) return;
+        const any = (mfData.goldAdv && mfData.goldAdv.length) || (mfData.xpAdv && mfData.xpAdv.length);
+        // show the block if parsed; if not parsed, still show with the note so the user knows why
+        mfBox.classList.remove('hidden');
+        if (!any) { mfData = { goldAdv: null, xpAdv: null }; }
+        drawMatchflow();
+    }
+    function mfHide() { if (mfBox) mfBox.classList.add('hidden'); mfData = null; }
+    if (mfRanges) mfRanges.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-r]'); if (!b) return;
+        mfRange = b.dataset.r; mfRanges.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); drawMatchflow();
+    });
+    if (mfMetricBox) mfMetricBox.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-k]'); if (!b) return;
+        mfMetric = b.dataset.k; mfMetricBox.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); drawMatchflow();
+    });
+    if (mfCanvas && mfTip) {
+        mfCanvas.addEventListener('mousemove', (e) => {
+            if (!mfGeom) return;
+            const r = mfCanvas.getBoundingClientRect(), gx = e.clientX - r.left;
+            const { arr, off, n, X, Y, pad, gW } = mfGeom;
+            if (gx < pad.l || gx > pad.l + gW) { mfTip.classList.add('hidden'); return; }
+            let i = Math.round(((gx - pad.l) / gW) * (n - 1)); i = Math.max(0, Math.min(n - 1, i));
+            const v = arr[i] || 0, k = (v / 1000);
+            mfTip.classList.remove('hidden');
+            mfTip.innerHTML = '<b>' + (off + i) + ':00</b> ' + (v >= 0 ? T('Radiant') : T('Dire')) + ' ' + (v >= 0 ? '+' : '') + (Math.round(k * 10) / 10) + 'k';
+            mfTip.style.left = Math.min(r.width - 120, Math.max(0, X(i))) + 'px';
+            mfTip.style.top = Math.max(0, Y(v) - 34) + 'px';
+        });
+        mfCanvas.addEventListener('mouseleave', () => mfTip.classList.add('hidden'));
+    }
+    let mfRz; window.addEventListener('resize', () => { clearTimeout(mfRz); mfRz = setTimeout(() => { if (mfData) drawMatchflow(); }, 150); });
+
     function render() {
         const id = matchIdNow();
         const hidden = !id || (results && results.classList.contains('hidden'));
-        if (hidden) { box.classList.add('hidden'); lastId = null; return; }
+        if (hidden) { box.classList.add('hidden'); mfHide(); lastId = null; return; }
         if (id === lastId) return;
-        lastId = id; reset();
+        lastId = id; reset(); mfHide();
         const dur = durFromReplay(findMatch(id));
         dEl.textContent = dur > 0 ? fmt(dur) : '—';
         box.classList.remove('hidden');
@@ -1224,6 +1330,7 @@
                 }
                 if (j.radiantScore != null && j.direScore != null) scoreEl.textContent = j.radiantScore + ' — ' + j.direScore;
                 if (j.startTime) { try { dateEl.textContent = new Date(j.startTime * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch (_) {} }
+                mfShow(j);
             }).catch(() => {});
     }
 
