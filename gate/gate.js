@@ -874,6 +874,26 @@ async function odApi(req, res, url, pathname) {
             }, { 'Cache-Control': 'private, max-age=86400' });
         } catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
     }
+    if (pathname === '/_ledger/od/parse' && req.method === 'POST') {
+        const b = await readBody(req, 1024);
+        const id = String(b.matchId || '');
+        if (!/^\d{6,12}$/.test(id)) return sendJson(res, 400, { error: 'Bad match ID.' });
+        try {
+            const r = await odJson('/request/' + id, 20000, 'POST');
+            const jobId = r && r.job && (r.job.jobId != null) ? r.job.jobId : null;
+            return sendJson(res, 200, { matchId: id, jobId: jobId, done: !jobId });
+        } catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
+    }
+    if (pathname === '/_ledger/od/parsejob' && req.method === 'GET') {
+        const jid = String(url.searchParams.get('id') || '');
+        if (!/^\d{1,15}$/.test(jid)) return sendJson(res, 400, { error: 'Bad job ID.' });
+        try {
+            const r = await odJson('/request/' + jid, 15000);
+            // OpenDota returns the job while it is queued/processing, and null once finished.
+            const done = !r || r.jobId == null;
+            return sendJson(res, 200, { jobId: jid, done: done });
+        } catch (_) { return sendJson(res, 200, { jobId: jid, done: false }); }
+    }
     if (pathname === '/_ledger/od/heroimg' && (req.method === 'GET' || req.method === 'HEAD')) {
         const h = String(url.searchParams.get('h') || '').toLowerCase();
         if (!/^[a-z0-9_]{1,40}$/.test(h)) { res.writeHead(400); return res.end(); }

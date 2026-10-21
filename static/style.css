@@ -1295,6 +1295,11 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .mf-note span { max-width: 460px; line-height: 1.45; }
 .matchflow.mf-empty .mf-controls, .matchflow.mf-empty .mf-foot, .matchflow.mf-empty .mf-canvas-wrap { display: none; }
 .matchflow.mf-empty .mf-head { margin-bottom: 0; }
+.mf-parse-btn { margin-top: 4px; height: 36px; padding: 0 18px; border: 0; cursor: pointer; clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); background: linear-gradient(180deg, #e9c868, #b48f36); color: #2a1e08; font: 800 0.76rem var(--font-ui); letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 0 20px -4px rgba(216, 180, 90, 0.5); transition: filter 0.2s, opacity 0.2s; }
+.mf-parse-btn:hover { filter: brightness(1.07); }
+.mf-parse-btn:disabled, .mf-parse-btn.busy { opacity: 0.6; cursor: default; filter: none; }
+.mf-parse-btn.busy { position: relative; padding-left: 36px; }
+.mf-parse-btn.busy::before { content: ""; position: absolute; left: 15px; top: 50%; width: 13px; height: 13px; margin-top: -6.5px; border: 2px solid rgba(42,30,8,.35); border-top-color: #2a1e08; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @media (max-width: 640px) { .mf-head { align-items: flex-start; } .mf-seg button { padding: 0 9px; font-size: 0.66rem; } }
 
 /* match highlights strip */

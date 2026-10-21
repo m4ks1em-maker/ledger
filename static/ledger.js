@@ -1231,7 +1231,8 @@
             mfCanvas.style.display = 'none'; if (mfTip) mfTip.classList.add('hidden');
             mfNote.classList.remove('hidden');
             mfNote.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>'
-                + '<span>' + T('This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.') + '</span>';
+                + '<span>' + T('This match is not parsed on OpenDota yet — the match-flow graph needs a parsed match.') + '</span>'
+                + '<button type="button" class="mf-parse-btn" id="mf-parse">' + T('Parse this match') + '</button>';
             return;
         }
         mfBox.classList.remove('mf-empty');
@@ -1314,6 +1315,48 @@
         mfCanvas.addEventListener('mouseleave', () => mfTip.classList.add('hidden'));
     }
     let mfRz; window.addEventListener('resize', () => { clearTimeout(mfRz); mfRz = setTimeout(() => { if (mfData) drawMatchflow(); }, 150); });
+
+    // Request an OpenDota parse for the current match, then poll and refresh the graph.
+    let mfParsing = false;
+    function mfSetParse(msg, btnLabel, busy) {
+        if (!mfNote) return;
+        const span = mfNote.querySelector('span'); if (span && msg != null) span.textContent = msg;
+        const btn = mfNote.querySelector('#mf-parse');
+        if (btn) { btn.disabled = !!busy; btn.classList.toggle('busy', !!busy); if (btnLabel != null) btn.textContent = btnLabel; }
+    }
+    async function mfRequestParse() {
+        const id = matchIdNow(); if (!id || mfParsing) return;
+        mfParsing = true;
+        mfSetParse(T('Requesting a parse from OpenDota…'), T('Parsing…'), true);
+        try {
+            const r = await fetch('/_ledger/od/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchId: id }) })
+                .then((x) => x.ok ? x.json() : null);
+            if (!r || (r.jobId == null && !r.done)) throw new Error('no job');
+            mfSetParse(T('Parsing… this usually takes a minute or two.'), null, true);
+            let tries = 0;
+            const finish = async () => {
+                const j = await fetch('/_ledger/od/match?id=' + encodeURIComponent(id), { cache: 'no-store' }).then((x) => x.ok ? x.json() : null).catch(() => null);
+                mfParsing = false;
+                if (matchIdNow() !== id) return;
+                if (j && j.goldAdv && j.goldAdv.length) { mfShow(j); }
+                else mfSetParse(T('Parsed, but the graph data is not ready yet — try again in a minute.'), T('Try again'), false);
+            };
+            if (r.done) { await finish(); return; }
+            const poll = async () => {
+                if (matchIdNow() !== id) { mfParsing = false; return; }
+                tries++;
+                const s = await fetch('/_ledger/od/parsejob?id=' + encodeURIComponent(r.jobId)).then((x) => x.ok ? x.json() : null).catch(() => null);
+                if (s && s.done) return finish();
+                if (tries >= 40) { mfParsing = false; mfSetParse(T('Parsing is taking a while. Try again later.'), T('Try again'), false); return; }
+                setTimeout(poll, 5000);
+            };
+            setTimeout(poll, 5000);
+        } catch (_) {
+            mfParsing = false;
+            mfSetParse(T('Could not request a parse right now. Try again later.'), T('Try again'), false);
+        }
+    }
+    if (mfNote) mfNote.addEventListener('click', (e) => { if (e.target.closest('#mf-parse')) mfRequestParse(); });
 
     function render() {
         const id = matchIdNow();

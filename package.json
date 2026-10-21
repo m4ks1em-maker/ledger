@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.18.1",
+  "version": "2.19.0",
   "engineRev": "5",
-  "releaseNotes": "Fix: match-flow graph showed an empty block. The explanation for unparsed matches now renders; cleaner empty state.",
-  "releaseNotesRu": "Фикс: график «Ход матча» показывал пустой блок. Теперь для нераспарсенных матчей выводится понятная плашка, пустое состояние аккуратное.",
+  "releaseNotes": "Match flow: added a \"Parse this match\" button that requests an OpenDota parse and auto-loads the graph when ready.",
+  "releaseNotesRu": "Ход матча: добавлена кнопка «Распарсить матч» — запрашивает парсинг на OpenDota и сам подгружает график, когда готово.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
