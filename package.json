@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.15.5",
+  "version": "2.15.6",
   "engineRev": "5",
-  "releaseNotes": "Report lists now show the actual hero portraits as avatars (moments tab + reports timeline).",
-  "releaseNotesRu": "В списках репортов теперь аватарки — настоящие иконки героев (вкладка моментов и таймлайн репортов).",
+  "releaseNotes": "Chat wheel messages now appear in the Chat tab (merged by time, with ALL/TEAM scope and a wheel icon).",
+  "releaseNotesRu": "Сообщения с колеса чата теперь показываются во вкладке «Чат» (вперемешку по времени, с бейджем ВСЕ/КОМАНДА и иконкой колеса).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

@@ -1282,6 +1282,9 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .chat-line.r .cl-name { color: var(--radiant); } .chat-line.d .cl-name { color: var(--dire); }
 .cl-text { min-width: 0; word-break: break-word; }
 .cl-flame { font-style: normal; }
+.chat-line.wheel { box-shadow: inset 2px 0 0 var(--accent); }
+.chat-line.wheel .cl-text { display: inline-flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+.cl-wheel { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: var(--accent); stroke-width: 1.6; opacity: 0.9; }
 
 .ev-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .ev-chip { padding: 6px 12px; border-radius: 999px; background: var(--glass-soft); border: 1px solid var(--hair); font-size: 0.82rem; color: var(--text-secondary); }

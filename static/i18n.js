@@ -198,6 +198,7 @@
         "Report from enemy": "Репорт от врага",
         "Reports on the player": "Репорты на игрока",
         "Reports the player made": "Репорты от игрока",
+        "Chat wheel": "Колесо чата",
         "Verdict": "Вердикт",
         "Clean match": "Чистый матч",
         "Calm match": "Спокойный матч",

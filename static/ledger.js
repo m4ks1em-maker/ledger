@@ -886,11 +886,49 @@
         repPane.appendChild(list);
     }
 
+    function clSecs(t) {
+        if (t == null) return 0;
+        const s = String(t).trim(); const neg = s.startsWith('-');
+        const p = s.replace('-', '').split(':').map(Number);
+        let v = 0;
+        if (p.length === 3) v = p[0] * 3600 + p[1] * 60 + p[2];
+        else if (p.length === 2) v = p[0] * 60 + p[1];
+        else v = Number(s) || 0;
+        return neg ? -v : v;
+    }
+    const WHEEL_IC = '<svg class="cl-wheel" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"/></svg>';
+    function wheelPhrase(e) {
+        const W = window.CHAT_WHEEL || {};
+        let id = e.MessageID; if (id == null) id = e.MessageId; if (id == null) id = e.Message;
+        if (id == null) id = e.ChatWheelID; if (id == null) id = e.WheelID; if (id == null) id = e.Value;
+        if (id == null) id = e.Text;
+        const idStr = String(id == null ? '' : id).trim();
+        if (W[idStr]) return { text: W[idStr].t, all: W[idStr].a === 1, sound: W[idStr].s === 1 };
+        if (idStr && !/^\d+$/.test(idStr)) return { text: idStr, all: false, sound: false }; // already readable
+        return { text: T('Chat wheel') + (idStr ? ' #' + idStr : ''), all: false, sound: false };
+    }
+
     function renderChat(m) {
-        const chat = (m && m.chat) || [];
+        const chat = ((m && m.chat) || []).map((c) => { c._k = 'chat'; return c; });
+        const wheels = ((m && m.events) || []).filter((e) => e.Type === 'chat_wheel').map((e) => { e._k = 'wheel'; return e; });
+        const all = chat.concat(wheels).sort((a, b) => clSecs(a.Time) - clSecs(b.Time));
         chatPane.textContent = '';
-        if (!chat.length) { chatPane.innerHTML = '<p class="moments-empty">' + T('No chat in this replay.') + '</p>'; return; }
-        chat.forEach((c) => {
+        if (!all.length) { chatPane.innerHTML = '<p class="moments-empty">' + T('No chat in this replay.') + '</p>'; return; }
+        all.forEach((c) => {
+            if (c._k === 'wheel') {
+                const w = wheelPhrase(c);
+                const row = document.createElement('div');
+                row.className = 'chat-line wheel ' + teamClass(c.Team);
+                const t = document.createElement('span'); t.className = 'cl-time'; t.textContent = c.Time;
+                const scope = document.createElement('span'); scope.className = 'cl-scope';
+                scope.textContent = (c.AllChat != null ? c.AllChat : w.all) ? T('ALL') : T('TEAM');
+                const n = document.createElement('b'); n.className = 'cl-name'; n.textContent = who(c);
+                const tx = document.createElement('span'); tx.className = 'cl-text';
+                tx.innerHTML = WHEEL_IC + '<span>' + (w.sound ? '🔊 ' : '') + esc(w.text) + '</span>';
+                row.append(t, scope, n, tx);
+                chatPane.appendChild(row);
+                return;
+            }
             const row = document.createElement('div');
             const flame = FLAME.test(c.Text || '');
             row.className = 'chat-line ' + teamClass(c.Team) + (flame ? ' flame' : '');
