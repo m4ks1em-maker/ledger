@@ -865,7 +865,7 @@
         repPane.textContent = '';
         if (!reports.length) { repPane.innerHTML = '<p class="moments-empty">' + T('No reports in this replay.') + '</p>'; return; }
         const list = document.createElement('div'); list.className = 'rep-list';
-        reports.forEach((r) => {
+        [...reports].sort((a, b) => clSecs(a.Time) - clSecs(b.Time)).forEach((r) => {
             const ally = r.Team === 'FRIENDLY';
             const reporter = who(r);
             const hero = (r.Hero && String(r.Hero).toLowerCase() !== 'unknown') ? r.Hero : '';
@@ -1047,17 +1047,62 @@
             map.appendChild(d);
         });
 
+        // who placed the most wards (by placer slot)
+        const byPlacer = {};
+        wards.forEach((w) => { const s = w.Slot; if (s == null || s < 0) return; byPlacer[s] = (byPlacer[s] || 0) + 1; });
+        let topSlot = null, topN = 0;
+        Object.keys(byPlacer).forEach((s) => { if (byPlacer[s] > topN) { topN = byPlacer[s]; topSlot = Number(s); } });
+        // observers that died well before their 6-minute life ≈ dewarded
+        const dewarded = obs.filter((w) => w.LifeSecs > 0 && w.LifeSecs < 340).length;
+
         const stats = document.createElement('div'); stats.className = 'ward-stats';
         const stat = (label, val, cls) => '<div class="ward-stat"><span>' + esc(label) + '</span><b class="' + (cls || '') + '">' + esc(val) + '</b></div>';
         stats.innerHTML = stat(T('Observers placed'), obs.length, 'y')
             + stat(T('Sentries placed'), sen.length, 'b')
-            + stat(T('Average observer lifetime'), avgLife ? mmss(avgLife) : '—');
+            + stat(T('Average observer lifetime'), avgLife ? mmss(avgLife) : '—')
+            + (topSlot != null ? stat(T('Most wards'), wardName(m, topSlot) + ' · ' + topN, 'sm') : '')
+            + stat(T('Dewarded (est.)'), dewarded, dewarded ? 'r' : '');
 
         const grid = document.createElement('div'); grid.className = 'wardmap-grid';
         const mapCol = document.createElement('div'); mapCol.className = 'wardmap-col';
         mapCol.append(legend, map);
         grid.append(mapCol, stats);
         wardPane.appendChild(grid);
+    }
+
+    const hlPane = document.getElementById('match-highlights');
+    const HL_SVG = {
+        blood: ICON.blood, rosh: ICON.rosh, courier: ICON.courier,
+        report: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h4"/>',
+        flame: '<path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5s.2 2.2 2 2.2c1.6 0 1-3 2-5 1 1.2 2 2.4 2 4"/>',
+        wheel: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"/>'
+    };
+    function renderHighlights(m) {
+        if (!hlPane) return;
+        const ev = (m && m.events) || [], chat = (m && m.chat) || [], reps = (m && m.reports) || [];
+        const cnt = (t) => ev.filter((e) => evKey(e) === t).length;
+        const fb = ev.find((e) => evKey(e) === 'firstblood');
+        const rosh = cnt('roshan'), cour = cnt('courier');
+        const tox = chat.filter((c) => FLAME.test(c.Text || '')).length;
+        const wheel = cnt('chat_wheel');
+        const items = [];
+        if (fb) items.push(['blood', fb.Time, T('first blood')]);
+        if (rosh) items.push(['rosh', rosh, T('Roshan')]);
+        if (cour) items.push(['courier', cour, T('couriers')]);
+        if (reps.length) items.push(['report', reps.length, T('reports')]);
+        if (tox) items.push(['flame', tox, T('toxic')]);
+        if (wheel) items.push(['wheel', wheel, T('chat wheel')]);
+        hlPane.textContent = '';
+        if (!items.length) { hlPane.classList.add('hidden'); return; }
+        hlPane.classList.remove('hidden');
+        const strip = document.createElement('div'); strip.className = 'hl-strip';
+        items.forEach(([ic, val, label]) => {
+            const chip = document.createElement('span'); chip.className = 'hl-chip ' + ic;
+            chip.innerHTML = '<span class="hl-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + (HL_SVG[ic] || '') + '</svg></span>'
+                + '<b>' + esc(String(val)) + '</b><small>' + esc(label) + '</small>';
+            strip.appendChild(chip);
+        });
+        hlPane.appendChild(strip);
     }
 
     function current() {
@@ -1071,7 +1116,7 @@
         const has = m && ((m.reports && m.reports.length) || (m.chat && m.chat.length) || (m.events && m.events.length) || (m.wards && m.wards.length));
         sec.classList.toggle('hidden', !has);
         if (!has) return;
-        renderReports(m); renderChat(m); renderEvents(m); renderWards(m);
+        renderHighlights(m); renderReports(m); renderChat(m); renderEvents(m); renderWards(m);
         if (sw) {
             const wb = sw.querySelector('[data-m="wards"]'); if (wb) wb.classList.toggle('hidden', !(m.wards && m.wards.length));
             const rb = sw.querySelector('[data-m="reports"]'); if (rb) rb.classList.toggle('hidden', !(m.reports && m.reports.length));

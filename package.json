@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "engineRev": "5",
-  "releaseNotes": "Events tab fixed and expanded: first blood, Roshan kills, courier kills and disconnects now show up. New chat toxicity meter (most talkative / most toxic).",
-  "releaseNotesRu": "Таб «События» починен и расширен: первая кровь, убийства Рошана, курьеры и дисконнекты теперь показываются. Новый токсик-метр в чате (кто больше писал / самый токсик).",
+  "releaseNotes": "Match highlights strip (first blood, Roshan, couriers, reports, toxic, chat wheel). Ward stats expanded (top warder, dewards). Fixed list overflow/clipping near corner brackets.",
+  "releaseNotesRu": "Хайлайты матча одной строкой (первая кровь, Рошан, курьеры, репорты, токсик, колесо). Статистика вардов: топ-вардер и задеворды. Починены переполнения/обрезка у золотых уголков.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
