@@ -1106,11 +1106,16 @@
 
         const map = document.createElement('div'); map.className = 'matchmap';
         const layer = document.createElement('div'); layer.className = 'mm-layer'; map.appendChild(layer);
+        const tip = document.createElement('div'); tip.className = 'mm-tip hidden'; map.appendChild(tip);
         // building markers (faint standing; red X when down)
         const bEls = blds.map((b) => {
             const el = document.createElement('div');
             el.className = 'mmk bld ' + b.side + (b.kind === 'fort' ? ' fort' : '');
             el.style.left = (b.x * 100).toFixed(1) + '%'; el.style.top = ((1 - b.y) * 100).toFixed(1) + '%';
+            const parts = b.id.split('_');
+            el.dataset.k = 'bld'; el.dataset.side = b.side; el.dataset.kind = b.kind;
+            if (b.kind !== 'fort') { el.dataset.lane = parts[1]; el.dataset.tier = (parts[2] || '').replace('t', ''); }
+            el.dataset.at = b.at != null ? mmss(b.at) : '';
             layer.appendChild(el); return { el, at: b.at };
         });
         // ward markers
@@ -1118,7 +1123,8 @@
             const el = document.createElement('div');
             el.className = 'mmk ward ' + (w.sen ? 'sen' : 'obs');
             el.style.left = (w.nx * 100).toFixed(1) + '%'; el.style.top = ((1 - w.ny) * 100).toFixed(1) + '%';
-            el.title = (w.sen ? T('Sentry') : T('Observer')) + ' · ' + w.who + ' · ' + mmss(w.placeAt);
+            el.dataset.k = 'ward'; el.dataset.sen = w.sen ? '1' : ''; el.dataset.who = w.who;
+            el.dataset.place = mmss(w.placeAt); el.dataset.die = mmss(w.dieAt);
             layer.appendChild(el); return { el, placeAt: w.placeAt, dieAt: w.dieAt };
         });
         // roshan kill markers — placed on a rosh pit (top/bottom alternate between kills, since the pit isn't in the data)
@@ -1127,8 +1133,44 @@
             const pit = PITS[i % 2];
             const el = document.createElement('div'); el.className = 'mmk rosh';
             el.style.left = (pit.x * 100).toFixed(1) + '%'; el.style.top = ((1 - pit.y) * 100).toFixed(1) + '%';
-            el.textContent = 'R'; el.title = T('Roshan killed') + ' · ' + mmss(r.at); layer.appendChild(el); return { el, at: r.at };
+            el.textContent = 'R'; el.dataset.k = 'rosh'; el.dataset.at = mmss(r.at);
+            layer.appendChild(el); return { el, at: r.at };
         });
+        // rich hover tooltip for markers
+        const laneName = (l) => (l === 'top' ? T('Top lane') : l === 'mid' ? T('Mid lane') : l === 'bot' ? T('Bot lane') : '');
+        function tipHTML(mk) {
+            const k = mk.dataset.k;
+            if (k === 'ward') {
+                const sen = mk.dataset.sen === '1';
+                return '<div class="tt-h"><i class="tt-dot ' + (sen ? 'sen' : 'obs') + '"></i>' + esc(sen ? T('Sentry') : T('Observer')) + '</div>'
+                    + '<div class="tt-r">' + esc(T('Placed by')) + ' <b>' + esc(mk.dataset.who) + '</b></div>'
+                    + '<div class="tt-r tt-mono">' + esc(mk.dataset.place) + ' → ' + esc(mk.dataset.die) + '</div>';
+            }
+            if (k === 'bld') {
+                const side = mk.dataset.side === 'r' ? T('The Radiant') : T('The Dire');
+                const what = mk.dataset.kind === 'fort' ? T('Ancient') : (T('Tower') + ' T' + mk.dataset.tier + ' · ' + laneName(mk.dataset.lane));
+                return '<div class="tt-h"><i class="tt-dot td"></i>' + esc(what) + '</div>'
+                    + '<div class="tt-r">' + esc(side) + '</div>'
+                    + (mk.dataset.at ? '<div class="tt-r tt-mono">' + esc(T('Fell')) + ': ' + esc(mk.dataset.at) + '</div>' : '');
+            }
+            if (k === 'rosh') return '<div class="tt-h"><i class="tt-dot ro"></i>' + esc(T('Roshan killed')) + '</div><div class="tt-r tt-mono">' + esc(mk.dataset.at) + '</div>';
+            return '';
+        }
+        const visibleMk = (mk) => mk.classList.contains('ward') ? mk.classList.contains('on')
+            : mk.classList.contains('bld') ? mk.classList.contains('down')
+            : mk.classList.contains('rosh') ? mk.classList.contains('on') : false;
+        map.addEventListener('mousemove', (e) => {
+            const mk = e.target.closest('.mmk');
+            if (!mk || !visibleMk(mk)) { tip.classList.add('hidden'); return; }
+            tip.innerHTML = tipHTML(mk);
+            tip.classList.remove('hidden');
+            const mw = map.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+            let left = mk.offsetLeft - tw / 2; left = Math.max(4, Math.min(mw - tw - 4, left));
+            let top = mk.offsetTop - th - 12; if (top < 4) top = mk.offsetTop + 16;
+            tip.style.left = left + 'px'; tip.style.top = top + 'px';
+        });
+        map.addEventListener('mouseleave', () => tip.classList.add('hidden'));
+
         const mapWrap = document.createElement('div'); mapWrap.className = 'matchmap-wrap';
         mapWrap.appendChild(map);
         mapCol.appendChild(legend); mapCol.appendChild(mapWrap);

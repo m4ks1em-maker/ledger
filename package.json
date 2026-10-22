@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.22.2",
+  "version": "2.23.0",
   "engineRev": "5",
-  "releaseNotes": "Fixed the light theme across the match flow, map player and ward stats. Roshan kill markers now sit on a rosh pit (top/bottom alternating between kills).",
-  "releaseNotesRu": "Починена белая тема в «Ходе матча», плеере карты и статистике вардов. Метки убийства Рошана теперь на пите (верхний/нижний чередуются между убийствами).",
+  "releaseNotes": "Map markers now have a rich hover tooltip (who placed a ward and its lifetime, which tower fell and when, Roshan). Fixed the corner-bracket glitch that poked outside rounded cards (most visible on the light theme).",
+  "releaseNotesRu": "У маркеров на карте — красивый тултип при наведении (кто поставил вард и сколько он жил, какая башня пала и когда, Рошан). Починен баг с угловыми скобками, торчавшими за скруглёнными карточками (особенно заметно на светлой теме).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",
