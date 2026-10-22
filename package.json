@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.22.0",
+  "version": "2.22.1",
   "engineRev": "5",
-  "releaseNotes": "New interactive match map with a time scrubber + play: scrub/replay the match and watch wards appear and expire, towers fall and Roshan die over time. Death timeline ticks + running kill score. Needs an OpenDota-parsed match for towers/deaths.",
-  "releaseNotesRu": "Новая интерактивная карта матча с ползунком времени и плеером: проматывай/проигрывай матч и смотри, как ставятся и пропадают варды, падают башни и убивают Рошана по минутам. Тики смертей на шкале + счёт киллов. Для башен/смертей нужен распарсенный на OpenDota матч.",
+  "releaseNotes": "Match map polish: framed map with gold corner brackets + vignette, a big clock + live \"what just happened\" readout, progress fill on the scrubber, and nicer ward/tower/Roshan markers.",
+  "releaseNotesRu": "Карта матча — красивее: рамка с золотыми уголками и виньетка, крупные часы + строка «что сейчас происходит», прогресс-заливка на ползунке, аккуратнее маркеры вардов/башен/Рошана.",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

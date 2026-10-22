@@ -1127,22 +1127,38 @@
             el.style.left = (ROSH.x * 100).toFixed(1) + '%'; el.style.top = ((1 - ROSH.y) * 100).toFixed(1) + '%';
             el.textContent = 'R'; layer.appendChild(el); return { el, at: r.at };
         });
-        mapCol.appendChild(legend); mapCol.appendChild(map);
+        const mapWrap = document.createElement('div'); mapWrap.className = 'matchmap-wrap';
+        mapWrap.appendChild(map);
+        mapCol.appendChild(legend); mapCol.appendChild(mapWrap);
 
         // ---- scrubber / player ----
+        // timeline for the "what's happening now" readout
+        const nowline = [];
+        const fbEv = ((m && m.events) || []).find((e) => String(e.Type || '').toLowerCase() === 'firstblood');
+        if (fbEv) nowline.push({ t: clSecs(fbEv.Time), txt: T('First blood'), cls: 'fb' });
+        blds.forEach((b) => { if (b.at != null) nowline.push({ t: b.at, txt: (b.side === 'r' ? T('The Radiant') : T('The Dire')) + ' · ' + T('Tower down'), cls: b.side === 'r' ? 'tr' : 'td' }); });
+        roshKills.forEach((r) => nowline.push({ t: r.at, txt: T('Roshan killed'), cls: 'ro' }));
+        nowline.sort((a, b) => a.t - b.t);
+
+        const panel = document.createElement('div'); panel.className = 'mm-panel';
+        const top = document.createElement('div'); top.className = 'mm-top';
+        const clockEl = document.createElement('div'); clockEl.className = 'mm-clock';
+        const nowEl = document.createElement('div'); nowEl.className = 'mm-now';
+        top.append(clockEl, nowEl);
+
         const bar = document.createElement('div'); bar.className = 'mm-bar';
         const playBtn = document.createElement('button'); playBtn.type = 'button'; playBtn.className = 'mm-play';
         const ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>';
         const ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>';
         playBtn.innerHTML = ICON_PLAY;
         const slider = document.createElement('input'); slider.type = 'range'; slider.min = '0'; slider.max = String(dur); slider.value = '0'; slider.className = 'mm-slider';
-        const tLabel = document.createElement('span'); tLabel.className = 'mm-time';
         const speedBtn = document.createElement('button'); speedBtn.type = 'button'; speedBtn.className = 'mm-speed'; speedBtn.textContent = '1×';
-        // death ticks on the track
+        const fill = document.createElement('div'); fill.className = 'mm-fill';
         const ticks = document.createElement('div'); ticks.className = 'mm-ticks';
         deaths.forEach((d) => { if (d.t < 0 || d.t > dur) return; const tk = document.createElement('i'); tk.className = 'tk ' + (d.team === 2 ? 'r' : d.team === 3 ? 'd' : ''); tk.style.left = (d.t / dur * 100).toFixed(2) + '%'; ticks.appendChild(tk); });
-        const sliderWrap = document.createElement('div'); sliderWrap.className = 'mm-slider-wrap'; sliderWrap.appendChild(ticks); sliderWrap.appendChild(slider);
-        bar.append(playBtn, sliderWrap, tLabel, speedBtn);
+        const sliderWrap = document.createElement('div'); sliderWrap.className = 'mm-slider-wrap'; sliderWrap.append(fill, ticks, slider);
+        bar.append(playBtn, sliderWrap, speedBtn);
+        panel.append(top, bar);
 
         let T_now = dur, speed = 1, playing = false; const speeds = [1, 2, 4];
         function apply(t) {
@@ -1151,8 +1167,12 @@
             bEls.forEach((b) => { b.el.classList.toggle('down', b.at != null && t >= b.at); });
             rEls.forEach((r, i) => { const last = (r.at <= t) && (i === rEls.length - 1 || !(rEls[i + 1].at <= t)); r.el.classList.toggle('on', r.at <= t); r.el.classList.toggle('fresh', last && t - r.at < 30); });
             let dr = 0, dd = 0; deaths.forEach((d) => { if (d.t <= t) { if (d.team === 2) dr++; else if (d.team === 3) dd++; } });
-            tLabel.innerHTML = '<b>' + mmss(t) + '</b> / ' + mmss(dur)
-                + (deaths.length ? ' · <span class="kills"><span class="kr">' + dr + '</span>:<span class="kd">' + dd + '</span></span>' : '');
+            clockEl.innerHTML = '<b>' + mmss(t) + '</b><span>/ ' + mmss(dur) + '</span>'
+                + (deaths.length ? '<span class="kc"><i class="kr">' + dr + '</i><em>:</em><i class="kd">' + dd + '</i></span>' : '');
+            fill.style.width = (dur ? (t / dur * 100) : 0).toFixed(1) + '%';
+            let cur = null; for (let i = 0; i < nowline.length; i++) { if (nowline[i].t <= t) cur = nowline[i]; else break; }
+            if (cur) { nowEl.innerHTML = '<i class="nd ' + cur.cls + '"></i><b>' + mmss(cur.t) + '</b> ' + esc(cur.txt); nowEl.classList.add('show'); }
+            else { nowEl.innerHTML = '<span class="nd-idle">' + esc(T('Drag or play to replay the match')) + '</span>'; nowEl.classList.remove('show'); }
             slider.value = String(t);
         }
         function setPlaying(p) { playing = p; playBtn.innerHTML = p ? ICON_PAUSE : ICON_PLAY; playBtn.classList.toggle('on', p); }
@@ -1170,7 +1190,7 @@
         });
         slider.addEventListener('input', () => { setPlaying(false); stopMap(); apply(Number(slider.value)); });
         speedBtn.addEventListener('click', () => { speed = speeds[(speeds.indexOf(speed) + 1) % speeds.length]; speedBtn.textContent = speed + '×'; });
-        mapCol.appendChild(bar);
+        mapCol.appendChild(panel);
 
         // ---- ward stats ----
         const obs = wards.filter((w) => w.Type === 'obs'), sen = wards.filter((w) => w.Type === 'sen');

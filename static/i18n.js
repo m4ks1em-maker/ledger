@@ -217,6 +217,7 @@
         "Dewarded (est.)": "Задеворжено (≈)",
         "Map": "Карта",
         "Tower down": "Башня пала",
+        "Drag or play to replay the match": "Перемотай или нажми play — проиграй матч",
         "No map data for this match yet. Parse it on OpenDota for towers and deaths.": "Пока нет данных карты. Распарси матч на OpenDota — появятся башни и смерти.",
         "Players": "Игроки",
         "Player": "Игрок",
