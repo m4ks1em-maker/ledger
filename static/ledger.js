@@ -1031,42 +1031,154 @@
         if (p) return p.Hero || p.hero || p.Name || p.name || (T('Slot') + ' ' + slot);
         return slot >= 0 ? T('Slot') + ' ' + slot : '?';
     }
+    // ---- match map geometry (normalized to img/map.png: x right 0..1, y up 0..1; Radiant bottom-left, Dire top-right) ----
+    const TOW = {
+        top: { 1: { x: .14, y: .72 }, 2: { x: .115, y: .50 }, 3: { x: .135, y: .33 } },
+        mid: { 1: { x: .40, y: .36 }, 2: { x: .31, y: .28 }, 3: { x: .22, y: .20 } },
+        bot: { 1: { x: .62, y: .07 }, 2: { x: .34, y: .07 }, 3: { x: .20, y: .115 } }
+    };
+    const mir = (p) => ({ x: 1 - p.x, y: 1 - p.y });
+    const ROSH = { x: .29, y: .73 };
+    function buildBuildings() {
+        const b = [];
+        ['top', 'mid', 'bot'].forEach((ln) => [1, 2, 3].forEach((t) => {
+            b.push({ id: 'r_' + ln + '_t' + t, x: TOW[ln][t].x, y: TOW[ln][t].y, side: 'r', kind: 'tower', at: null });
+            // Dire map is rotated 180°, so Dire's top lane mirrors Radiant's bot and vice-versa
+            const dln = ln === 'top' ? 'bot' : ln === 'bot' ? 'top' : 'mid';
+            const dp = mir(TOW[dln][t]);
+            b.push({ id: 'd_' + ln + '_t' + t, x: dp.x, y: dp.y, side: 'd', kind: 'tower', at: null });
+        }));
+        b.push({ id: 'r_fort', x: .12, y: .12, side: 'r', kind: 'fort', at: null });
+        b.push({ id: 'd_fort', x: .88, y: .88, side: 'd', kind: 'fort', at: null });
+        return b;
+    }
+    function keyToId(key) {
+        if (!key) return null; const k = String(key).toLowerCase();
+        const side = k.indexOf('badguys') >= 0 ? 'd' : 'r';
+        if (k.indexOf('fort') >= 0) return side + '_fort';
+        const ln = k.indexOf('_top') >= 0 ? 'top' : k.indexOf('_mid') >= 0 ? 'mid' : k.indexOf('_bot') >= 0 ? 'bot' : null;
+        const tm = k.match(/tower(\d)/); if (ln && tm) return side + '_' + ln + '_t' + tm[1];
+        return null;
+    }
+    let mapTimer = null;
+    function stopMap() { if (mapTimer) { clearInterval(mapTimer); mapTimer = null; } }
     function renderWards(m) {
         if (!wardPane) return;
+        stopMap();
         const wards = (m && m.wards) || [];
+        const od = (window.ledgerOD && m && String(window.ledgerOD.matchId) === String(m.matchID)) ? window.ledgerOD : null;
+        const objectives = (od && od.objectives) || [];
+        const deaths = (od && od.deaths) || [];
         wardPane.textContent = '';
-        if (!wards.length) { wardPane.innerHTML = '<p class="moments-empty">' + T('No ward data in this replay. Rebuild the engine to enable it.') + '</p>'; return; }
-        const obs = wards.filter((w) => w.Type === 'obs');
-        const sen = wards.filter((w) => w.Type === 'sen');
-        const livedObs = obs.filter((w) => w.LifeSecs > 0);
-        const avgLife = livedObs.length ? Math.round(livedObs.reduce((a, w) => a + w.LifeSecs, 0) / livedObs.length) : 0;
-        const mmss = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        if (!wards.length && !objectives.length) { wardPane.innerHTML = '<p class="moments-empty">' + T('No map data for this match yet. Parse it on OpenDota for towers and deaths.') + '</p>'; return; }
+        const mmss = (s) => (s < 0 ? '-' : '') + Math.floor(Math.abs(s) / 60) + ':' + String(Math.floor(Math.abs(s) % 60)).padStart(2, '0');
 
-        const legend = document.createElement('div'); legend.className = 'ward-legend';
-        legend.innerHTML = '<span class="wl"><i class="dot obs"></i>' + esc(T('Observers')) + '</span>'
-            + '<span class="wl"><i class="dot sen"></i>' + esc(T('Sentries')) + '</span>';
-
-        const map = document.createElement('div'); map.className = 'wardmap';
-        wards.forEach((w) => {
+        // ward time windows
+        const wItems = wards.map((w) => {
             const nx = clamp01((w.CellX + (w.VecX || 0) / 128 - 64) / 128);
             const ny = clamp01((w.CellY + (w.VecY || 0) / 128 - 64) / 128);
-            const d = document.createElement('div');
-            d.className = 'wmk ' + (w.Type === 'sen' ? 'sen' : 'obs');
-            d.style.left = (nx * 100).toFixed(1) + '%';
-            d.style.top = ((1 - ny) * 100).toFixed(1) + '%';
-            const kind = w.Type === 'sen' ? T('Sentry') : T('Observer');
-            d.title = kind + ' · ' + wardName(m, w.Slot) + ' · ' + w.PlaceTime + (w.DeathTime ? ' → ' + w.DeathTime : '');
-            map.appendChild(d);
+            const placeAt = clSecs(w.PlaceTime);
+            const dieAt = w.DeathTime ? clSecs(w.DeathTime) : (w.LifeSecs > 0 ? placeAt + w.LifeSecs : placeAt + (w.Type === 'obs' ? 360 : 420));
+            return { nx, ny, placeAt, dieAt, sen: w.Type === 'sen', who: wardName(m, w.Slot) };
         });
+        // buildings + destruction
+        const blds = buildBuildings(); const bById = {}; blds.forEach((b) => { bById[b.id] = b; });
+        const roshKills = [];
+        objectives.forEach((o) => {
+            const ty = String(o.type || '').toUpperCase(), key = o.key || '';
+            if (/ROSHAN/.test(ty) || /roshan/i.test(key)) { roshKills.push({ at: o.time }); return; }
+            const id = keyToId(key); if (id && bById[id] && (bById[id].at == null || o.time < bById[id].at)) bById[id].at = o.time;
+        });
+        // duration
+        let dur = (od && od.duration) || 0;
+        wItems.forEach((w) => { if (w.dieAt > dur) dur = w.dieAt; });
+        blds.forEach((b) => { if (b.at != null && b.at > dur) dur = b.at; });
+        deaths.forEach((d) => { if (d.t > dur) dur = d.t; });
+        dur = Math.max(60, Math.round(dur));
 
-        // who placed the most wards (by placer slot)
-        const byPlacer = {};
-        wards.forEach((w) => { const s = w.Slot; if (s == null || s < 0) return; byPlacer[s] = (byPlacer[s] || 0) + 1; });
-        let topSlot = null, topN = 0;
-        Object.keys(byPlacer).forEach((s) => { if (byPlacer[s] > topN) { topN = byPlacer[s]; topSlot = Number(s); } });
-        // observers that died well before their 6-minute life ≈ dewarded
+        // ---- build DOM ----
+        const grid = document.createElement('div'); grid.className = 'mapgrid';
+        const mapCol = document.createElement('div'); mapCol.className = 'map-col';
+
+        const legend = document.createElement('div'); legend.className = 'map-legend';
+        legend.innerHTML = '<span class="ml obs">' + esc(T('Observers')) + '</span><span class="ml sen">' + esc(T('Sentries')) + '</span>'
+            + '<span class="ml tw">' + esc(T('Tower down')) + '</span><span class="ml ro">' + esc(T('Roshan')) + '</span>';
+
+        const map = document.createElement('div'); map.className = 'matchmap';
+        const layer = document.createElement('div'); layer.className = 'mm-layer'; map.appendChild(layer);
+        // building markers (faint standing; red X when down)
+        const bEls = blds.map((b) => {
+            const el = document.createElement('div');
+            el.className = 'mmk bld ' + b.side + (b.kind === 'fort' ? ' fort' : '');
+            el.style.left = (b.x * 100).toFixed(1) + '%'; el.style.top = ((1 - b.y) * 100).toFixed(1) + '%';
+            layer.appendChild(el); return { el, at: b.at };
+        });
+        // ward markers
+        const wEls = wItems.map((w) => {
+            const el = document.createElement('div');
+            el.className = 'mmk ward ' + (w.sen ? 'sen' : 'obs');
+            el.style.left = (w.nx * 100).toFixed(1) + '%'; el.style.top = ((1 - w.ny) * 100).toFixed(1) + '%';
+            el.title = (w.sen ? T('Sentry') : T('Observer')) + ' · ' + w.who + ' · ' + mmss(w.placeAt);
+            layer.appendChild(el); return { el, placeAt: w.placeAt, dieAt: w.dieAt };
+        });
+        // roshan markers
+        const rEls = roshKills.map((r) => {
+            const el = document.createElement('div'); el.className = 'mmk rosh';
+            el.style.left = (ROSH.x * 100).toFixed(1) + '%'; el.style.top = ((1 - ROSH.y) * 100).toFixed(1) + '%';
+            el.textContent = 'R'; layer.appendChild(el); return { el, at: r.at };
+        });
+        mapCol.appendChild(legend); mapCol.appendChild(map);
+
+        // ---- scrubber / player ----
+        const bar = document.createElement('div'); bar.className = 'mm-bar';
+        const playBtn = document.createElement('button'); playBtn.type = 'button'; playBtn.className = 'mm-play';
+        const ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>';
+        const ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>';
+        playBtn.innerHTML = ICON_PLAY;
+        const slider = document.createElement('input'); slider.type = 'range'; slider.min = '0'; slider.max = String(dur); slider.value = '0'; slider.className = 'mm-slider';
+        const tLabel = document.createElement('span'); tLabel.className = 'mm-time';
+        const speedBtn = document.createElement('button'); speedBtn.type = 'button'; speedBtn.className = 'mm-speed'; speedBtn.textContent = '1×';
+        // death ticks on the track
+        const ticks = document.createElement('div'); ticks.className = 'mm-ticks';
+        deaths.forEach((d) => { if (d.t < 0 || d.t > dur) return; const tk = document.createElement('i'); tk.className = 'tk ' + (d.team === 2 ? 'r' : d.team === 3 ? 'd' : ''); tk.style.left = (d.t / dur * 100).toFixed(2) + '%'; ticks.appendChild(tk); });
+        const sliderWrap = document.createElement('div'); sliderWrap.className = 'mm-slider-wrap'; sliderWrap.appendChild(ticks); sliderWrap.appendChild(slider);
+        bar.append(playBtn, sliderWrap, tLabel, speedBtn);
+
+        let T_now = dur, speed = 1, playing = false; const speeds = [1, 2, 4];
+        function apply(t) {
+            T_now = t;
+            wEls.forEach((w) => { w.el.classList.toggle('on', t >= w.placeAt && t < w.dieAt); });
+            bEls.forEach((b) => { b.el.classList.toggle('down', b.at != null && t >= b.at); });
+            rEls.forEach((r, i) => { const last = (r.at <= t) && (i === rEls.length - 1 || !(rEls[i + 1].at <= t)); r.el.classList.toggle('on', r.at <= t); r.el.classList.toggle('fresh', last && t - r.at < 30); });
+            let dr = 0, dd = 0; deaths.forEach((d) => { if (d.t <= t) { if (d.team === 2) dr++; else if (d.team === 3) dd++; } });
+            tLabel.innerHTML = '<b>' + mmss(t) + '</b> / ' + mmss(dur)
+                + (deaths.length ? ' · <span class="kills"><span class="kr">' + dr + '</span>:<span class="kd">' + dd + '</span></span>' : '');
+            slider.value = String(t);
+        }
+        function setPlaying(p) { playing = p; playBtn.innerHTML = p ? ICON_PAUSE : ICON_PLAY; playBtn.classList.toggle('on', p); }
+        function tick() {
+            if (!playing) return;
+            // ~full match in 42s at 1×; each 100ms tick advances dur/420 game-seconds
+            const t = T_now + Math.max(1, dur / 420) * speed;
+            if (t >= dur) { apply(dur); setPlaying(false); stopMap(); return; }
+            apply(t);
+        }
+        playBtn.addEventListener('click', () => {
+            if (playing) { setPlaying(false); stopMap(); return; }
+            if (T_now >= dur) { apply(0); }
+            setPlaying(true); stopMap(); mapTimer = setInterval(tick, 100);
+        });
+        slider.addEventListener('input', () => { setPlaying(false); stopMap(); apply(Number(slider.value)); });
+        speedBtn.addEventListener('click', () => { speed = speeds[(speeds.indexOf(speed) + 1) % speeds.length]; speedBtn.textContent = speed + '×'; });
+        mapCol.appendChild(bar);
+
+        // ---- ward stats ----
+        const obs = wards.filter((w) => w.Type === 'obs'), sen = wards.filter((w) => w.Type === 'sen');
+        const livedObs = obs.filter((w) => w.LifeSecs > 0);
+        const avgLife = livedObs.length ? Math.round(livedObs.reduce((a, w) => a + w.LifeSecs, 0) / livedObs.length) : 0;
+        const byPlacer = {}; wards.forEach((w) => { const s = w.Slot; if (s == null || s < 0) return; byPlacer[s] = (byPlacer[s] || 0) + 1; });
+        let topSlot = null, topN = 0; Object.keys(byPlacer).forEach((s) => { if (byPlacer[s] > topN) { topN = byPlacer[s]; topSlot = Number(s); } });
         const dewarded = obs.filter((w) => w.LifeSecs > 0 && w.LifeSecs < 340).length;
-
         const stats = document.createElement('div'); stats.className = 'ward-stats';
         const stat = (label, val, cls) => '<div class="ward-stat"><span>' + esc(label) + '</span><b class="' + (cls || '') + '">' + esc(val) + '</b></div>';
         stats.innerHTML = stat(T('Observers placed'), obs.length, 'y')
@@ -1075,11 +1187,9 @@
             + (topSlot != null ? stat(T('Most wards'), wardName(m, topSlot) + ' · ' + topN, 'sm') : '')
             + stat(T('Dewarded (est.)'), dewarded, dewarded ? 'r' : '');
 
-        const grid = document.createElement('div'); grid.className = 'wardmap-grid';
-        const mapCol = document.createElement('div'); mapCol.className = 'wardmap-col';
-        mapCol.append(legend, map);
         grid.append(mapCol, stats);
         wardPane.appendChild(grid);
+        apply(dur); // start fully revealed
     }
 
     const hlPane = document.getElementById('match-highlights');
@@ -1174,6 +1284,8 @@
     document.addEventListener('ledger:matches', paint);
     if (sel) { sel.addEventListener('change', paint); new MutationObserver(paint).observe(sel, { childList: true }); }
     document.addEventListener('ledger:lang', paint);
+    // OpenDota data (towers/deaths) arrives async — re-render the map when it does
+    document.addEventListener('ledger:od', () => { const m = current(); if (m) try { renderWards(m); } catch (e) {} });
 })();
 
 /* ---------- Match verdict + report gauge ---------- */
@@ -1461,6 +1573,8 @@
                 if (j.radiantScore != null && j.direScore != null) scoreEl.textContent = j.radiantScore + ' — ' + j.direScore;
                 if (j.startTime) { try { dateEl.textContent = new Date(j.startTime * 1000).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch (_) {} }
                 mfShow(j);
+                window.ledgerOD = { matchId: id, duration: j.duration, objectives: j.objectives || null, deaths: j.deaths || null };
+                try { document.dispatchEvent(new CustomEvent('ledger:od')); } catch (_) {}
             }).catch(() => {});
     }
 

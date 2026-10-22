@@ -1394,21 +1394,56 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 }
 
 /* ---------- Ward map ---------- */
-.wardmap-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
-.wardmap-col { min-width: 0; }
-.ward-legend { display: flex; gap: 18px; margin-bottom: 10px; }
-.ward-legend .wl { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--text-dim, #c3ad9b); }
-.ward-legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-.ward-legend .dot.obs { background: #ffd65c; box-shadow: 0 0 8px #ffd65c; }
-.ward-legend .dot.sen { background: #5cc8ff; box-shadow: 0 0 8px #5cc8ff; }
-.wardmap { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1 / 1; margin: 0 auto;
-  background: #120b08 url('/img/map.png') center/cover no-repeat; border-radius: 14px;
-  border: 1px solid rgba(241,185,138,.18); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-.wmk { position: absolute; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%);
-  border: 2px solid rgba(10,8,6,.85); cursor: default; transition: transform .1s ease; }
-.wmk:hover { transform: translate(-50%, -50%) scale(1.35); z-index: 3; }
-.wmk.obs { background: #ffd65c; box-shadow: 0 0 10px #ffd65c; }
-.wmk.sen { background: #5cc8ff; box-shadow: 0 0 10px #5cc8ff; }
+/* ===== interactive match map (time scrubber playback) ===== */
+.mapgrid { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 20px; align-items: start; }
+.map-col { min-width: 0; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.map-legend .ml { display: inline-flex; align-items: center; gap: 7px; font: 700 .72rem var(--font-ui); color: var(--text-secondary); }
+.map-legend .ml::before { content: ""; width: 10px; height: 10px; border-radius: 50%; }
+.map-legend .ml.obs::before { background: #ffd65c; box-shadow: 0 0 7px #ffd65c; }
+.map-legend .ml.sen::before { background: #5cc8ff; box-shadow: 0 0 7px #5cc8ff; }
+.map-legend .ml.tw::before { background: var(--dire); border-radius: 2px; box-shadow: 0 0 7px var(--dire); }
+.map-legend .ml.ro::before { background: #caa868; box-shadow: 0 0 7px #caa868; }
+.matchmap { position: relative; width: 100%; max-width: 480px; aspect-ratio: 1/1; margin: 0 auto;
+  background: #0d1510 url('/img/map.png') center/cover no-repeat; border-radius: 14px;
+  border: 1px solid rgba(241,185,138,.18); box-shadow: 0 10px 30px rgba(0,0,0,.4); overflow: hidden; }
+.mm-layer { position: absolute; inset: 0; }
+.mmk { position: absolute; transform: translate(-50%, -50%); }
+/* wards: appear/disappear over time */
+.mmk.ward { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(10,8,6,.85); opacity: 0; transform: translate(-50%, -50%) scale(.3); transition: opacity .25s, transform .25s; }
+.mmk.ward.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.mmk.ward.obs { background: #ffd65c; box-shadow: 0 0 10px #ffd65c; }
+.mmk.ward.sen { background: #5cc8ff; box-shadow: 0 0 10px #5cc8ff; }
+.mmk.ward:hover { z-index: 4; transform: translate(-50%, -50%) scale(1.4); }
+/* buildings: invisible until destroyed, then a red X */
+.mmk.bld { width: 15px; height: 15px; opacity: 0; transition: opacity .2s; }
+.mmk.bld.down { opacity: 1; background:
+    linear-gradient(45deg, transparent 43%, var(--dire) 43%, var(--dire) 57%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, var(--dire) 43%, var(--dire) 57%, transparent 57%);
+  filter: drop-shadow(0 0 4px rgba(255,93,108,.8)); }
+.mmk.bld.fort.down { width: 19px; height: 19px; }
+/* roshan kill marker */
+.mmk.rosh { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 800 11px var(--font-ui); color: #1a1206; background: #caa868; box-shadow: 0 0 10px rgba(202,168,104,.8); opacity: 0; transition: opacity .2s; }
+.mmk.rosh.on { opacity: 1; }
+.mmk.rosh.fresh { animation: roshPulse 1s ease-out infinite; }
+@keyframes roshPulse { 0% { box-shadow: 0 0 0 0 rgba(202,168,104,.6); } 100% { box-shadow: 0 0 0 14px rgba(202,168,104,0); } }
+/* scrubber */
+.mm-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.mm-play { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border: 0; cursor: pointer; border-radius: 10px; background: linear-gradient(180deg, #e9c868, #b48f36); color: #2a1e08; box-shadow: 0 0 16px -4px rgba(216,180,90,.5); transition: filter .15s; }
+.mm-play:hover { filter: brightness(1.07); }
+.mm-play svg { width: 16px; height: 16px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mm-slider-wrap { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; height: 24px; }
+.mm-ticks { position: absolute; inset: 0; pointer-events: none; }
+.mm-ticks .tk { position: absolute; top: 50%; width: 2px; height: 9px; margin-top: -4px; transform: translateX(-50%); opacity: .55; border-radius: 1px; }
+.mm-ticks .tk.r { background: var(--radiant); } .mm-ticks .tk.d { background: var(--dire); }
+.mm-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 3px; background: var(--hair); outline: none; position: relative; z-index: 1; }
+.mm-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 8px rgba(216,180,90,.7); border: 2px solid #0d1318; }
+.mm-slider::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid #0d1318; }
+.mm-time { font: 600 .78rem var(--font-ui); color: var(--text-secondary); white-space: nowrap; }
+.mm-time b { font-family: var(--font-mono); color: var(--accent); }
+.mm-time .kills .kr { color: var(--radiant); font-weight: 800; } .mm-time .kills .kd { color: var(--dire); font-weight: 800; }
+.mm-speed { height: 30px; min-width: 38px; padding: 0 9px; border: 1px solid #2a3540; background: rgba(23,32,40,.5); color: var(--text-secondary); font: 800 .72rem var(--font-num); cursor: pointer; border-radius: 8px; }
+.mm-speed:hover { color: var(--text-primary); }
 .ward-stats { display: flex; flex-direction: column; gap: 10px; }
 .ward-stat { display: flex; align-items: center; justify-content: space-between;
   background: linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
@@ -1419,7 +1454,7 @@ button.match-meta-id.copied .mm-copy { background: var(--radiant); color: #04221
 .ward-stat b.b { color: #5cc8ff; }
 .ward-stat b.r { color: var(--dire); }
 .ward-stat b.sm { font-size: 14px; font-weight: 800; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
-@media (max-width: 720px) { .wardmap-grid { grid-template-columns: 1fr; } .ward-stats { flex-direction: row; flex-wrap: wrap; } .ward-stat { flex: 1 1 140px; } }
+@media (max-width: 720px) { .mapgrid { grid-template-columns: 1fr; } .ward-stats { flex-direction: row; flex-wrap: wrap; } .ward-stat { flex: 1 1 140px; } }
 
 /* ---------- Obsidian film grain (premium texture) ---------- */
 body::after {

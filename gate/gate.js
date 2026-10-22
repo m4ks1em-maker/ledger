@@ -852,13 +852,26 @@ async function odApi(req, res, url, pathname) {
             const m = await odJson('/matches/' + id, 15000);
             const goldAdv = m && Array.isArray(m.radiant_gold_adv) ? m.radiant_gold_adv : null;
             const xpAdv = m && Array.isArray(m.radiant_xp_adv) ? m.radiant_xp_adv : null;
-            // compact objective markers (tower/barracks/roshan/aegis) for the match-flow graph
+            // objective markers (tower/barracks/roshan/aegis) with key + position info for the match map
             let objectives = null;
             if (m && Array.isArray(m.objectives)) {
                 objectives = m.objectives
                     .filter((o) => o && o.time != null && o.type)
-                    .map((o) => ({ time: o.time, type: o.type, team: o.team != null ? o.team : null }))
-                    .slice(0, 200);
+                    .map((o) => ({ time: o.time, type: o.type, key: o.key != null ? String(o.key) : null, team: o.team != null ? o.team : null, slot: o.slot != null ? o.slot : (o.player_slot != null ? o.player_slot : null) }))
+                    .slice(0, 300);
+            }
+            // flattened hero-death timeline (victim team), from each player's kills_log — no positions available
+            let deaths = null;
+            if (m && Array.isArray(m.players)) {
+                const arr = [];
+                m.players.forEach((p) => {
+                    const radiant = (p && p.player_slot != null) ? p.player_slot < 128 : null;
+                    (p && Array.isArray(p.kills_log) ? p.kills_log : []).forEach((k) => {
+                        if (k && k.time != null) arr.push({ t: k.time, team: radiant === null ? 0 : (radiant ? 3 : 2) });
+                    });
+                });
+                arr.sort((a, b) => a.t - b.t);
+                if (arr.length) deaths = arr.slice(0, 500);
             }
             return sendJson(res, 200, {
                 matchId: id,
@@ -870,7 +883,8 @@ async function odApi(req, res, url, pathname) {
                 parsed: !!(goldAdv && goldAdv.length),
                 goldAdv: goldAdv,
                 xpAdv: xpAdv,
-                objectives: objectives
+                objectives: objectives,
+                deaths: deaths
             }, { 'Cache-Control': 'private, max-age=86400' });
         } catch (_) { return sendJson(res, 502, { error: 'OpenDota did not answer. Try again in a minute.' }); }
     }
