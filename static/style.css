@@ -1751,6 +1751,36 @@ html[data-theme="light"] .main-card::after,
 html[data-theme="light"] .match-verdict::after,
 html[data-theme="light"] #timeline-graph-container::after { opacity: 0.55; }
 
+/* ===== light-theme fixes for match flow + map player + ward stats ===== */
+/* segmented controls (match flow ranges/metric, speed, collapse) */
+html[data-theme="light"] .mf-seg, html[data-theme="light"] .mf-collapse,
+html[data-theme="light"] .mm-speed { border-color: #dde3ee; background: #f3f6fc; color: var(--text-secondary); }
+html[data-theme="light"] .mf-seg button { border-color: #dde3ee; background: #f3f6fc; color: var(--text-secondary); }
+html[data-theme="light"] .mf-seg button.on { background: #eef2f9; color: var(--accent-strong); box-shadow: inset 0 0 12px rgba(74,99,224,.12); }
+html[data-theme="light"] .mm-speed { color: var(--accent-strong); }
+html[data-theme="light"] .mm-speed:hover, html[data-theme="light"] .mf-collapse:hover { background: #e7edf8; }
+/* match-flow / map containers use --cv-bg (already light); corner brackets softer */
+html[data-theme="light"] .matchmap-wrap { background: linear-gradient(180deg, rgba(74,99,224,.06), rgba(74,99,224,.02)); border-color: rgba(74,99,224,.2); box-shadow: 0 16px 40px -14px rgba(30,45,100,.25), inset 0 0 40px -18px rgba(74,99,224,.18); }
+html[data-theme="light"] .matchmap-wrap::after { opacity: .6; }
+html[data-theme="light"] .matchmap::after { box-shadow: inset 0 0 50px -16px rgba(0,0,0,.5); }
+/* player panel */
+html[data-theme="light"] .mm-panel { background: linear-gradient(180deg, rgba(74,99,224,.05), rgba(74,99,224,.015)); border-color: var(--hair); }
+html[data-theme="light"] .mm-clock .kc { background: rgba(40,62,130,.05); border-color: var(--hair); }
+html[data-theme="light"] .mm-clock b { text-shadow: none; }
+html[data-theme="light"] .mm-slider-wrap::before { background: rgba(40,62,130,.14); }
+html[data-theme="light"] .mm-slider::-webkit-slider-thumb { border-color: #fff; }
+html[data-theme="light"] .mm-slider::-moz-range-thumb { border-color: #fff; }
+/* ward stats cards */
+html[data-theme="light"] .ward-stat { background: linear-gradient(160deg, rgba(74,99,224,.05), rgba(74,99,224,.015)); border-color: rgba(74,99,224,.15); }
+html[data-theme="light"] .ward-stat span { color: var(--text-secondary); }
+html[data-theme="light"] .ward-stat b { color: var(--text-primary); }
+html[data-theme="light"] .ward-stat b.y { color: #c8921a; }
+html[data-theme="light"] .ward-stat b.b { color: #2f86d6; }
+/* highlights + toxicity chips */
+html[data-theme="light"] .hl-chip, html[data-theme="light"] .cs-chip { background: #f3f6fc; border-color: #e2e8f4; }
+html[data-theme="light"] .hl-ic { background: #e7edf8; }
+/* map legend markers already use fixed accent colors — keep */
+
 /* ===================== Match stat tiles (duration / winner / date / score) ===================== */
 .match-stats {
     display: grid; grid-template-columns: repeat(4, 1fr);

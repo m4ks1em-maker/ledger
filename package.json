@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.22.1",
+  "version": "2.22.2",
   "engineRev": "5",
-  "releaseNotes": "Match map polish: framed map with gold corner brackets + vignette, a big clock + live \"what just happened\" readout, progress fill on the scrubber, and nicer ward/tower/Roshan markers.",
-  "releaseNotesRu": "Карта матча — красивее: рамка с золотыми уголками и виньетка, крупные часы + строка «что сейчас происходит», прогресс-заливка на ползунке, аккуратнее маркеры вардов/башен/Рошана.",
+  "releaseNotes": "Fixed the light theme across the match flow, map player and ward stats. Roshan kill markers now sit on a rosh pit (top/bottom alternating between kills).",
+  "releaseNotesRu": "Починена белая тема в «Ходе матча», плеере карты и статистике вардов. Метки убийства Рошана теперь на пите (верхний/нижний чередуются между убийствами).",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

@@ -1121,11 +1121,13 @@
             el.title = (w.sen ? T('Sentry') : T('Observer')) + ' · ' + w.who + ' · ' + mmss(w.placeAt);
             layer.appendChild(el); return { el, placeAt: w.placeAt, dieAt: w.dieAt };
         });
-        // roshan markers
-        const rEls = roshKills.map((r) => {
+        // roshan kill markers — placed on a rosh pit (top/bottom alternate between kills, since the pit isn't in the data)
+        const PITS = [{ x: .29, y: .73 }, { x: .72, y: .28 }];
+        const rEls = roshKills.map((r, i) => {
+            const pit = PITS[i % 2];
             const el = document.createElement('div'); el.className = 'mmk rosh';
-            el.style.left = (ROSH.x * 100).toFixed(1) + '%'; el.style.top = ((1 - ROSH.y) * 100).toFixed(1) + '%';
-            el.textContent = 'R'; layer.appendChild(el); return { el, at: r.at };
+            el.style.left = (pit.x * 100).toFixed(1) + '%'; el.style.top = ((1 - pit.y) * 100).toFixed(1) + '%';
+            el.textContent = 'R'; el.title = T('Roshan killed') + ' · ' + mmss(r.at); layer.appendChild(el); return { el, at: r.at };
         });
         const mapWrap = document.createElement('div'); mapWrap.className = 'matchmap-wrap';
         mapWrap.appendChild(map);
