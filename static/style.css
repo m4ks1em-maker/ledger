@@ -1823,6 +1823,11 @@ html[data-theme="light"] .hl-ic { background: #e7edf8; }
 .rep-who { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .rep-who b { font: 700 14.5px var(--font-ui); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rep-who small { font: 600 12px var(--font-ui); color: var(--text-tertiary); }
+.rep-who small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rep-unsure { font-style: normal; color: var(--accent); opacity: .9; }
+.rep-unsure-row .rep-av { outline: 1.5px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 2px; }
+.rep-unsure-row { cursor: help; }
+.rep-unsure-row.rep-clickable { cursor: pointer; }
 .rep-target { font: 600 13px var(--font-ui); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .rep-tag { display: inline-flex; align-items: center; gap: 7px; font: 700 12px var(--font-ui); padding: 6px 12px; border-radius: 20px; white-space: nowrap; }
 .rep-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }

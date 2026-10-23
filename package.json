@@ -1,9 +1,9 @@
 {
   "name": "dotatraker",
-  "version": "2.23.0",
+  "version": "2.23.1",
   "engineRev": "5",
-  "releaseNotes": "Map markers now have a rich hover tooltip (who placed a ward and its lifetime, which tower fell and when, Roshan). Fixed the corner-bracket glitch that poked outside rounded cards (most visible on the light theme).",
-  "releaseNotesRu": "У маркеров на карте — красивый тултип при наведении (кто поставил вард и сколько он жил, какая башня пала и когда, Рошан). Починен баг с угловыми скобками, торчавшими за скруглёнными карточками (особенно заметно на светлой теме).",
+  "releaseNotes": "Report counting fixed: duplicate reports the replay engine saw twice are merged, reports from an unknown player are no longer collapsed into one, impossible self-reports are dropped, and a report without a timestamp no longer breaks the whole replay. The verdict, the player picker, the report list and the highlights now show the same number. A clean replay now shows \"Clean match\" instead of the number from the previous replay. Reports the replay can't pin down exactly are marked (with the likely player and alternatives on hover). The report list opens on Incoming.",
+  "releaseNotesRu": "Починен подсчёт репортов: дубли (когда движок видел один репорт дважды) склеиваются, репорты от неизвестного игрока больше не схлопываются в один, невозможные «репорты на себя» отбрасываются, а репорт без времени больше не ломает весь реплей. Вердикт, выбор игрока, список и хайлайты теперь показывают одно и то же число. Чистый реплей показывает «Чистый матч», а не цифру от прошлого реплея. Неточные репорты помечены (вероятный игрок и варианты — при наведении). Список репортов открывается на «Входящих».",
   "private": true,
   "description": "DotaTraker: who reported whom in Dota 2 matches, behind an access key.",
   "license": "MIT",

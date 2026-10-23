@@ -262,6 +262,96 @@ const DOTA_HEROES = [
     return `/api/hero-icon/${heroId}`;
 }
 
+/* ---------- Report hygiene ----------
+   One place that turns the engine's raw Reports[] into the list every screen counts,
+   so the list, the player picker, the verdict, highlights and history all agree. */
+// "MM:SS", "-0:45" (before the horn), "1:02:03", or plain seconds -> seconds
+function ledgerTimeSecs(t) {
+    if (t == null || t === '') return 0;
+    if (typeof t === 'number') return isFinite(t) ? t : 0;
+    const s = String(t).trim();
+    const neg = /^-/.test(s);
+    const parts = s.replace(/^[-+]/, '').split(':').map(x => parseFloat(x));
+    if (!parts.length || parts.some(x => !isFinite(x))) return 0;
+    const v = parts.reduce((acc, p) => acc * 60 + p, 0);
+    return neg ? -v : v;
+}
+function ledgerSlot(v) {
+    const n = typeof v === 'string' && /^\s*\d+\s*$/.test(v) ? parseInt(v, 10) : v;
+    return Number.isInteger(n) && n >= 0 && n < 10 ? n : null;
+}
+function ledgerSid(v) {
+    const s = v == null ? '' : String(v).trim();
+    if (!/^\d+$/.test(s) || /^0+$/.test(s)) return '';
+    try { let n = BigInt(s); if (n < 76561197960265728n) n += 76561197960265728n; return n.toString(); } catch (_) { return s; }
+}
+// Candidate list -> [{c, share}] sorted by score (share = this candidate's part of all scores)
+function ledgerCandidates(r) {
+    const c = (r && Array.isArray(r.Candidates)) ? r.Candidates.filter(Boolean) : [];
+    if (c.length < 2) return [];
+    const sum = c.reduce((a, x) => a + (x.Score > 0 ? x.Score : 0), 0);
+    return c.map(x => ({ c: x, share: sum > 0 ? Math.max(0, x.Score || 0) / sum : 1 / c.length }))
+        .sort((a, b) => b.share - a.share);
+}
+function ledgerCleanReports(raw, players) {
+    const list = Array.isArray(raw) ? raw : [];
+    const teamBySlot = new Map(), slotBySid = new Map();
+    (Array.isArray(players) ? players : []).forEach(p => {
+        const s = ledgerSlot(p && p.Slot);
+        if (s == null) return;
+        const tm = Number(p.Team);
+        if (tm === 2 || tm === 3) teamBySlot.set(s, tm);
+        const id = ledgerSid(p.SteamID);
+        if (id) slotBySid.set(id, s);
+    });
+    const out = [], seen = new Map();
+    let selfDrops = 0, dupes = 0;
+    list.forEach(r0 => {
+        if (!r0 || typeof r0 !== 'object') return;
+        const r = { ...r0 };
+        r.Time = r.Time == null ? '' : String(r.Time);
+        const sid = ledgerSid(r.SteamID), tsid = ledgerSid(r.TargetSteamID);
+        // fill a missing slot from the roster by SteamID (and keep numeric slots numeric)
+        let s = ledgerSlot(r.Slot), ts = ledgerSlot(r.TargetSlot);
+        if (s == null && sid && slotBySid.has(sid)) s = slotBySid.get(sid);
+        if (ts == null && tsid && slotBySid.has(tsid)) ts = slotBySid.get(tsid);
+        if (s != null) r.Slot = s;
+        if (ts != null) r.TargetSlot = ts;
+        // nobody can report themselves — that is the engine mis-attributing one side
+        if ((s != null && s === ts) || (sid && sid === tsid)) { selfDrops++; return; }
+        // teammate / enemy *of the reported player*, from the roster when both sides are known
+        const a = teamBySlot.get(s), b = teamBySlot.get(ts);
+        if (a && b) r.Team = a === b ? 'FRIENDLY' : 'ENEMY';
+        else r.Team = String(r.Team || '').toUpperCase() === 'FRIENDLY' ? 'FRIENDLY' : 'ENEMY';
+        r._unsure = r.Confirmed === false || ledgerCandidates(r).length > 0;
+        // Dota allows one report per player per match: the same reporter -> same target twice
+        // is the same report seen twice. Keep the confirmed copy, else the earliest one.
+        const who = s != null ? 's' + s : (sid ? 'i' + sid : '');
+        const whom = ts != null ? 's' + ts : (tsid ? 'i' + tsid : '');
+        if (who && whom) {
+            const k = who + '>' + whom;
+            const prev = seen.get(k);
+            if (prev) {
+                dupes++;
+                const pc = prev.r.Confirmed !== false, rc = r.Confirmed !== false;
+                if ((rc && !pc) || (rc === pc && ledgerTimeSecs(r.Time) < ledgerTimeSecs(prev.r.Time))) { out[prev.i] = r; prev.r = r; }
+                return;
+            }
+            seen.set(k, { i: out.length, r });
+        }
+        out.push(r);
+    });
+    if (selfDrops || dupes) dbg('[reports] cleaned:', list.length, '->', out.length, '(duplicates', dupes, ', self-reports', selfDrops, ')');
+    return out;
+}
+// counts of an already-cleaned list: each row is one reporter -> one target
+function ledgerCountReports(reports) {
+    let team = 0, enemy = 0, unsure = 0;
+    (reports || []).forEach(r => { if (r.Team === 'FRIENDLY') team++; else enemy++; if (r._unsure) unsure++; });
+    return { team, enemy, unsure, total: team + enemy };
+}
+window.LedgerReports = { clean: ledgerCleanReports, count: ledgerCountReports, secs: ledgerTimeSecs, candidates: ledgerCandidates };
+
 document.addEventListener('DOMContentLoaded', () => {
     let currentPath = '';
     let currentReplays = [];
@@ -300,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const graphLoadingOverlay = document.getElementById('graph-loading-overlay');
     const graphViewTabs = document.querySelectorAll('.graph-view-tab');
     
-    let currentGraphView = 'playerReports';
+    // open on reports *on* the player: that is what the verdict counts
+    let currentGraphView = 'reports';
     
     function updateGraphViewTabs() {
         graphViewTabs.forEach(tab => {
@@ -1201,24 +1292,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const result = matchResult.fullResult;
             const filePath = directory ? `${directory}/${matchResult.matchId}.dem` : `${matchResult.matchId}.dem`;
-            
-            const countedSlots = new Set();
-            let uniqueTeamReports = 0;
-            let uniqueEnemyReports = 0;
-            
-            if (result.Reports) {
-                result.Reports.forEach(report => {
-                    if (!countedSlots.has(report.Slot)) {
-                        countedSlots.add(report.Slot);
-                        if (report.Team === "FRIENDLY") {
-                            uniqueTeamReports++;
-                        } else {
-                            uniqueEnemyReports++;
-                        }
-                    }
-                });
-            }
-            
+            result.Reports = ledgerCleanReports(result.Reports, result.Players);
+
+            const cnt = ledgerCountReports(result.Reports);
+            const uniqueTeamReports = cnt.team;
+            const uniqueEnemyReports = cnt.enemy;
+
             totalTeamReports += uniqueTeamReports;
             totalEnemyReports += uniqueEnemyReports;
             totalConfirmedTeamReports += uniqueTeamReports;
@@ -1244,14 +1323,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.Reports) {
                 result.Reports.forEach(report => {
                     const playerKey = report.Name || `Slot ${report.Slot}`;
-                    const timeParts = report.Time.split(':');
-                    let totalMinutes = 0;
-                    if (timeParts.length === 2) {
-                        const minutes = parseInt(timeParts[0]) || 0;
-                        const seconds = parseInt(timeParts[1]) || 0;
-                        totalMinutes = minutes + seconds / 60;
-                    }
-                    
+                    const totalMinutes = ledgerTimeSecs(report.Time) / 60;
+
                     const timelinePoint = {
                         x: totalMinutes,
                         y: report.Team === 'FRIENDLY' ? 1 : 2,
@@ -2145,23 +2218,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const resultTextFixed = resultText.replace(/"TargetSteamID":\s*(\d+)/g, '"TargetSteamID":"$1"')
                     .replace(/"SteamID":\s*(\d+)/g, '"SteamID":"$1"');
                 const result = JSON.parse(resultTextFixed);
+                result.Reports = ledgerCleanReports(result.Reports, result.Players);
 
-                const countedSlots = new Set();
-                let uniqueTeamReports = 0;
-                let uniqueEnemyReports = 0;
-                
-                if (result.Reports) {
-                    result.Reports.forEach(report => {
-                        if (!countedSlots.has(report.Slot)) {
-                            countedSlots.add(report.Slot);
-                            if (report.Team === "FRIENDLY") {
-                                uniqueTeamReports++;
-                            } else {
-                                uniqueEnemyReports++;
-                            }
-                        }
-                    });
-                }
+                const cnt = ledgerCountReports(result.Reports);
+                const uniqueTeamReports = cnt.team;
+                const uniqueEnemyReports = cnt.enemy;
 
                 totalTeamReports += uniqueTeamReports;
                 totalEnemyReports += uniqueEnemyReports;
@@ -2193,13 +2254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.Reports) {
                     result.Reports.forEach(report => {
                         const playerKey = report.Name || `Slot ${report.Slot}`;
-                        const timeParts = report.Time.split(':');
-                        let totalMinutes = 0;
-                        if (timeParts.length === 2) {
-                            const minutes = parseInt(timeParts[0]) || 0;
-                            const seconds = parseInt(timeParts[1]) || 0;
-                            totalMinutes = minutes + seconds / 60;
-                        }
+                        const totalMinutes = ledgerTimeSecs(report.Time) / 60;
 
                         const timelinePoint = {
                             x: totalMinutes,
@@ -2255,7 +2310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             matchSelectorContainer.classList.add('hidden');
         }
 
-        if (totalTeamReports + totalEnemyReports > 0) {
+        {
             const totalUnconfirmedTeamReports = totalTeamReports - totalConfirmedTeamReports;
             const totalUnconfirmedEnemyReports = totalEnemyReports - totalConfirmedEnemyReports;
             
@@ -2270,8 +2325,10 @@ document.addEventListener('DOMContentLoaded', () => {
             allTotalUnconfirmedTeamReports = totalUnconfirmedTeamReports;
             allTotalUnconfirmedEnemyReports = totalUnconfirmedEnemyReports;
             
+            // run even for a 0-report replay, so the verdict and list refresh instead of
+            // keeping the previous replay's numbers
             try { updateGraphsForPlayer(currentSelectedPlayer); } catch (e) { console.error('graphs failed', e); }
-            graphsSection.classList.remove('hidden');
+            if (totalTeamReports + totalEnemyReports > 0) graphsSection.classList.remove('hidden');
         }
     }
 
@@ -2397,6 +2454,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function populatePlayerSelector(matchData) {
         if (!matchData || !matchData.reports || matchData.reports.length === 0) {
+            // drop the previous match's options, or the auto-pick below would select a player
+            // from the last replay
+            playerSelectorOptions = [];
             playerSelectorContainer.classList.add('hidden');
             return;
         }
@@ -2825,11 +2885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function parseTimeToMinutes(timeStr) {
-        const parts = timeStr.split(':');
-        if (parts.length !== 2) return 0;
-        const minutes = parseInt(parts[0]) || 0;
-        const seconds = parseInt(parts[1]) || 0;
-        return minutes + seconds / 60;
+        return ledgerTimeSecs(timeStr) / 60;
     }
 
     async function renderCurrentGraph(matchData, playerFilter = null) {
@@ -2859,7 +2915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function escTL(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-    function tlWho(x) { return (x.Name && String(x.Name).trim()) || x.Hero || (x.Slot >= 0 ? tr('Slot') + ' ' + x.Slot : '?'); }
+    function tlWho(x) { return (x.Name && String(x.Name).trim()) || (x.Hero && String(x.Hero).toLowerCase() !== 'unknown' ? x.Hero : '') || (x.Slot >= 0 ? tr('Slot') + ' ' + x.Slot : tr('Unknown player')); }
 
     // Clean list view of reports (replaces the minute-by-minute canvas chart).
     function renderReportTimelineList(reports, dir) {
@@ -2895,13 +2951,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const avInner = escTL((primary || '?').trim().charAt(0).toUpperCase())
                 + (iconUrl ? '<img src="' + escTL(iconUrl) + '" alt="" loading="lazy" onerror="this.remove()">' : '');
 
+            // The engine could not pin this report down exactly: say so, and list who else it might be.
+            const cands = ledgerCandidates(r);
+            const unsure = !!r._unsure || r.Confirmed === false || cands.length > 0;
+            const candName = (c) => (c.Name && String(c.Name).trim()) || (c.Hero && String(c.Hero).toLowerCase() !== 'unknown' ? c.Hero : '') || '?';
+            // the candidate this row shows: the one on the displayed slot, else the engine's pick, else the top score
+            const shown = cands.find(x => x.c.Slot != null && (x.c.Slot === r.TargetSlot || x.c.Slot === r.Slot))
+                || (Number.isInteger(r.SelectedCandidateIndex) && r.Candidates[r.SelectedCandidateIndex] ? cands.find(x => x.c === r.Candidates[r.SelectedCandidateIndex]) : null)
+                || cands[0];
+            let unsureTip = '';
+            if (cands.length) {
+                unsureTip = tr('Who it may be') + ':\n' + cands.map(x => (x === shown ? '★ ' : '• ') + candName(x.c) + ' — ' + Math.round(x.share * 100) + '%').join('\n');
+            } else if (unsure) {
+                unsureTip = tr('The replay does not show this report with certainty');
+            }
+            const sub = [];
+            if (hero) sub.push(escTL(hero));
+            if (unsure) sub.push('<i class="rep-unsure">≈ ' + escTL(shown ? tr('likely') + ' ' + Math.round(shown.share * 100) + '%' : tr('not certain')) + '</i>');
+
             const row = document.createElement('div');
-            row.className = 'rep-row ' + (ally ? 'ally' : 'enemy');
+            row.className = 'rep-row ' + (ally ? 'ally' : 'enemy') + (unsure ? ' rep-unsure-row' : '');
             if (pl && pl.id) { row.classList.add('rep-clickable'); row.dataset.sid = pl.id; }
+            if (unsureTip) row.title = unsureTip;
             row.innerHTML =
-                '<span class="rep-time">' + escTL(r.Time || '') + '</span>' +
+                '<span class="rep-time">' + escTL(r.Time || '—') + '</span>' +
                 '<span class="rep-av">' + avInner + '</span>' +
-                '<span class="rep-who"><b>' + escTL(primary) + '</b>' + (hero ? '<small>' + escTL(hero) + '</small>' : '') + '</span>' +
+                '<span class="rep-who"><b>' + escTL(primary) + '</b>' + (sub.length ? '<small>' + sub.join(' · ') + '</small>' : '') + '</span>' +
                 (target ? '<span class="rep-target">&rarr; ' + escTL(target) + '</span>' : '<span class="rep-target"></span>') +
                 '<span class="rep-tag ' + (ally ? 'ally' : 'enemy') + '">' + escTL(ally ? tr('Report from teammate') : tr('Report from enemy')) + '</span>';
             list.appendChild(row);
@@ -2981,7 +3056,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 reports = reports.filter(r => {
                     if (!r.TargetSteamID) return false;
                     const reportTargetSteamID = String(r.TargetSteamID).trim();
-                    const matches = reportTargetSteamID === targetSteamID;
+                    const matches = steamIDsMatch(reportTargetSteamID, targetSteamID);
                     if (!matches && reportTargetSteamID && targetSteamID) {
                         dbg(`[renderTimelineGraph] Mismatch: report.TargetSteamID="${reportTargetSteamID}" (type: ${typeof r.TargetSteamID}) !== filter="${targetSteamID}"`);
                     }
@@ -3485,7 +3560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 reports = reports.filter(r => r.Slot === reporterSlot);
             } else if (playerFilter.startsWith('steamid_')) {
                 const reporterSteamID = playerFilter.replace('steamid_', '');
-                reports = reports.filter(r => String(r.SteamID) === reporterSteamID);
+                reports = reports.filter(r => r.SteamID && steamIDsMatch(String(r.SteamID), reporterSteamID));
             }
         }
 
@@ -4882,27 +4957,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function filterDataByPlayer(matchData, playerFilter) {
         if (!playerFilter) return matchData;
         
+        // a malformed id must not throw and take the whole verdict down with it
+        const safeBig = (x) => { try { return BigInt(String(x).trim()); } catch (_) { return null; } };
         const filteredMatchData = matchData.map(match => {
             let filteredReports = match.reports || [];
             let effectiveFilter = playerFilter;
             
             if (playerFilter.startsWith('steamid_') && match.players) {
                 const targetSteamID = String(playerFilter.replace('steamid_', '')).trim();
-                const targetSteamIDNum = BigInt(targetSteamID);
-                const STEAMID64_IDENTIFIER = BigInt('76561197960265728');
-                const targetAccountID = targetSteamIDNum - STEAMID64_IDENTIFIER;
                 const targetPlayer = match.players.find(p => p.SteamID && String(p.SteamID).trim() === targetSteamID);
                 let foundPlayer = targetPlayer;
                 if (!foundPlayer) {
                     const normalizedTarget = normalizeSteamIDForComparison(targetSteamID);
                     foundPlayer = match.players.find(p => p.SteamID && steamIDsMatch(p.SteamID, targetSteamID));
                     if (!foundPlayer) {
-                        const targetNum = BigInt(targetSteamID);
+                        const targetNum = safeBig(targetSteamID);
                         let closestPlayer = null;
                         let minDiff = BigInt(1000);
                         match.players.forEach(p => {
-                            if (p.SteamID) {
-                                const playerNum = BigInt(String(p.SteamID));
+                            const playerNum = p.SteamID ? safeBig(p.SteamID) : null;
+                            if (targetNum != null && playerNum != null) {
                                 const diff = targetNum > playerNum ? targetNum - playerNum : playerNum - targetNum;
                                 if (diff < minDiff) {
                                     minDiff = diff;
@@ -4985,7 +5059,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const slotCounts = new Map();
                 let checkedReports = 0;
                 let matchedReports = 0;
-                const targetNum = BigInt(targetSteamID);
+                const targetNum = safeBig(targetSteamID);
                 filteredReports.forEach(r => {
                     if (r.TargetSteamID && r.TargetSlot != null && r.TargetSlot >= 0 && r.TargetSlot < 10) {
                         checkedReports++;
@@ -5043,19 +5117,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dbg(`[filterDataByPlayer] Filtered to ${filteredReports.length} reports for TargetSteamID: ${targetSteamID}`);
             }
             
-            const countedSlots = new Set();
-            let teamReports = 0;
-            let enemyReports = 0;
-            filteredReports.forEach(report => {
-                if (!countedSlots.has(report.Slot)) {
-                    countedSlots.add(report.Slot);
-                    if (report.Team === "FRIENDLY") {
-                        teamReports++;
-                    } else {
-                        enemyReports++;
-                    }
-                }
-            });
+            // reports are already de-duplicated per reporter -> target, so each row is one report
+            const cnt = ledgerCountReports(filteredReports);
+            const teamReports = cnt.team;
+            const enemyReports = cnt.enemy;
             
             return {
                 ...match,
@@ -5096,13 +5161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         filteredMatchData.forEach(match => {
             (match.reports || []).forEach(report => {
-                const timeParts = report.Time.split(':');
-                let totalMinutes = 0;
-                if (timeParts.length === 2) {
-                    const minutes = parseInt(timeParts[0]) || 0;
-                    const seconds = parseInt(timeParts[1]) || 0;
-                    totalMinutes = minutes + seconds / 60;
-                }
+                const totalMinutes = ledgerTimeSecs(report.Time) / 60;
                 filtered.push({
                     x: totalMinutes,
                     y: report.Team === 'FRIENDLY' ? 1 : 2,
@@ -5225,15 +5284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         playerReportsSection.style.display = 'block';
         
-        const reportsPerMatch = filteredMatchData.map(match => {
-            const uniqueReporters = new Set();
-            (match.reports || []).forEach(report => {
-                if (report.Slot != null) {
-                    uniqueReporters.add(report.Slot);
-                }
-            });
-            return uniqueReporters.size;
-        });
+        const reportsPerMatch = filteredMatchData.map(match => ledgerCountReports(match.reports).total);
         
         const matchLabels = filteredMatchData.map(m => `Match ${m.matchID}`);
         
@@ -5309,14 +5360,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalEnemy = totalEnemyReports;
         const totalCombined = totalFriendly + totalEnemy;
         
+        // Always write the numbers (0 included): the verdict reads them, and a clean match
+        // must show "Clean match" instead of the number left over from the previous replay.
         const reportSummary = document.getElementById('report-summary');
-        if (reportSummary && totalCombined > 0) {
+        if (reportSummary) {
             document.getElementById('total-friendly-reports').textContent = totalFriendly;
             document.getElementById('total-enemy-reports').textContent = totalEnemy;
             document.getElementById('total-combined-reports').textContent = totalCombined;
             reportSummary.style.display = 'block';
-        } else if (reportSummary) {
-            reportSummary.style.display = 'none';
         }
 
         // Calculate and display totals for all matches by summing unique reports received by the target player
@@ -5326,24 +5377,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allMatchDataOriginal && allMatchDataOriginal.length > 0 && (playerFilter || analysisSteamID)) {
             const filteredAllMatchData = filterDataByPlayer(allMatchDataOriginal, playerFilter);
             filteredAllMatchData.forEach(match => {
-                // Count unique reports by Slot (reporter slot) for the target player
-                const countedSlots = new Set();
-                let friendly = 0;
-                let enemy = 0;
-                
-                (match.reports || []).forEach(report => {
-                    if (!countedSlots.has(report.Slot)) {
-                        countedSlots.add(report.Slot);
-                        if (report.Team === "FRIENDLY") {
-                            friendly++;
-                        } else {
-                            enemy++;
-                        }
-                    }
-                });
-                
-                allMatchesFriendly += friendly;
-                allMatchesEnemy += enemy;
+                const c = ledgerCountReports(match.reports);
+                allMatchesFriendly += c.team;
+                allMatchesEnemy += c.enemy;
             });
         }
         
